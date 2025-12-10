@@ -24,9 +24,12 @@ app.commandLine.appendSwitch('enable-zero-copy');
 const fs = require('fs');
 const path = require('path');
 const { SerialManager } = require('./serial');
+const proto = require('./protocol');
+const { Ws2812Driver, DEFAULT_COLORS } = require('./ws2812');
 
 let mainWindow;
 const serial = new SerialManager();
+const leds = process.platform === 'linux' ? new Ws2812Driver({ ledCount: 51, defaultColor: DEFAULT_COLORS.idle }) : null;
 
 const BRIGHTNESS_PATH = '/sys/class/backlight/backlight2/brightness';
 const MAX_BRIGHTNESS_PATH = '/sys/class/backlight/backlight2/max_brightness';
@@ -66,6 +69,21 @@ async function setBrightnessPercent(percent) {
   const raw = Math.round((pct / 100) * max);
   await fs.promises.writeFile(BRIGHTNESS_PATH, String(raw));
   return { raw, max, percent: pct };
+}
+
+function ledShowIdle() {
+  if (!leds) return;
+  leds.showIdle();
+}
+
+function ledShowRunning() {
+  if (!leds) return;
+  leds.showRunning();
+}
+
+function ledShowStopAlert() {
+  if (!leds) return;
+  leds.showStopAlert();
 }
 
 
@@ -127,6 +145,7 @@ function createWindow() {
   });
   serial.on('stop-treatment', (value) => {
     mainWindow.webContents.send('stop-treatment', value);
+    ledShowStopAlert();
   });
   serial.on('shield-state', (value) => {
     mainWindow.webContents.send('shield-state', value);
@@ -165,6 +184,7 @@ app.whenReady().then(() => {
 
   broadcastPorts();
   setInterval(broadcastPorts, 3000);
+  ledShowIdle();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -186,7 +206,14 @@ app.on('window-all-closed', () => {
 ipcMain.handle('list-ports', async () => serial.listPorts());
 ipcMain.handle('connect', async (e, { port, baud }) => serial.connect(port, baud));
 ipcMain.handle('disconnect', async () => serial.disconnect());
-ipcMain.handle('send-u8', async (e, { frameId, value }) => serial.sendU8(frameId, value));
+ipcMain.handle('send-u8', async (e, { frameId, value }) => {
+  const sent = serial.sendU8(frameId, value);
+  if (leds && value) {
+    if (frameId === proto.U8_START_TREATMENT) ledShowRunning();
+    else if (frameId === proto.U8_STOP_TREATMENT) ledShowStopAlert();
+  }
+  return sent;
+});
 ipcMain.handle('send-f32', async (e, { frameId, value }) => serial.sendF32(frameId, value));
 ipcMain.handle('send-u16', async (e, { frameId, value }) => serial.sendU16(frameId, value));
 ipcMain.handle('send-text', async (e, { frameId, text }) => serial.sendText(frameId, text));
