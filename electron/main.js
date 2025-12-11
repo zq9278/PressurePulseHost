@@ -29,6 +29,13 @@ const { SerialManager } = require('./serial');
 const proto = require('./protocol');
 const { Ws2812Driver, DEFAULT_COLORS } = require('./ws2812');
 
+// Preemptively turn off backlight before Electron window creation to avoid white flash
+try {
+  fs.writeFileSync('/sys/class/backlight/backlight2/brightness', '0');
+} catch (err) {
+  console.warn('[PPHC] pre-start backlight off failed', err?.message || err);
+}
+
 const expandPath = (p) => {
   if (!p) return p;
   if (p.startsWith('~/')) return path.join(os.homedir(), p.slice(2));
@@ -82,14 +89,16 @@ async function getBrightnessPercent() {
   };
 }
 
-async function setBrightnessPercent(percent) {
+async function setBrightnessPercent(percent, opts = {}) {
   const max = await resolveMaxBrightness();
   const pctRaw = Number(percent);
   const pct = Number.isFinite(pctRaw) ? Math.max(0, Math.min(100, pctRaw)) : 0;
   const raw = Math.round((pct / 100) * max);
   await fs.promises.writeFile(BRIGHTNESS_PATH, String(raw));
-  currentSettings.brightness = pct;
-  saveSettings().catch(() => {});
+  if (!opts.skipSave) {
+    currentSettings.brightness = pct;
+    saveSettings().catch(() => {});
+  }
   return { raw, max, percent: pct };
 }
 
@@ -278,7 +287,7 @@ function createWindow() {
     frame: false,
     autoHideMenuBar: true,
     show: false, // delay showing to avoid white flash
-    backgroundColor: '#000000',
+    backgroundColor: '#050608',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -291,11 +300,9 @@ function createWindow() {
   if (process.env.PPHC_DEBUG_MOUSE) query.debugMouse = '1';
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'), { query });
 
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-  });
-
   mainWindow.webContents.once('did-finish-load', () => {
+    // 等页面加载完再展示，减少背景色闪烁
+    if (mainWindow && !mainWindow.isVisible()) mainWindow.show();
     broadcastPorts();
   });
 
@@ -348,9 +355,13 @@ async function broadcastPorts() {
 // =============================================
 app.whenReady().then(() => {
   loadSettings();
-  if (Number.isFinite(currentSettings.brightness)) {
-    setBrightnessPercent(currentSettings.brightness).catch(() => {});
-  }
+  // 启动即关背光，1 秒后再恢复为目标亮度
+  setBrightnessPercent(0, { skipSave: true }).catch(() => {});
+  setTimeout(() => {
+    if (Number.isFinite(currentSettings.brightness)) {
+      setBrightnessPercent(currentSettings.brightness).catch(() => {});
+    }
+  }, 500);
   if (Number.isFinite(currentSettings.volume)) {
     setVolumePercent(currentSettings.volume).catch(() => {});
   }

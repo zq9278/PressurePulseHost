@@ -38,7 +38,7 @@ unclutter -idle 0.1 -root &
 openbox &
 
 # 减少等待时间，快速启动Electron
-sleep 0.5
+# sleep 0.5
 
 # 切换到应用目录并启动
 cd ${APP_PATH}
