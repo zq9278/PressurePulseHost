@@ -237,6 +237,21 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
   const TEMP_FIXED_C = 42.0;
   const AUTO_PORT = '/dev/ttyS1';
   const AUTO_BAUD = 115200;
+  const audioMap = {
+    shield: new Audio('../resoure/shield-is-invalid.wav'),
+    start: new Audio('../resoure/Treatment-start.wav'),
+    stop: new Audio('../resoure/Treatment-stop.wav'),
+    tempHigh: new Audio('../resoure/Temperature-high.wav'),
+  };
+  const playSound = (key) => {
+    if (!state.settings.playChime) return;
+    const a = audioMap[key];
+    if (!a || typeof a.play !== 'function') return;
+    try {
+      a.currentTime = 0;
+      a.play().catch(() => {});
+    } catch {}
+  };
   if (WEB_DEBUG) {
     console.log('[PPHC] web debug mode enabled - serial and device calls are stubbed');
   }
@@ -277,6 +292,7 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     activeSides: [],
     shieldDropShown: false,
     modeStage: '--',
+    tempHighAlerted: false,
     settings: {
       brightness: 80,
       screensaver: 10,
@@ -294,7 +310,9 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
   };
 
   let brightnessApplyTimer = null;
+  let volumeApplyTimer = null;
   const clampBrightness = (val) => Math.max(0, Math.min(100, Math.round(Number(val) || 0)));
+  const clampVolume = (val) => Math.max(0, Math.min(100, Math.round(Number(val) || 0)));
 
   function showView(view) {
     const next = ['home', 'quick', 'settings'].includes(view) ? view : 'home';
@@ -611,8 +629,9 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
 
     const volume = document.getElementById('settingsVolume');
     const volumeValue = document.getElementById('settingsVolumeValue');
-    if (volume) volume.value = state.settings.volume;
-    if (volumeValue) volumeValue.textContent = `${state.settings.volume}%`;
+    const volPct = clampVolume(state.settings.volume);
+    if (volume) volume.value = volPct;
+    if (volumeValue) volumeValue.textContent = `${volPct}%`;
 
     const langZh = document.getElementById('languageZh');
     const langEn = document.getElementById('languageEn');
@@ -640,6 +659,32 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
       }
     } catch (err) {
       console.warn('[PPHC] getBrightness failed', err);
+    }
+  }
+
+  async function syncSystemVolume() {
+    if (!api?.getVolume) return;
+    try {
+      const info = await api.getVolume();
+      if (info && typeof info.percent === 'number') {
+        state.settings.volume = clampVolume(info.percent);
+        updateSettingsUI();
+      }
+    } catch (err) {
+      console.warn('[PPHC] getVolume failed', err);
+    }
+  }
+
+  async function syncPlayChime() {
+    if (!api?.getPlayChime) return;
+    try {
+      const info = await api.getPlayChime();
+      if (info && typeof info.on === 'boolean') {
+        state.settings.playChime = info.on;
+        updateSettingsUI();
+      }
+    } catch (err) {
+      console.warn('[PPHC] getPlayChime failed', err);
     }
   }
 
@@ -722,6 +767,31 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     }
   }
 
+  function requestVolumeApply(percent) {
+    if (!api?.setVolume) return;
+    const target = clampVolume(percent);
+    state.settings.volume = target;
+    updateSettingsUI();
+    if (volumeApplyTimer) clearTimeout(volumeApplyTimer);
+    volumeApplyTimer = setTimeout(() => {
+      volumeApplyTimer = null;
+      applyVolume(target);
+    }, 120);
+  }
+
+  async function applyVolume(percent) {
+    if (!api?.setVolume) return;
+    try {
+      const result = await api.setVolume(percent);
+      if (result && typeof result.percent === 'number') {
+        state.settings.volume = clampVolume(result.percent);
+        updateSettingsUI();
+      }
+    } catch (err) {
+      console.warn('[PPHC] setVolume failed', err);
+    }
+  }
+
   function requestBrightnessApply(percent) {
     const target = clampBrightness(percent);
     state.settings.brightness = target;
@@ -784,6 +854,14 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     buf.push(value);
     if (buf.length > state.max) buf.shift();
     state.latest[ch] = value;
+    if ((ch === 1 || ch === 3) && typeof value === 'number') {
+      if (value > 45 && !state.tempHighAlerted) {
+        state.tempHighAlerted = true;
+        playSound('tempHigh');
+      } else if (value < 44) {
+        state.tempHighAlerted = false;
+      }
+    }
   }
 
   function drawSparkline(canvas, data, color, cfg = {}) {
@@ -999,6 +1077,7 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     if (state.countdownTimer) clearInterval(state.countdownTimer);
     state.countdownTimer = setInterval(updateCountdown, 250);
     updateRunState();
+    playSound('start');
   }
 
   function handleShieldDropOffline() {
@@ -1032,9 +1111,11 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     }
     if (!left && !right) {
       openShieldAlert('未检测到治疗眼罩，请正确佩戴后再开始治疗。');
+      playSound('shield');
       return;
     }
     const active = left ? ['left'] : ['right'];
+    playSound('shield');
     openShieldConfirm(active);
   }
 
@@ -1059,10 +1140,11 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
 
     const volume = document.getElementById('settingsVolume');
     if (volume) {
-      volume.value = state.settings.volume;
+      volume.value = clampVolume(state.settings.volume);
       volume.addEventListener('input', () => {
-        state.settings.volume = Number(volume.value || 0);
+        state.settings.volume = clampVolume(volume.value);
         updateSettingsUI();
+        requestVolumeApply(state.settings.volume);
       });
     }
 
@@ -1083,6 +1165,7 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
       chimeToggle.addEventListener('change', () => {
         state.settings.playChime = !!chimeToggle.checked;
         updateSettingsUI();
+        api?.setPlayChime?.(state.settings.playChime);
       });
     }
 
@@ -1114,7 +1197,12 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     ].forEach((id) => {
       if (!document.getElementById(id)) console.warn('[PPHC] missing element', id);
     });
-    document.getElementById('btnHomeQuick')?.addEventListener('click', () => showView('quick'));
+    document.getElementById('btnHomeQuick')?.addEventListener('click', () => {
+      showView('quick');
+      if (!isShieldHealthy('left') || !isShieldHealthy('right')) {
+        playSound('shield');
+      }
+    });
     document.getElementById('btnBackHome')?.addEventListener('click', () => showView('home'));
     document.getElementById('btnExit')?.addEventListener('click', () => {
       if (api && api.exitApp) api.exitApp();
@@ -1137,6 +1225,7 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
         }
         updateRunState();
         showAlert('治疗已停止');
+        playSound('stop');
       } else {
         handleStartClick();
       }
@@ -1259,6 +1348,7 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
         state.running = false;
         updateRunState();
         showAlert(t('stoppedByDevice'));
+        playSound('stop');
       });
     }
     if (api.onShieldState) {
@@ -1295,6 +1385,8 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     updateModeMeta();
     updateSettingsUI();
     syncSystemBrightness();
+    syncSystemVolume();
+    syncPlayChime();
     applyLanguage(state.settings.language || 'zh');
     setInterval(updateTelemetry, 200);
     updateHeroClock();

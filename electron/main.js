@@ -18,14 +18,22 @@ if (useWayland) {
 }
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
-app.commandLine.appendSwitch('enable-zero-copy');
+  app.commandLine.appendSwitch('enable-zero-copy');
 
 // =======================================================
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+const { spawn } = require('child_process');
 const { SerialManager } = require('./serial');
 const proto = require('./protocol');
 const { Ws2812Driver, DEFAULT_COLORS } = require('./ws2812');
+
+const expandPath = (p) => {
+  if (!p) return p;
+  if (p.startsWith('~/')) return path.join(os.homedir(), p.slice(2));
+  return p;
+};
 
 let mainWindow;
 const serial = new SerialManager();
@@ -34,6 +42,18 @@ const leds = process.platform === 'linux' ? new Ws2812Driver({ ledCount: 51, def
 const BRIGHTNESS_PATH = '/sys/class/backlight/backlight2/brightness';
 const MAX_BRIGHTNESS_PATH = '/sys/class/backlight/backlight2/max_brightness';
 const DEFAULT_MAX_BRIGHTNESS = 255;
+const SETTINGS_PATH = (() => {
+  // 开发时写到项目根目录，打包后写到可执行文件同目录
+  const base = app.isPackaged ? path.dirname(app.getPath('exe')) : path.join(__dirname, '..');
+  return path.join(base, 'settings.json');
+})();
+const STARTUP_SPEECH = {
+  zh: '设备已启动，请连接治疗仪。',
+  en: 'System is ready. Please connect the device.',
+};
+const DEFAULT_SETTINGS = { brightness: 80, volume: 100, playChime: true };
+let currentSettings = { ...DEFAULT_SETTINGS };
+let settingsFresh = true;
 
 async function readNumber(filePath) {
   const raw = await fs.promises.readFile(filePath, 'utf8');
@@ -68,6 +88,8 @@ async function setBrightnessPercent(percent) {
   const pct = Number.isFinite(pctRaw) ? Math.max(0, Math.min(100, pctRaw)) : 0;
   const raw = Math.round((pct / 100) * max);
   await fs.promises.writeFile(BRIGHTNESS_PATH, String(raw));
+  currentSettings.brightness = pct;
+  saveSettings().catch(() => {});
   return { raw, max, percent: pct };
 }
 
@@ -84,6 +106,156 @@ function ledShowRunning() {
 function ledShowStopAlert() {
   if (!leds) return;
   leds.showStopAlert();
+}
+
+function loadSettings() {
+  try {
+    const raw = fs.readFileSync(SETTINGS_PATH, 'utf8');
+    const parsed = JSON.parse(raw);
+    currentSettings = { ...DEFAULT_SETTINGS, ...parsed };
+    settingsFresh = false;
+  } catch {
+    currentSettings = { ...DEFAULT_SETTINGS };
+    settingsFresh = true;
+  }
+}
+
+async function saveSettings() {
+  try {
+    await fs.promises.mkdir(path.dirname(SETTINGS_PATH), { recursive: true });
+    await fs.promises.writeFile(SETTINGS_PATH, JSON.stringify(currentSettings, null, 2), 'utf8');
+  } catch (err) {
+    console.warn('[PPHC] save settings failed', err?.message || err);
+  }
+}
+
+async function setVolumePercent(percent) {
+  const pctRaw = Number(percent) || 0;
+  const pctClamped = Math.max(0, Math.min(100, pctRaw));
+  let target = 0;
+  if (pctClamped > 0) {
+    target = 80 + (pctClamped / 100) * 20; // map 1-100 -> 80-100
+  }
+  const args = ['-c', '0', 'set', 'PCM', `${Math.round(target)}%`];
+  if (pctClamped === 0) args.push('mute');
+  else args.push('unmute');
+  try {
+    await new Promise((resolve, reject) => {
+      const child = spawn('amixer', args, { stdio: 'ignore' });
+      child.on('error', reject);
+      child.on('close', (code) => {
+        if (code === 0) resolve();
+        else reject(new Error(`amixer exit ${code}`));
+      });
+    });
+    currentSettings.volume = pctClamped;
+    saveSettings().catch(() => {});
+    return { percent: pctClamped, applied: Math.round(target) };
+  } catch (err) {
+    console.warn('[PPHC] set volume failed', err?.message || err);
+    return { percent: pctClamped, applied: null, error: err?.message || String(err) };
+  }
+}
+
+function runAmixer(args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn('amixer', args, { stdio: 'ignore' });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) resolve(true);
+      else reject(new Error(`amixer exit ${code}`));
+    });
+  });
+}
+
+async function ensureAudioOutputsOn() {
+  const tasks = [
+    ['-c', '0', 'set', 'Speaker', 'on'],
+    ['-c', '0', 'set', 'Headphone', 'on'],
+    ['-c', '0', 'set', 'PCM', '100%'],
+  ];
+  for (const args of tasks) {
+    try {
+      await runAmixer(args);
+    } catch (err) {
+      console.warn('[PPHC] amixer init failed', args.join(' '), err?.message || err);
+    }
+  }
+}
+
+async function ensureAudioOutputsOff() {
+  const tasks = [
+    ['-c', '0', 'set', 'Speaker', 'off'],
+    ['-c', '0', 'set', 'Headphone', 'off'],
+    ['-c', '0', 'set', 'PCM', '0%', 'mute'],
+  ];
+  for (const args of tasks) {
+    try {
+      await runAmixer(args);
+    } catch (err) {
+      console.warn('[PPHC] amixer off failed', args.join(' '), err?.message || err);
+    }
+  }
+}
+
+async function applyChimeSetting() {
+  if (settingsFresh && currentSettings.playChime) {
+    await ensureAudioOutputsOn().catch(() => {});
+    return;
+  }
+  if (currentSettings.playChime) {
+    await ensureAudioOutputsOn().catch(() => {});
+  } else {
+    await ensureAudioOutputsOff().catch(() => {});
+  }
+}
+
+let spokeOnce = false;
+function speakStartup() {
+  // TTS disabled; using pre-recorded audio in renderer.
+  return;
+}
+
+function playWav(filePath, player, sox, aplayArgs) {
+  let wavForPlay = filePath;
+  const cleanup = [];
+  const doPlay = () => {
+    if (player) {
+      const args = ['-q', ...aplayArgs, wavForPlay];
+      const play = spawn(player, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+      play.stderr?.on('data', (d) => console.warn('[PPHC] aplay stderr', d.toString().trim()));
+      play.on('error', (err) => console.warn('[PPHC] aplay failed', err?.message || err));
+      play.on('close', (code) => {
+        if (code !== 0) console.warn('[PPHC] aplay exited with code', code);
+        fs.promises.unlink(filePath).catch(() => {});
+        cleanup.forEach((f) => fs.promises.unlink(f).catch(() => {}));
+      });
+      return;
+    }
+    console.warn('[PPHC] no aplay found, cannot play wav');
+  };
+
+  if (sox) {
+    const converted = filePath.replace(/\.wav$/i, '-48k.wav');
+    const soxArgs = [filePath, '-r', '48000', '-c', '2', converted];
+    const resample = spawn(sox, soxArgs, { stdio: ['ignore', 'ignore', 'pipe'] });
+    resample.stderr?.on('data', (d) => console.warn('[PPHC] sox stderr', d.toString().trim()));
+    resample.on('close', (code) => {
+      if (code === 0) {
+        wavForPlay = converted;
+        cleanup.push(converted);
+      } else {
+        console.warn('[PPHC] sox exited with code', code);
+      }
+      doPlay();
+    });
+    resample.on('error', (err) => {
+      console.warn('[PPHC] sox failed', err?.message || err);
+      doPlay();
+    });
+  } else {
+    doPlay();
+  }
 }
 
 
@@ -175,6 +347,14 @@ async function broadcastPorts() {
 // 6) app.whenReady()
 // =============================================
 app.whenReady().then(() => {
+  loadSettings();
+  if (Number.isFinite(currentSettings.brightness)) {
+    setBrightnessPercent(currentSettings.brightness).catch(() => {});
+  }
+  if (Number.isFinite(currentSettings.volume)) {
+    setVolumePercent(currentSettings.volume).catch(() => {});
+  }
+  applyChimeSetting().catch(() => {});
   createWindow();
 
   try {
@@ -185,6 +365,7 @@ app.whenReady().then(() => {
   broadcastPorts();
   setInterval(broadcastPorts, 3000);
   ledShowIdle();
+  speakStartup();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -225,3 +406,12 @@ ipcMain.handle('exit-app', async () => {
 });
 ipcMain.handle('get-brightness', async () => getBrightnessPercent());
 ipcMain.handle('set-brightness', async (e, { percent }) => setBrightnessPercent(percent));
+ipcMain.handle('get-volume', async () => ({ percent: currentSettings.volume || 0 }));
+ipcMain.handle('set-volume', async (e, { percent }) => setVolumePercent(percent));
+ipcMain.handle('get-play-chime', async () => ({ on: !!currentSettings.playChime }));
+ipcMain.handle('set-play-chime', async (e, { on }) => {
+  currentSettings.playChime = !!on;
+  saveSettings().catch(() => {});
+  applyChimeSetting().catch(() => {});
+  return { on: currentSettings.playChime };
+});
