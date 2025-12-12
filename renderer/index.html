@@ -45,6 +45,10 @@
               updatedAt: new Date().toISOString(),
               ...patient,
             }),
+            listLogs: async () => [],
+            readLog: async () => '',
+            checkUpdates: async () => ({ currentVersion: '0.0.0', latestVersion: null, updateAvailable: false }),
+            logToMain: noop,
             onSerialData: () => {},
             onConnectionChanged: () => {},
             onHeartbeatAck: () => {},
@@ -529,99 +533,118 @@
             <aside class="settings-sidebar">
               <div class="sidebar-title">偏好选项</div>
               <div class="settings-nav">
-                <button type="button">显示 <span class="hint">亮度 / 屏保</span></button>
-                <button type="button">声音 <span class="hint">音量 / 提示</span></button>
-                <button type="button">语言 <span class="hint">中文 / English</span></button>
-                <button type="button">关于 <span class="hint">版本 / 日志</span></button>
+                <button type="button" data-module="display" class="active">显示 <span class="hint">亮度 / 屏保</span></button>
+                <button type="button" data-module="sound">声音 <span class="hint">音量 / 提示</span></button>
+                <button type="button" data-module="language">语言 <span class="hint">中文 / English</span></button>
+                <button type="button" data-module="about">关于 <span class="hint">版本 / 更新</span></button>
+                <button type="button" data-module="logs">日志 <span class="hint">查看 / 导出</span></button>
               </div>
             </aside>
 
               <div class="settings-main">
-                <div class="settings-card headered">
-                  <h3>显示</h3>
-                  <div class="setting-row">
-                    <div class="meta">
-                      <strong>屏幕亮度</strong>
+                <div id="settingsModuleDisplay" class="settings-module active" data-module="display">
+                  <div class="settings-card headered">
+                    <h3>显示</h3>
+                    <div class="setting-row">
+                      <div class="meta">
+                        <strong>屏幕亮度</strong>
+                      </div>
+                      <div class="pill"><span>当前</span><strong id="settingsBrightnessValue">80%</strong></div>
                     </div>
-                    <div class="pill"><span>当前</span><strong id="settingsBrightnessValue">80%</strong></div>
-                  </div>
-                <input type="range" class="mac-slider" id="settingsBrightness" min="0" max="100" step="1" />
-                  <div class="setting-row">
-                    <div class="meta">
-                      <strong>屏保等待</strong>
+                    <input type="range" class="mac-slider" id="settingsBrightness" min="0" max="100" step="1" />
+                    <div class="setting-row">
+                      <div class="meta">
+                        <strong>屏保等待</strong>
+                      </div>
+                      <div class="pill"><span>倒计时</span><strong id="screensaverValue">10 min</strong></div>
                     </div>
-                    <div class="pill"><span>倒计时</span><strong id="screensaverValue">10 min</strong></div>
+                    <select id="screensaverSelect">
+                      <option value="5">5 分钟</option>
+                      <option value="10">10 分钟</option>
+                      <option value="15">15 分钟</option>
+                      <option value="30">30 分钟</option>
+                      <option value="60">60 分钟</option>
+                    </select>
                   </div>
-                <select id="screensaverSelect">
-                  <option value="5">5 分钟</option>
-                  <option value="10">10 分钟</option>
-                  <option value="15">15 分钟</option>
-                  <option value="30">30 分钟</option>
-                  <option value="60">60 分钟</option>
-                </select>
+                </div>
+
+                <div id="settingsModuleSound" class="settings-module" data-module="sound">
+                  <div class="settings-card">
+                    <h3>声音</h3>
+                    <div class="setting-row">
+                      <div class="meta">
+                        <strong>系统音量</strong>
+                      </div>
+                      <div class="pill"><span>当前</span><strong id="settingsVolumeValue">60%</strong></div>
+                    </div>
+                    <input type="range" class="mac-slider" id="settingsVolume" min="0" max="100" step="1" />
+                    <div class="setting-row">
+                      <div class="meta">
+                        <strong>提示音</strong>
+                        <span>重要操作播放提示</span>
+                      </div>
+                      <label class="toggle">
+                        <input type="checkbox" id="chimeToggle" />
+                        <span class="toggle-track"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="settingsModuleLanguage" class="settings-module" data-module="language">
+                  <div class="settings-card">
+                    <h3>语言</h3>
+                    <div class="setting-row">
+                      <div class="meta">
+                        <strong>界面语言</strong>
+                      </div>
+                      <div class="pill"><span>当前</span><strong id="languageValue">中文</strong></div>
+                    </div>
+                    <div class="radio-pill">
+                      <label>
+                        <input type="radio" name="lang" id="languageZh" value="zh" checked />
+                        <span>中文</span>
+                      </label>
+                      <label>
+                        <input type="radio" name="lang" id="languageEn" value="en" />
+                        <span>English</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="settingsModuleAbout" class="settings-module" data-module="about">
+                  <div class="settings-card">
+                    <h3>关于</h3>
+                    <div class="settings-meta">
+                      <div class="meta-tile">
+                        <div class="label">程序版本</div>
+                        <div class="value" id="settingsAppVersion">0.1.0</div>
+                      </div>
+                      <div class="meta-tile">
+                        <div class="label">固件版本</div>
+                        <div class="value" id="settingsFirmwareVersion">--</div>
+                      </div>
+                    </div>
+                    <div class="settings-actions">
+                      <button id="btnCheckUpdates" class="ghost-btn">检查更新</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="settingsModuleLogs" class="settings-module" data-module="logs">
+                  <div class="settings-card">
+                    <h3>日志</h3>
+                    <div class="logs-layout">
+                      <div class="logs-list" id="logsList"></div>
+                      <pre class="logs-viewer" id="logContent"></pre>
+                    </div>
+                    <div class="settings-actions logs-actions">
+                      <button id="btnRefreshLogs" class="ghost-btn">刷新</button>
+                    </div>
+                  </div>
+                </div>
               </div>
-
-              <div class="settings-stack">
-                <div class="settings-card">
-                  <h3>声音</h3>
-                  <div class="setting-row">
-                    <div class="meta">
-                      <strong>系统音量</strong>
-                    </div>
-                    <div class="pill"><span>当前</span><strong id="settingsVolumeValue">60%</strong></div>
-                  </div>
-                  <input type="range" class="mac-slider" id="settingsVolume" min="0" max="100" step="1" />
-                  <div class="setting-row">
-                    <div class="meta">
-                      <strong>提示音</strong>
-                      <span>重要操作播放提示</span>
-                    </div>
-                    <label class="toggle">
-                      <input type="checkbox" id="chimeToggle" />
-                      <span class="toggle-track"></span>
-                    </label>
-                  </div>
-                </div>
-
-                <div class="settings-card">
-                  <h3>语言</h3>
-                  <div class="setting-row">
-                    <div class="meta">
-                      <strong>界面语言</strong>
-                    </div>
-                    <div class="pill"><span>当前</span><strong id="languageValue">中文</strong></div>
-                  </div>
-                  <div class="radio-pill">
-                    <label>
-                      <input type="radio" name="lang" id="languageZh" value="zh" checked />
-                      <span>中文</span>
-                    </label>
-                    <label>
-                      <input type="radio" name="lang" id="languageEn" value="en" />
-                      <span>English</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div class="settings-card">
-                  <h3>关于 / 日志</h3>
-                  <div class="settings-meta">
-                    <div class="meta-tile">
-                      <div class="label">程序版本</div>
-                      <div class="value" id="settingsAppVersion">0.1.0</div>
-                    </div>
-                    <div class="meta-tile">
-                      <div class="label">固件版本</div>
-                      <div class="value" id="settingsFirmwareVersion">--</div>
-                    </div>
-                  </div>
-                  <div class="settings-actions" hidden>
-                    <button id="btnCheckUpdates" class="ghost-btn">检查更新</button>
-                    <button id="btnOpenLogs" class="ghost-btn">打开日志</button>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>

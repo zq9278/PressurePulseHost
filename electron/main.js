@@ -65,6 +65,16 @@ const PATIENTS_DIR = (() => {
   return path.join(base, 'patients');
 })();
 const PATIENTS_FILE = path.join(PATIENTS_DIR, 'patients.json');
+const LOGS_DIR = (() => {
+  const base = app.isPackaged ? path.dirname(app.getPath('exe')) : path.join(__dirname, '..');
+  return path.join(base, 'logs');
+})();
+const UPDATES_FILE = (() => {
+  const base = app.isPackaged ? path.dirname(app.getPath('exe')) : path.join(__dirname, '..');
+  return path.join(base, 'updates', 'latest.json');
+})();
+let currentLogFile = null;
+let logStream = null;
 const STARTUP_SPEECH = {
   zh: '设备已启动，请连接治疗仪。',
   en: 'System is ready. Please connect the device.',
@@ -340,6 +350,127 @@ function playWav(filePath, player, sox, aplayArgs) {
   }
 }
 
+function safeToString(val) {
+  if (typeof val === 'string') return val;
+  try {
+    return JSON.stringify(val);
+  } catch {
+    return String(val);
+  }
+}
+
+function appendLogLine(source, level, args) {
+  if (!logStream) return;
+  const ts = new Date().toISOString();
+  const msg = (args || []).map(safeToString).join(' ');
+  try {
+    logStream.write(`[${ts}] [${source}] [${level}] ${msg}\n`);
+  } catch {}
+}
+
+function initLogging() {
+  try {
+    fs.mkdirSync(LOGS_DIR, { recursive: true });
+  } catch {}
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  currentLogFile = path.join(LOGS_DIR, `${stamp}.log`);
+  try {
+    logStream = fs.createWriteStream(currentLogFile, { flags: 'a' });
+  } catch {}
+
+  const original = {
+    log: console.log.bind(console),
+    info: console.info.bind(console),
+    warn: console.warn.bind(console),
+    error: console.error.bind(console),
+  };
+  console.log = (...args) => {
+    original.log(...args);
+    appendLogLine('main', 'log', args);
+  };
+  console.info = (...args) => {
+    original.info(...args);
+    appendLogLine('main', 'info', args);
+  };
+  console.warn = (...args) => {
+    original.warn(...args);
+    appendLogLine('main', 'warn', args);
+  };
+  console.error = (...args) => {
+    original.error(...args);
+    appendLogLine('main', 'error', args);
+  };
+
+  process.on('uncaughtException', (err) => {
+    appendLogLine('process', 'error', [err?.stack || err?.message || safeToString(err)]);
+  });
+  process.on('unhandledRejection', (reason) => {
+    appendLogLine('process', 'error', [reason?.stack || reason?.message || safeToString(reason)]);
+  });
+}
+
+async function listLogFiles() {
+  try {
+    await fs.promises.mkdir(LOGS_DIR, { recursive: true });
+    const files = await fs.promises.readdir(LOGS_DIR);
+    const logs = [];
+    for (const name of files) {
+      if (!name.endsWith('.log')) continue;
+      try {
+        const st = await fs.promises.stat(path.join(LOGS_DIR, name));
+        logs.push({ name, size: st.size, mtimeMs: st.mtimeMs });
+      } catch {}
+    }
+    logs.sort((a, b) => (b.mtimeMs || 0) - (a.mtimeMs || 0));
+    return logs;
+  } catch (err) {
+    console.warn('[PPHC] list logs failed', err?.message || err);
+    return [];
+  }
+}
+
+async function readLogFile(name) {
+  const safeName = String(name || '').replace(/[\\/]/g, '');
+  const full = path.join(LOGS_DIR, safeName);
+  if (!full.startsWith(LOGS_DIR)) throw new Error('invalid log path');
+  return fs.promises.readFile(full, 'utf8');
+}
+
+function compareVersions(a, b) {
+  const pa = String(a || '').split('.').map((n) => Number.parseInt(n, 10) || 0);
+  const pb = String(b || '').split('.').map((n) => Number.parseInt(n, 10) || 0);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i += 1) {
+    const da = pa[i] || 0;
+    const db = pb[i] || 0;
+    if (da > db) return 1;
+    if (da < db) return -1;
+  }
+  return 0;
+}
+
+async function checkForUpdates() {
+  const currentVersion = app.getVersion();
+  try {
+    const raw = await fs.promises.readFile(UPDATES_FILE, 'utf8');
+    const manifest = JSON.parse(raw || '{}');
+    const latestVersion = String(manifest.version || '').trim();
+    if (!latestVersion) {
+      return { currentVersion, latestVersion: null, updateAvailable: false };
+    }
+    const updateAvailable = compareVersions(latestVersion, currentVersion) > 0;
+    return {
+      currentVersion,
+      latestVersion,
+      updateAvailable,
+      downloadUrl: manifest.downloadUrl || manifest.url || null,
+      notes: manifest.notes || '',
+    };
+  } catch {
+    return { currentVersion, latestVersion: null, updateAvailable: false };
+  }
+}
+
 
 // =============================================
 // 4) 创建窗口
@@ -428,6 +559,8 @@ async function broadcastPorts() {
 // =============================================
 app.whenReady().then(() => {
   loadSettings();
+  initLogging();
+  console.log('[PPHC] logging started', currentLogFile);
   // 启动即关背光，1 秒后再恢复为目标亮度
   if (IS_LINUX) {
     setBrightnessPercent(0, { skipSave: true }).catch(() => {});
@@ -520,4 +653,13 @@ ipcMain.handle('patients:add', async (e, patient) => {
   const saved = await savePatients(nextList);
   if (!saved) throw new Error('保存病例信息失败');
   return entry;
+});
+ipcMain.handle('logs:list', async () => listLogFiles());
+ipcMain.handle('logs:read', async (_e, name) => readLogFile(name));
+ipcMain.handle('updates:check', async () => checkForUpdates());
+ipcMain.on('logs:renderer', (_e, payload) => {
+  const level = payload?.level || 'info';
+  const message = payload?.message || '';
+  const stack = payload?.stack || '';
+  appendLogLine('renderer', level, [message, stack].filter(Boolean));
 });

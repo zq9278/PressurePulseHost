@@ -10,9 +10,25 @@
   // Basic error logging so UI issues are visible in DevTools console
   window.addEventListener('error', (e) => {
     console.error('[PPHC] window error:', e.error || e.message, e);
+    try {
+      api?.logToMain?.({
+        level: 'error',
+        message: e.message || String(e.error || 'window error'),
+        stack: e.error?.stack || null,
+        source: 'renderer',
+      });
+    } catch {}
   });
   window.addEventListener('unhandledrejection', (e) => {
     console.error('[PPHC] unhandled rejection:', e.reason);
+    try {
+      api?.logToMain?.({
+        level: 'error',
+        message: String(e.reason?.message || e.reason || 'unhandled rejection'),
+        stack: e.reason?.stack || null,
+        source: 'renderer',
+      });
+    } catch {}
   });
 
   const TRANSLATIONS = {
@@ -48,6 +64,14 @@
       datePickerCancel: '取消',
       datePickerBack: '返回',
       datePickerSelectYear: '选择年份',
+      logsTitle: '系统日志',
+      logsEmpty: '暂无日志',
+      logsRefresh: '刷新',
+      logsLoading: '加载日志中...',
+      logsReadFailed: '读取日志失败',
+      updateAvailable: '发现新版本',
+      updateNotAvailable: '当前已是最新版本',
+      updateCheckFailed: '检查更新失败',
       quickTitle: '快速治疗',
       summaryOverline: '实时数据',
       summaryTitle: '压力 / 温度',
@@ -92,7 +116,9 @@
       navLanguage: '语言',
       navLanguageHint: '中文 / English',
       navAbout: '关于',
-      navAboutHint: '版本 / 日志',
+      navAboutHint: '版本 / 更新',
+      navLogs: '日志',
+      navLogsHint: '查看 / 导出',
       displayCardTitle: '显示',
       displayCardDesc: '模仿 macOS 样式的柔和背光与模糊效果。',
       brightnessLabel: '屏幕亮度',
@@ -111,7 +137,7 @@
       languageHint: '偏好选择',
       langZh: '中文',
       langEn: 'English',
-      aboutTitle: '关于 / 日志',
+      aboutTitle: '关于 / 更新',
       aboutVersion: '程序版本',
       aboutFirmware: '固件版本',
       aboutCheck: '检查更新',
@@ -176,6 +202,14 @@
       datePickerCancel: 'Cancel',
       datePickerBack: 'Back',
       datePickerSelectYear: 'Select Year',
+      logsTitle: 'System Logs',
+      logsEmpty: 'No logs yet',
+      logsRefresh: 'Refresh',
+      logsLoading: 'Loading logs...',
+      logsReadFailed: 'Failed to read log',
+      updateAvailable: 'New version available',
+      updateNotAvailable: 'Already up to date',
+      updateCheckFailed: 'Update check failed',
       quickTitle: 'Quick Session',
       summaryOverline: 'Live Data',
       summaryTitle: 'Pressure / Temp',
@@ -220,7 +254,9 @@
       navLanguage: 'Language',
       navLanguageHint: 'Chinese / English',
       navAbout: 'About',
-      navAboutHint: 'Version / Logs',
+      navAboutHint: 'Version / Updates',
+      navLogs: 'Logs',
+      navLogsHint: 'View / Export',
       displayCardTitle: 'Display',
       displayCardDesc: 'macOS-inspired soft lighting and glassy blur.',
       brightnessLabel: 'Brightness',
@@ -239,7 +275,7 @@
       languageHint: 'Preference',
       langZh: '中文',
       langEn: 'English',
-      aboutTitle: 'About / Logs',
+      aboutTitle: 'About / Updates',
       aboutVersion: 'App Version',
       aboutFirmware: 'Firmware Version',
       aboutCheck: 'Check Updates',
@@ -363,6 +399,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     latest: { 0: null, 1: null, 2: null, 3: null },
     max: 360,
     currentView: 'home',
+    settingsActiveModule: 'display',
     patients: [],
     patientsLoaded: false,
     systemState: null,
@@ -428,7 +465,10 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     document.body.classList.remove(...VIEW_CLASSES);
     document.body.classList.add(`view-${next}`);
     if (prev !== next) hideKeyboard();
-    if (next === 'newPatient') {
+    if (next === 'settings') {
+      updateSettingsUI();
+      setSettingsModule(state.settingsActiveModule || 'display');
+    } else if (next === 'newPatient') {
       ensurePatientsLoaded();
       resetPatientForm();
     } else if (next === 'patientList') {
@@ -1606,10 +1646,22 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (connectionNode) connectionNode.textContent = state.connected ? t('connected') : t('disconnected');
 
     const navBtns = $$('.settings-nav button');
-    if (navBtns[0]) navBtns[0].innerHTML = `${t('navDisplay')} <span class=\"hint\">${t('navDisplayHint')}</span>`;
-    if (navBtns[1]) navBtns[1].innerHTML = `${t('navSound')} <span class=\"hint\">${t('navSoundHint')}</span>`;
-    if (navBtns[2]) navBtns[2].innerHTML = `${t('navLanguage')} <span class=\"hint\">${t('navLanguageHint')}</span>`;
-    if (navBtns[3]) navBtns[3].innerHTML = `${t('navAbout')} <span class=\"hint\">${t('navAboutHint')}</span>`;
+    const navMap = {
+      display: ['navDisplay', 'navDisplayHint'],
+      sound: ['navSound', 'navSoundHint'],
+      language: ['navLanguage', 'navLanguageHint'],
+      about: ['navAbout', 'navAboutHint'],
+      logs: ['navLogs', 'navLogsHint'],
+    };
+    navBtns.forEach((btn) => {
+      const mod = btn.dataset.module;
+      const pair = navMap[mod] || [];
+      const labelKey = pair[0];
+      const hintKey = pair[1];
+      if (!labelKey) return;
+      const hint = hintKey ? t(hintKey) : '';
+      btn.innerHTML = `${t(labelKey)} ${hint ? `<span class=\"hint\">${hint}</span>` : ''}`;
+    });
 
     const displayCard = document.querySelector('.settings-card.headered');
     if (displayCard) {
@@ -1625,8 +1677,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       if (metaHints[1]) metaHints[1].textContent = t('screensaverHint');
     }
 
-    const settingCards = $$('.settings-stack .settings-card');
-    const soundCard = settingCards[0];
+    const soundCard = document.querySelector('#settingsModuleSound .settings-card');
     if (soundCard) {
       const h3 = soundCard.querySelector('h3');
       if (h3) h3.textContent = t('soundTitle');
@@ -1637,7 +1688,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       if (meta[1]) meta[1].textContent = t('chimeLabel');
       if (hints[1]) hints[1].textContent = t('chimeHint');
     }
-    const languageCard = settingCards[1];
+    const languageCard = document.querySelector('#settingsModuleLanguage .settings-card');
     if (languageCard) {
       const h3 = languageCard.querySelector('h3');
       if (h3) h3.textContent = t('languageTitle');
@@ -1651,7 +1702,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       if (labels[0]) labels[0].textContent = t('langZh');
       if (labels[1]) labels[1].textContent = t('langEn');
     }
-    const aboutCard = settingCards[2];
+    const aboutCard = document.querySelector('#settingsModuleAbout .settings-card');
     if (aboutCard) {
       const h3 = aboutCard.querySelector('h3');
       if (h3) h3.textContent = t('aboutTitle');
@@ -1661,6 +1712,13 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       const buttons = aboutCard.querySelectorAll('.settings-actions button');
       if (buttons[0]) buttons[0].textContent = t('aboutCheck');
       if (buttons[1]) buttons[1].textContent = t('aboutLogs');
+    }
+    const logsCard = document.querySelector('#settingsModuleLogs .settings-card');
+    if (logsCard) {
+      const h3 = logsCard.querySelector('h3');
+      if (h3) h3.textContent = t('logsTitle');
+      const refreshBtn = document.getElementById('btnRefreshLogs');
+      if (refreshBtn) refreshBtn.textContent = t('logsRefresh');
     }
 
     set('#shieldModal .modal-title', 'shieldModalTitle');
@@ -1711,6 +1769,101 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (appVersion) appVersion.textContent = state.settings.appVersion;
     const firmware = document.getElementById('settingsFirmwareVersion');
     if (firmware) firmware.textContent = state.settings.firmwareVersion;
+  }
+
+  let logsCache = [];
+  let activeLogName = null;
+
+  function setSettingsModule(moduleKey) {
+    const next = moduleKey || state.settingsActiveModule || 'display';
+    state.settingsActiveModule = next;
+    $$('.settings-module').forEach((mod) => {
+      mod.classList.toggle('active', mod.dataset.module === next);
+    });
+    $$('.settings-nav button').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.module === next);
+    });
+    if (next === 'logs') {
+      loadLogsList();
+    }
+  }
+
+  async function loadLogsList(preselect) {
+    const listNode = document.getElementById('logsList');
+    const viewerNode = document.getElementById('logContent');
+    if (!listNode) return;
+    listNode.innerHTML = '';
+    const loading = document.createElement('div');
+    loading.className = 'empty-tip';
+    loading.textContent = t('logsLoading');
+    listNode.appendChild(loading);
+    if (viewerNode) viewerNode.textContent = '';
+    try {
+      const logs = api?.listLogs ? await api.listLogs() : [];
+      logsCache = Array.isArray(logs) ? logs : [];
+      activeLogName = preselect || logsCache[0]?.name || null;
+      renderLogsList();
+      if (activeLogName) await selectLog(activeLogName, { silent: true });
+    } catch (err) {
+      console.warn('[PPHC] load logs failed', err);
+      listNode.innerHTML = `<div class="empty-tip">${t('logsReadFailed')}</div>`;
+    }
+  }
+
+  function renderLogsList() {
+    const listNode = document.getElementById('logsList');
+    if (!listNode) return;
+    listNode.innerHTML = '';
+    if (!logsCache.length) {
+      listNode.innerHTML = `<div class="empty-tip">${t('logsEmpty')}</div>`;
+      return;
+    }
+    logsCache.forEach((item) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'log-item';
+      if (item.name === activeLogName) btn.classList.add('active');
+      const title = document.createElement('span');
+      title.textContent = item.name;
+      const meta = document.createElement('small');
+      if (item.mtimeMs) {
+        meta.textContent = new Date(item.mtimeMs).toLocaleString();
+      }
+      btn.append(title, meta);
+      btn.addEventListener('click', () => selectLog(item.name));
+      listNode.appendChild(btn);
+    });
+  }
+
+  async function selectLog(name, opts = {}) {
+    activeLogName = name;
+    renderLogsList();
+    const viewerNode = document.getElementById('logContent');
+    if (viewerNode) viewerNode.textContent = t('logsLoading');
+    try {
+      const content = api?.readLog ? await api.readLog(name) : '';
+      if (viewerNode) viewerNode.textContent = content || '';
+    } catch (err) {
+      console.warn('[PPHC] read log failed', err);
+      if (viewerNode) viewerNode.textContent = t('logsReadFailed');
+      if (!opts.silent) showAlert(t('logsReadFailed'));
+    }
+  }
+
+  async function handleCheckUpdates() {
+    showAlert(t('checkingUpdates'));
+    try {
+      const res = api?.checkUpdates ? await api.checkUpdates() : null;
+      if (res && res.updateAvailable) {
+        const v = res.latestVersion ? ` ${res.latestVersion}` : '';
+        showAlert(`${t('updateAvailable')}${v}`, 4000);
+      } else {
+        showAlert(t('updateNotAvailable'), 3000);
+      }
+    } catch (err) {
+      console.warn('[PPHC] check updates failed', err);
+      showAlert(t('updateCheckFailed'), 3000);
+    }
   }
 
   async function syncSystemBrightness() {
@@ -2246,10 +2399,14 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     }
 
     document.getElementById('btnCheckUpdates')?.addEventListener('click', () => {
-      showAlert('检查更新中...');
+      handleCheckUpdates();
     });
-    document.getElementById('btnOpenLogs')?.addEventListener('click', () => {
-      showAlert('日志目录打开功能待接入');
+    document.getElementById('btnRefreshLogs')?.addEventListener('click', () => {
+      loadLogsList(activeLogName);
+    });
+
+    $$('.settings-nav button').forEach((btn) => {
+      btn.addEventListener('click', () => setSettingsModule(btn.dataset.module));
     });
   }
 
