@@ -1,4 +1,15 @@
-const spi = require('spi-device');
+const isLinux = process.platform === 'linux';
+let spi = null;
+
+if (isLinux) {
+  try {
+    spi = require('spi-device');
+  } catch (err) {
+    console.warn('[WS2812] spi-device unavailable; LED control disabled', err?.message || err);
+  }
+} else {
+  console.info('[WS2812] WS2812 control disabled on non-Linux platform:', process.platform);
+}
 
 // Encode a single byte for WS2812 when driven via SPI at ~2.4 MHz:
 // - logical 1 => 110 (high-high-low)
@@ -51,6 +62,7 @@ class Ws2812Driver {
   }
 
   async init() {
+    if (!spi) return false;
     if (this._ready) return true;
     if (this._initPromise) return this._initPromise;
     this._initPromise = new Promise((resolve) => {
@@ -157,7 +169,7 @@ class Ws2812Driver {
   }
 
   _transfer(sendBuffer) {
-    if (!this._device || !this._ready) return false;
+    if (!spi || !this._device || !this._ready) return false;
     return new Promise((resolve) => {
       this._device.transfer(
         [

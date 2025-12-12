@@ -17,11 +17,14 @@
     "electron": "^31.7.7",
     "electron-builder": "^24.13.3"
   },
-  "dependencies": {
+ "dependencies": {
     "@serialport/list": "^12.0.0",
-    "serialport": "^12.0.0",
+    "serialport": "^12.0.0"
+},
+"optionalDependencies": {
     "spi-device": "^3.1.2"
-  },
+}
+,
   "build": {
     "appId": "com.9c-uits.pressure-pulse",
     "productName": "Pressure Pulse Controller",
