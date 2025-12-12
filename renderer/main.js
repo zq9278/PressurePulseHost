@@ -464,6 +464,7 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     keyboardState.visible = false;
     if (osk) osk.classList.add('osk-hidden');
     if (ime) ime.classList.add('osk-hidden');
+    document.body.classList.remove('keyboard-open');
   }
 
   function showKeyboard() {
@@ -471,6 +472,7 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     if (!osk) return;
     keyboardState.visible = true;
     osk.classList.remove('osk-hidden');
+    document.body.classList.add('keyboard-open');
   }
 
   function handleKeyboardAction(action) {
