@@ -113,12 +113,44 @@
       navDisplayHint: '亮度 / 屏保',
       navSound: '声音',
       navSoundHint: '音量 / 提示',
+      navPrinter: '打印机',
+      navPrinterHint: '选择 / 设置',
       navLanguage: '语言',
       navLanguageHint: '中文 / English',
       navAbout: '关于',
       navAboutHint: '版本 / 更新',
       navLogs: '日志',
       navLogsHint: '查看 / 导出',
+      printerTitle: '打印机',
+      printerSelectLabel: '选择打印机',
+      printerSelectHint: '用于打印病例报告',
+      printerCurrentLabel: '当前',
+      printersRefresh: '刷新列表',
+      printerEmpty: '未检测到打印机',
+      printerSaved: '打印机已保存',
+      printerSaveFailed: '保存失败，请重试',
+      printerNotSet: '未设置打印机',
+      default: '默认',
+      reportScreenTitle: '打印报告',
+      reportSuffix: '报告',
+      reportPatientInfoTitle: '患者信息',
+      reportTreatmentInfoTitle: '治疗信息',
+      reportTipsTitle: '干眼注意事项',
+      reportDisclaimerTitle: '医疗报告说明',
+      reportDoctorSign: '医生签名：________________',
+      reportDoctorDate: '日期：________________',
+      reportGeneratedAtLabel: '报告生成时间',
+      reportPressureLabel: '治疗压力',
+      reportDurationLabel: '治疗时长',
+      reportModeLabel: '治疗模式',
+      reportTempLabel: '治疗温度',
+      reportSidesLabel: '治疗眼别',
+      reportStartTimeLabel: '治疗开始时间',
+      printReport: '打印报告',
+      printingReport: '正在打印...',
+      printSuccess: '打印成功',
+      printFailed: '打印失败',
+      printNoPrinter: '请先在设置中选择打印机',
       displayCardTitle: '显示',
       displayCardDesc: '模仿 macOS 样式的柔和背光与模糊效果。',
       brightnessLabel: '屏幕亮度',
@@ -251,12 +283,44 @@
       navDisplayHint: 'Brightness / Saver',
       navSound: 'Sound',
       navSoundHint: 'Volume / Chime',
+      navPrinter: 'Printer',
+      navPrinterHint: 'Select / Setup',
       navLanguage: 'Language',
       navLanguageHint: 'Chinese / English',
       navAbout: 'About',
       navAboutHint: 'Version / Updates',
       navLogs: 'Logs',
       navLogsHint: 'View / Export',
+      printerTitle: 'Printer',
+      printerSelectLabel: 'Select Printer',
+      printerSelectHint: 'Used for case report printing',
+      printerCurrentLabel: 'Current',
+      printersRefresh: 'Refresh List',
+      printerEmpty: 'No printers found',
+      printerSaved: 'Printer saved',
+      printerSaveFailed: 'Save failed. Please retry.',
+      printerNotSet: 'Printer not set',
+      default: 'Default',
+      reportScreenTitle: 'Print Report',
+      reportSuffix: 'Report',
+      reportPatientInfoTitle: 'Patient Information',
+      reportTreatmentInfoTitle: 'Treatment Information',
+      reportTipsTitle: 'Dry Eye Care Tips',
+      reportDisclaimerTitle: 'Medical Report Notes',
+      reportDoctorSign: 'Physician Signature: ________________',
+      reportDoctorDate: 'Date: ________________',
+      reportGeneratedAtLabel: 'Report Generated At',
+      reportPressureLabel: 'Pressure',
+      reportDurationLabel: 'Duration',
+      reportModeLabel: 'Mode',
+      reportTempLabel: 'Temperature',
+      reportSidesLabel: 'Eyes',
+      reportStartTimeLabel: 'Treatment Started At',
+      printReport: 'Print Report',
+      printingReport: 'Printing...',
+      printSuccess: 'Printed successfully',
+      printFailed: 'Print failed',
+      printNoPrinter: 'Select a printer in Settings first',
       displayCardTitle: 'Display',
       displayCardDesc: 'macOS-inspired soft lighting and glassy blur.',
       brightnessLabel: 'Brightness',
@@ -313,7 +377,7 @@
 let currentLang = 'zh';
 const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
 
-const VIEWS = ['home', 'quick', 'settings', 'newPatient', 'patientList'];
+const VIEWS = ['home', 'quick', 'settings', 'newPatient', 'patientList', 'report'];
 const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
 
   const MODE = { target: 20, t1: 25, t2: 35, t3: 50 };
@@ -402,6 +466,8 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     settingsActiveModule: 'display',
     patients: [],
     patientsLoaded: false,
+    activePatient: null,
+    lastTreatment: null,
     systemState: null,
     alarmState: null,
     shields: { left: false, right: false },
@@ -421,6 +487,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       appVersion: '0.1.0',
       firmwareVersion: '1.2.3',
       playChime: true,
+      printerName: '',
     },
     targets: {
       pressure: null,
@@ -474,6 +541,8 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     } else if (next === 'patientList') {
       ensurePatientsLoaded();
       renderPatientList();
+    } else if (next === 'report') {
+      renderReport();
     }
     console.info('[PPHC] view ->', next);
   }
@@ -718,10 +787,178 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
         cell.textContent = values[col];
         row.appendChild(cell);
       });
+      row.addEventListener('click', () => openReportForPatient(p));
       table.appendChild(row);
     });
 
     listNode.appendChild(table);
+  }
+
+  const REPORT_TIPS = {
+    zh: [
+      '治疗后 24 小时内避免揉眼，减少长时间用眼。',
+      '可按医嘱配合热敷、睑缘清洁及人工泪液使用。',
+      '使用电子屏幕时注意增加眨眼频率，每 20 分钟远眺 20 秒。',
+      '室内保持适当湿度，避免空调或风扇直吹。',
+      '饮食清淡，适量补充富含 ω‑3 脂肪酸食物。',
+      '如出现明显疼痛、视力下降或分泌物增多，请及时复诊。',
+    ],
+    en: [
+      'Avoid rubbing eyes within 24 hours after treatment and reduce prolonged screen time.',
+      'Follow clinician instructions for warm compresses, lid hygiene, and artificial tears.',
+      'Blink more when using screens; look away for 20 seconds every 20 minutes.',
+      'Maintain indoor humidity and avoid direct air from AC/fans.',
+      'Keep a balanced diet and consider omega‑3 rich foods as advised.',
+      'Seek medical review if pain, vision drop, or discharge increases.',
+    ],
+  };
+
+  const REPORT_DISCLAIMER = {
+    zh: [
+      '本报告为设备自动生成的治疗记录，用于临床随访与健康管理参考。',
+      '报告内容不构成独立医学诊断，不能替代医生的临床判断。',
+      '请遵医嘱进行后续护理与复查，如症状持续或加重请及时就诊。',
+    ].join('\n'),
+    en: [
+      'This report is an automatically generated treatment record for follow‑up and care reference.',
+      'It does not constitute an independent medical diagnosis nor replace clinician judgment.',
+      'Follow clinician instructions and return for review if symptoms persist or worsen.',
+    ].join('\n'),
+  };
+
+  function openReportForPatient(patient) {
+    if (!patient) return;
+    state.activePatient = patient;
+    showView('report');
+  }
+
+  function appendReportField(gridNode, label, value, opts = {}) {
+    if (!gridNode) return;
+    const field = document.createElement('div');
+    field.className = `report-field${opts.full ? ' full' : ''}`;
+    const labelNode = document.createElement('div');
+    labelNode.className = 'report-label';
+    labelNode.textContent = label;
+    const valueNode = document.createElement('div');
+    valueNode.className = 'report-value';
+    valueNode.textContent = value || '--';
+    field.append(labelNode, valueNode);
+    gridNode.appendChild(field);
+  }
+
+  function renderReport() {
+    const patient = state.activePatient;
+    const headerTitle = document.getElementById('reportHeaderTitle');
+    if (headerTitle) headerTitle.textContent = `${t('homeTitle')} ${t('reportSuffix')}`;
+    const screenTitle = document.getElementById('reportScreenTitle');
+    if (screenTitle) screenTitle.textContent = t('reportScreenTitle');
+    const generatedAtNode = document.getElementById('reportGeneratedAt');
+    if (generatedAtNode) {
+      generatedAtNode.textContent = `${t('reportGeneratedAtLabel')}: ${new Date().toLocaleString()}`;
+    }
+
+    const patientGrid = document.getElementById('reportPatientInfoGrid');
+    if (patientGrid) {
+      patientGrid.innerHTML = '';
+      appendReportField(patientGrid, t('patientId'), patient?.id || '--');
+      appendReportField(patientGrid, t('patientName'), patient?.name || '--');
+      appendReportField(patientGrid, t('patientGender'), patient?.gender || '--');
+      appendReportField(patientGrid, t('patientPhone'), patient?.phone || '--');
+      appendReportField(patientGrid, t('patientBirth'), patient?.birth || '--');
+      const created = patient?.createdAt
+        ? new Date(patient.createdAt).toLocaleDateString()
+        : '--';
+      appendReportField(patientGrid, t('patientCreatedAt'), created);
+      appendReportField(patientGrid, t('patientNotes'), patient?.notes || '--', { full: true });
+    }
+
+    const treatGrid = document.getElementById('reportTreatmentInfoGrid');
+    if (treatGrid) {
+      treatGrid.innerHTML = '';
+      const pressureMmHg =
+        state.lastTreatment?.pressureMmHg ??
+        state.targets.pressure ??
+        Number(document.getElementById('pressMmHg')?.value ?? 0);
+      const durationMin =
+        state.lastTreatment?.durationMin ??
+        Number(document.getElementById('treatDuration')?.value ?? 0);
+      const modeVal = state.lastTreatment?.mode ?? state.mode ?? 1;
+      const sides = state.lastTreatment?.sides || state.activeSides || [];
+      const sidesText = sides.length
+        ? sides
+            .map((s) => (s === 'left' ? t('leftEye') : t('rightEye')))
+            .join(' / ')
+        : '--';
+      appendReportField(
+        treatGrid,
+        t('reportPressureLabel'),
+        pressureMmHg ? `${pressureMmHg} mmHg` : '--'
+      );
+      appendReportField(
+        treatGrid,
+        t('reportDurationLabel'),
+        durationMin ? `${durationMin} min` : '--'
+      );
+      appendReportField(treatGrid, t('reportTempLabel'), `${TEMP_FIXED_C} ℃`);
+      appendReportField(treatGrid, t('reportModeLabel'), String(modeVal));
+      appendReportField(treatGrid, t('reportSidesLabel'), sidesText);
+      const startedAt = state.lastTreatment?.startedAt
+        ? new Date(state.lastTreatment.startedAt).toLocaleString()
+        : '--';
+      appendReportField(treatGrid, t('reportStartTimeLabel'), startedAt);
+    }
+
+    const tipsList = document.getElementById('reportTipsList');
+    if (tipsList) {
+      tipsList.innerHTML = '';
+      const tips = REPORT_TIPS[currentLang] || REPORT_TIPS.zh;
+      tips.forEach((tip) => {
+        const li = document.createElement('li');
+        li.textContent = tip;
+        tipsList.appendChild(li);
+      });
+    }
+
+    const disclaimerNode = document.getElementById('reportDisclaimerText');
+    if (disclaimerNode) {
+      disclaimerNode.textContent = REPORT_DISCLAIMER[currentLang] || REPORT_DISCLAIMER.zh;
+    }
+
+    const patientTitle = document.getElementById('reportPatientInfoTitle');
+    if (patientTitle) patientTitle.textContent = t('reportPatientInfoTitle');
+    const treatmentTitle = document.getElementById('reportTreatmentInfoTitle');
+    if (treatmentTitle) treatmentTitle.textContent = t('reportTreatmentInfoTitle');
+    const tipsTitle = document.getElementById('reportTipsTitle');
+    if (tipsTitle) tipsTitle.textContent = t('reportTipsTitle');
+    const disclaimerTitle = document.getElementById('reportDisclaimerTitle');
+    if (disclaimerTitle) disclaimerTitle.textContent = t('reportDisclaimerTitle');
+    const signNode = document.getElementById('reportDoctorSign');
+    if (signNode) signNode.textContent = t('reportDoctorSign');
+    const dateNode = document.getElementById('reportDoctorDate');
+    if (dateNode) dateNode.textContent = t('reportDoctorDate');
+    const printBtn = document.getElementById('btnPrintReport');
+    if (printBtn) printBtn.textContent = t('printReport');
+  }
+
+  async function handlePrintReport() {
+    const printerName = state.settings.printerName || '';
+    if (!printerName) {
+      showAlert(t('printNoPrinter'));
+      return;
+    }
+    showAlert(t('printingReport'), 2000);
+    try {
+      const res = api?.printReport ? await api.printReport({ printerName }) : null;
+      if (res?.success) {
+        showAlert(t('printSuccess'), 3000);
+      } else {
+        const reason = res?.failureReason ? `: ${res.failureReason}` : '';
+        showAlert(`${t('printFailed')}${reason}`, 3500);
+      }
+    } catch (err) {
+      console.warn('[PPHC] print failed', err);
+      showAlert(t('printFailed'), 3500);
+    }
   }
 
   async function loadPatients() {
@@ -1595,6 +1832,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     const dpModal = document.getElementById('datePickerModal');
     if (dpModal && !dpModal.hidden) renderDatePicker();
     if (state.currentView === 'patientList') renderPatientList();
+    if (state.currentView === 'report') renderReport();
     set('.summary-panel .panel-overline', 'summaryOverline');
     set('.summary-panel .panel-title', 'summaryTitle');
     set('.curve-panel .panel-overline', 'curveOverline');
@@ -1649,6 +1887,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     const navMap = {
       display: ['navDisplay', 'navDisplayHint'],
       sound: ['navSound', 'navSoundHint'],
+      printer: ['navPrinter', 'navPrinterHint'],
       language: ['navLanguage', 'navLanguageHint'],
       about: ['navAbout', 'navAboutHint'],
       logs: ['navLogs', 'navLogsHint'],
@@ -1687,6 +1926,19 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       if (hints[0]) hints[0].textContent = t('volumeHint');
       if (meta[1]) meta[1].textContent = t('chimeLabel');
       if (hints[1]) hints[1].textContent = t('chimeHint');
+    }
+    const printerCard = document.querySelector('#settingsModulePrinter .settings-card');
+    if (printerCard) {
+      const h3 = printerCard.querySelector('h3');
+      if (h3) h3.textContent = t('printerTitle');
+      const meta = printerCard.querySelectorAll('.setting-row .meta strong');
+      if (meta[0]) meta[0].textContent = t('printerSelectLabel');
+      const hints = printerCard.querySelectorAll('.setting-row .meta span');
+      if (hints[0]) hints[0].textContent = t('printerSelectHint');
+      const pillSpans = printerCard.querySelectorAll('.setting-row .pill span');
+      if (pillSpans[0]) pillSpans[0].textContent = t('printerCurrentLabel');
+      const refreshBtn = document.getElementById('btnRefreshPrinters');
+      if (refreshBtn) refreshBtn.textContent = t('printersRefresh');
     }
     const languageCard = document.querySelector('#settingsModuleLanguage .settings-card');
     if (languageCard) {
@@ -1765,6 +2017,18 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     const chimeToggle = document.getElementById('chimeToggle');
     if (chimeToggle) chimeToggle.checked = !!state.settings.playChime;
 
+    const printerNameNode = document.getElementById('printerCurrentName');
+    if (printerNameNode) {
+      printerNameNode.textContent = state.settings.printerName || t('printerNotSet');
+    }
+    const printerSelect = document.getElementById('printerSelect');
+    if (printerSelect) {
+      if (state.settings.printerName) {
+        printerSelect.value = state.settings.printerName;
+      }
+      updateCustomSelectDisplay(printerSelect);
+    }
+
     const appVersion = document.getElementById('settingsAppVersion');
     if (appVersion) appVersion.textContent = state.settings.appVersion;
     const firmware = document.getElementById('settingsFirmwareVersion');
@@ -1785,6 +2049,8 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     });
     if (next === 'logs') {
       loadLogsList();
+    } else if (next === 'printer') {
+      loadPrintersList();
     }
   }
 
@@ -1847,6 +2113,66 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       console.warn('[PPHC] read log failed', err);
       if (viewerNode) viewerNode.textContent = t('logsReadFailed');
       if (!opts.silent) showAlert(t('logsReadFailed'));
+    }
+  }
+
+  let printersCache = [];
+
+  async function loadPrintersList(preselect) {
+    const select = document.getElementById('printerSelect');
+    if (!select) return;
+    const currentName = preselect || state.settings.printerName || '';
+    if (select._custom?.wrapper) {
+      select._custom.wrapper.remove();
+      delete select._custom;
+      select.classList.remove('native-select-hidden');
+    }
+    select.innerHTML = '';
+    try {
+      const list = api?.listPrinters ? await api.listPrinters() : [];
+      printersCache = Array.isArray(list) ? list : [];
+      if (!printersCache.length) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = t('printerEmpty');
+        select.appendChild(opt);
+        select.value = '';
+      } else {
+        printersCache.forEach((p) => {
+          const opt = document.createElement('option');
+          opt.value = p.name;
+          const label = p.displayName || p.name;
+          opt.textContent = p.isDefault ? `${label} (${t('default')})` : label;
+          select.appendChild(opt);
+        });
+        const defaultPrinter = printersCache.find((p) => p.isDefault)?.name;
+        select.value = currentName || defaultPrinter || printersCache[0].name;
+      }
+      state.settings.printerName = select.value || '';
+      attachCustomSelect('printerSelect');
+      updateSettingsUI();
+    } catch (err) {
+      console.warn('[PPHC] list printers failed', err);
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = t('printerEmpty');
+      select.appendChild(opt);
+      select.value = '';
+      attachCustomSelect('printerSelect');
+      updateSettingsUI();
+    }
+  }
+
+  async function syncPrinterSelection() {
+    if (!api?.getPrinter) return;
+    try {
+      const res = await api.getPrinter();
+      if (res && typeof res.printerName === 'string') {
+        state.settings.printerName = res.printerName;
+        updateSettingsUI();
+      }
+    } catch (err) {
+      console.warn('[PPHC] get printer failed', err);
     }
   }
 
@@ -2299,6 +2625,13 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       1,
       Math.min(15, Number(document.getElementById('treatDuration')?.value || 10))
     );
+    state.lastTreatment = {
+      startedAt: new Date().toISOString(),
+      pressureMmHg: mmHg,
+      durationMin: min,
+      mode: state.mode || 1,
+      sides: sides.slice(),
+    };
     api.sendU16(0x1006, min);
     api.sendU8(0x10c1, 1);
     state.running = true;
@@ -2404,6 +2737,24 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     document.getElementById('btnRefreshLogs')?.addEventListener('click', () => {
       loadLogsList(activeLogName);
     });
+    document.getElementById('btnRefreshPrinters')?.addEventListener('click', () => {
+      loadPrintersList(state.settings.printerName);
+    });
+    const printerSelect = document.getElementById('printerSelect');
+    if (printerSelect) {
+      printerSelect.addEventListener('change', async () => {
+        const name = printerSelect.value || '';
+        state.settings.printerName = name;
+        updateSettingsUI();
+        try {
+          await api?.setPrinter?.(name);
+          showAlert(t('printerSaved'));
+        } catch (err) {
+          console.warn('[PPHC] set printer failed', err);
+          showAlert(t('printerSaveFailed'));
+        }
+      });
+    }
 
     $$('.settings-nav button').forEach((btn) => {
       btn.addEventListener('click', () => setSettingsModule(btn.dataset.module));
@@ -2431,6 +2782,8 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       'btnBackSettings',
       'btnBackNewPatient',
       'btnBackPatientList',
+      'btnBackReport',
+      'btnPrintReport',
       'btnGoPatientList',
       'patientForm',
     ].forEach((id) => {
@@ -2463,6 +2816,10 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     document.getElementById('btnBackPatientList')?.addEventListener('click', () =>
       showView('home')
     );
+    document.getElementById('btnBackReport')?.addEventListener('click', () =>
+      showView('patientList')
+    );
+    document.getElementById('btnPrintReport')?.addEventListener('click', handlePrintReport);
     document.getElementById('btnGoPatientList')?.addEventListener('click', () => {
       ensurePatientsLoaded();
       showView('patientList');
@@ -2698,6 +3055,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     syncSystemBrightness();
     syncSystemVolume();
     syncPlayChime();
+    syncPrinterSelection();
     applyLanguage(state.settings.language || 'zh');
     ensurePatientsLoaded();
     // 默认进入 home

@@ -41,11 +41,13 @@ body {
 .app-shell[data-view="quick"] #quickScreen,
 .app-shell[data-view="settings"] #settingsScreen,
 .app-shell[data-view="newPatient"] #newPatientScreen,
+.app-shell[data-view="report"] #reportScreen,
 .app-shell[data-view="patientList"] #patientListScreen,
 body.view-home #homeScreen,
 body.view-quick #quickScreen,
 body.view-settings #settingsScreen,
 body.view-newPatient #newPatientScreen,
+body.view-report #reportScreen,
 body.view-patientList #patientListScreen { display: block; }
 .app-shell[data-view="quick"] #homeScreen,
 .app-shell[data-view="settings"] #homeScreen,
@@ -188,7 +190,8 @@ body.view-patientList #newPatientScreen { display: none; }
 .quick-screen .action.primary-toggle { font-size: 22px; }
 .settings-screen { background: inherit; display: flex; align-items: stretch; justify-content: center; }
 .new-patient-screen,
-.patient-list-screen {
+.patient-list-screen,
+.report-screen {
   background:
     radial-gradient(140% 120% at 24% 28%, rgba(91, 227, 255, 0.12), rgba(13, 58, 122, 0)),
     radial-gradient(120% 120% at 74% 32%, rgba(128, 162, 255, 0.18), rgba(13, 58, 122, 0)),
@@ -198,8 +201,15 @@ body.view-patientList #newPatientScreen { display: none; }
 }
 .app-shell[data-view="newPatient"] #newPatientScreen,
 .app-shell[data-view="patientList"] #patientListScreen,
+.app-shell[data-view="report"] #reportScreen,
 body.view-newPatient #newPatientScreen,
 body.view-patientList #patientListScreen {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.app-shell[data-view="report"] #reportScreen,
+body.view-report #reportScreen {
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -1506,6 +1516,118 @@ body.keyboard-open .new-patient-screen {
   font-family: 'Consolas', 'SFMono-Regular', monospace;
   color: rgba(93, 246, 255, 0.9);
   font-weight: 700;
+}
+
+/* Report print screen */
+.report-shell {
+  width: 100%;
+  margin: 0 auto;
+  padding: 64px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-height: calc(100vh - 120px);
+}
+.report-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+.report-page {
+  width: 210mm;
+  min-height: 297mm;
+  background: #ffffff;
+  color: #0b0b0b;
+  border-radius: 8px;
+  padding: 16mm 14mm;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+}
+.report-header {
+  text-align: center;
+  padding-bottom: 8mm;
+  margin-bottom: 6mm;
+  border-bottom: 1px solid #e7e7e7;
+}
+.report-title {
+  font-size: 28pt;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.report-subline {
+  font-size: 11pt;
+  color: #333;
+  margin-top: 2mm;
+}
+.report-section { margin-top: 6mm; }
+.report-section h3 {
+  font-size: 16pt;
+  margin: 0 0 3mm;
+  padding-left: 4mm;
+  border-left: 4px solid #0d3a7a;
+  color: #0d3a7a;
+}
+.report-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3mm 8mm;
+  font-size: 12pt;
+}
+.report-field { display: flex; gap: 4mm; align-items: flex-start; }
+.report-field.full { grid-column: 1 / -1; }
+.report-label { font-weight: 700; min-width: 40mm; color: #111; }
+.report-value { flex: 1; white-space: pre-wrap; }
+.report-list {
+  margin: 0;
+  padding-left: 6mm;
+  font-size: 12pt;
+  line-height: 1.6;
+}
+.report-text {
+  font-size: 11.5pt;
+  line-height: 1.7;
+  color: #111;
+  white-space: pre-wrap;
+}
+.report-sign {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8mm;
+  font-size: 12pt;
+}
+.report-actions {
+  width: 210mm;
+  display: flex;
+  justify-content: center;
+}
+.report-actions .action {
+  font-size: 24px;
+  padding: 18px 36px;
+  min-height: 72px;
+}
+
+@page {
+  size: A4;
+  margin: 12mm;
+}
+@media print {
+  body { background: #fff !important; }
+  .top-bar,
+  .window-controls,
+  .osk,
+  .ime-candidates,
+  #reportActions {
+    display: none !important;
+  }
+  .report-page {
+    width: auto;
+    min-height: auto;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
 }
 .patient-card {
   padding: 16px;

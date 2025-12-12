@@ -79,7 +79,7 @@ const STARTUP_SPEECH = {
   zh: '设备已启动，请连接治疗仪。',
   en: 'System is ready. Please connect the device.',
 };
-const DEFAULT_SETTINGS = { brightness: 80, volume: 100, playChime: true };
+const DEFAULT_SETTINGS = { brightness: 80, volume: 100, playChime: true, printerName: '' };
 let currentSettings = { ...DEFAULT_SETTINGS };
 let settingsFresh = true;
 
@@ -471,6 +471,43 @@ async function checkForUpdates() {
   }
 }
 
+async function listPrinters() {
+  if (!mainWindow) return [];
+  try {
+    const printers = await mainWindow.webContents.getPrintersAsync();
+    return Array.isArray(printers) ? printers : [];
+  } catch (err) {
+    console.warn('[PPHC] list printers failed', err?.message || err);
+    return [];
+  }
+}
+
+function getSelectedPrinterName() {
+  return String(currentSettings.printerName || '');
+}
+
+async function setSelectedPrinterName(name) {
+  currentSettings.printerName = String(name || '');
+  saveSettings().catch(() => {});
+  return { printerName: currentSettings.printerName };
+}
+
+async function printCurrentView(opts = {}) {
+  if (!mainWindow) throw new Error('window not ready');
+  const printerName = String(opts.printerName || getSelectedPrinterName() || '');
+  const options = {
+    silent: !!printerName,
+    deviceName: printerName || undefined,
+    printBackground: true,
+    pageSize: 'A4',
+  };
+  return new Promise((resolve) => {
+    mainWindow.webContents.print(options, (success, failureReason) => {
+      resolve({ success, failureReason: failureReason || null });
+    });
+  });
+}
+
 
 // =============================================
 // 4) 创建窗口
@@ -657,6 +694,10 @@ ipcMain.handle('patients:add', async (e, patient) => {
 ipcMain.handle('logs:list', async () => listLogFiles());
 ipcMain.handle('logs:read', async (_e, name) => readLogFile(name));
 ipcMain.handle('updates:check', async () => checkForUpdates());
+ipcMain.handle('printers:list', async () => listPrinters());
+ipcMain.handle('printers:get', async () => ({ printerName: getSelectedPrinterName() }));
+ipcMain.handle('printers:set', async (_e, name) => setSelectedPrinterName(name));
+ipcMain.handle('print:report', async (_e, opts) => printCurrentView(opts));
 ipcMain.on('logs:renderer', (_e, payload) => {
   const level = payload?.level || 'info';
   const message = payload?.message || '';
