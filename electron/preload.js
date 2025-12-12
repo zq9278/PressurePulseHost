@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld('api', {
   setVolume: (percent) => ipcRenderer.invoke('set-volume', { percent }),
   getPlayChime: () => ipcRenderer.invoke('get-play-chime'),
   setPlayChime: (on) => ipcRenderer.invoke('set-play-chime', { on }),
+  getPatients: () => ipcRenderer.invoke('patients:list'),
+  addPatient: (patient) => ipcRenderer.invoke('patients:add', patient),
   onSerialData: (cb) => ipcRenderer.on('serial-data', (_, payload) => cb(payload)),
   onConnectionChanged: (cb) => ipcRenderer.on('connection-changed', (_, connected) => cb(connected)),
   onPorts: (cb) => ipcRenderer.on('ports', (_, ports) => cb(ports)),
