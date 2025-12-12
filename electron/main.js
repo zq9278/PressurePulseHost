@@ -60,6 +60,11 @@ const SETTINGS_PATH = (() => {
   const base = app.isPackaged ? path.dirname(app.getPath('exe')) : path.join(__dirname, '..');
   return path.join(base, 'settings.json');
 })();
+const PATIENTS_DIR = (() => {
+  const base = app.isPackaged ? path.dirname(app.getPath('exe')) : path.join(__dirname, '..');
+  return path.join(base, 'patients');
+})();
+const PATIENTS_FILE = path.join(PATIENTS_DIR, 'patients.json');
 const STARTUP_SPEECH = {
   zh: '设备已启动，请连接治疗仪。',
   en: 'System is ready. Please connect the device.',
@@ -238,6 +243,40 @@ async function ensureAudioOutputsOff() {
       console.warn('[PPHC] amixer off failed', args.join(' '), err?.message || err);
     }
   }
+}
+
+function loadPatients() {
+  try {
+    const raw = fs.readFileSync(PATIENTS_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+async function savePatients(list) {
+  try {
+    await fs.promises.mkdir(PATIENTS_DIR, { recursive: true });
+    await fs.promises.writeFile(PATIENTS_FILE, JSON.stringify(list, null, 2), 'utf8');
+    return true;
+  } catch (err) {
+    console.warn('[PPHC] save patients failed', err?.message || err);
+    return false;
+  }
+}
+
+function nextPatientId(existing = []) {
+  const nums = existing
+    .map((p) => String(p?.id || ''))
+    .map((id) => {
+      const m = id.match(/(\d+)/);
+      return m ? Number(m[1]) : NaN;
+    })
+    .filter((n) => Number.isFinite(n));
+  const next = nums.length ? Math.max(...nums) + 1 : 1;
+  return `P${String(next).padStart(4, '0')}`;
 }
 
 async function applyChimeSetting() {
@@ -461,4 +500,24 @@ ipcMain.handle('set-play-chime', async (e, { on }) => {
   saveSettings().catch(() => {});
   applyChimeSetting().catch(() => {});
   return { on: currentSettings.playChime };
+});
+ipcMain.handle('patients:list', async () => loadPatients());
+ipcMain.handle('patients:add', async (e, patient) => {
+  const list = loadPatients();
+  const id = nextPatientId(list);
+  const now = new Date().toISOString();
+  const entry = {
+    id,
+    name: String(patient?.name || '').trim(),
+    gender: patient?.gender === '女' || patient?.gender === 'female' ? '女' : '男',
+    phone: String(patient?.phone || '').trim(),
+    birth: String(patient?.birth || '').trim(),
+    notes: String(patient?.notes || '').trim(),
+    createdAt: now,
+    updatedAt: now,
+  };
+  const nextList = [...list, entry];
+  const saved = await savePatients(nextList);
+  if (!saved) throw new Error('保存病例信息失败');
+  return entry;
 });

@@ -40,6 +40,8 @@ body {
 .app-shell[data-view="home"] #homeScreen,
 .app-shell[data-view="quick"] #quickScreen,
 .app-shell[data-view="settings"] #settingsScreen,
+.app-shell[data-view="newPatient"] #newPatientScreen,
+.app-shell[data-view="patientList"] #patientListScreen,
 body.view-home #homeScreen,
 body.view-quick #quickScreen,
 body.view-settings #settingsScreen,
@@ -123,30 +125,25 @@ body.view-patientList #newPatientScreen { display: none; }
 .hero-desc { display: none; }
 .hero-actions-home {
   display: grid;
-  grid-template-columns: repeat(2, minmax(240px, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 26px;
   justify-content: center;
   align-items: stretch;
-  margin-top: 10px;
-  max-width: 1200px;
+  margin-top: 18px;
+  max-width: 1320px;
   margin-left: auto;
   margin-right: auto;
 }
-.hero-btn { border-radius: 28px; padding: 20px 34px; min-width: 220px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.05); color: var(--fg); font-size: 22px; letter-spacing: 2px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 18px 45px rgba(0,0,0,0.35); transition: transform 0.2s, box-shadow 0.2s, background 0.2s; }
+.hero-btn { border-radius: 28px; padding: 22px 36px; min-width: 220px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.05); color: var(--fg); font-size: 22px; letter-spacing: 2px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 18px 45px rgba(0,0,0,0.35); transition: transform 0.2s, box-shadow 0.2s, background 0.2s; }
 .hero-btn .label { font-weight: 700; }
 .hero-btn small { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.7); }
 .hero-btn.secondary:hover { background: rgba(255,255,255,0.12); transform: translateY(-4px); }
 .hero-btn.primary { background: linear-gradient(120deg, #5df6ff, #2c6dff); color: #041024; border-color: transparent; }
 .hero-btn.primary small { color: rgba(4,16,36,0.65); }
 .hero-btn.primary:hover { box-shadow: 0 30px 60px rgba(45,125,255,0.45); transform: translateY(-4px); }
-.hero-actions-home .hero-btn { font-size: 28px; padding: 28px 52px; min-width: 0; }
-.hero-actions-home .hero-btn .label { font-size: 28px; }
+.hero-actions-home .hero-btn { font-size: 28px; padding: 28px 48px; min-width: 0; }
+.hero-actions-home .hero-btn .label { font-size: 30px; }
 .hero-actions-home .hero-btn small { font-size: 16px; }
-.hero-actions-home .hero-btn {
-  font-size: 32px;
-  padding: 30px 48px;
-  min-width: 0;
-}
 .hero-actions-home .hero-btn.tertiary {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
@@ -157,8 +154,9 @@ body.view-patientList #newPatientScreen { display: none; }
   transform: translateY(-4px);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 }
-.hero-actions-home .hero-btn .label { font-size: 34px; }
-.hero-actions-home .hero-btn small { font-size: 20px; }
+.hero-btn.quiet { transition: background 0.2s, box-shadow 0.2s; }
+.hero-btn.quiet:hover { transform: none !important; box-shadow: 0 12px 28px rgba(0,0,0,0.28); }
+.hero-btn.quiet:active { transform: none !important; }
 .hero-eye-texture { position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 50%; background: radial-gradient(circle, rgba(90,160,255,0.65), rgba(20,32,58,0.8)); overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.45); }
 .hero-eye-core { position: absolute; inset: 18%; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); box-shadow: inset 0 0 40px rgba(0,0,0,0.6); }
 .hero-eye-ring { position: absolute; border-radius: 50%; border: 1px dashed rgba(255,255,255,0.5); animation: slow-rotate 16s linear infinite; }
@@ -191,10 +189,17 @@ body.view-patientList #newPatientScreen { display: none; }
 .settings-screen { background: inherit; display: flex; align-items: stretch; justify-content: center; }
 .new-patient-screen,
 .patient-list-screen {
-  background: radial-gradient(circle at 20% 20%, rgba(93, 246, 255, 0.12), transparent 30%),
-              radial-gradient(circle at 80% 10%, rgba(120, 90, 255, 0.14), transparent 28%),
-              radial-gradient(circle at 50% 80%, rgba(90, 255, 180, 0.12), transparent 35%),
-              #050608;
+  background:
+    radial-gradient(140% 120% at 24% 28%, rgba(91, 227, 255, 0.12), rgba(13, 58, 122, 0)),
+    radial-gradient(120% 120% at 74% 32%, rgba(128, 162, 255, 0.18), rgba(13, 58, 122, 0)),
+    linear-gradient(180deg, #0d3a7a 0%, #0b2f62 60%, #081a3a 100%);
+  overflow-y: auto;
+  padding: 32px 0 48px;
+}
+.app-shell[data-view="newPatient"] #newPatientScreen,
+.app-shell[data-view="patientList"] #patientListScreen,
+body.view-newPatient #newPatientScreen,
+body.view-patientList #patientListScreen {
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -1011,6 +1016,20 @@ body.keyboard-open .login-panel {
   opacity: 0;
   pointer-events: none;
 }
+.patient-osk {
+  position: fixed;
+  left: 50%;
+  bottom: 80px;
+  transform: translateX(-50%);
+  width: 99%;
+  max-width: 1600px;
+}
+.patient-osk.osk-hidden {
+  display: none;
+}
+body.keyboard-open .new-patient-screen {
+  padding-bottom: 560px;
+}
 
 .osk-header {
   display: flex;
@@ -1163,15 +1182,31 @@ body.keyboard-open .login-panel {
 /* Patient forms */
 .form-shell {
   width: 90%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 32px 48px;
+  max-width: 1200px;
+  margin: 48px auto 0;
+  padding: 52px 64px;
   color: #fff;
+  font-size: 20px;
+  line-height: 1.7;
+  background: rgba(12, 18, 32, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 32px;
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.form-shell .top-bar {
+  width: 100%;
+  align-self: stretch;
+  margin-bottom: 18px;
 }
 .patient-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
+  max-width: 960px;
 }
 .form-row {
   display: grid;
@@ -1185,7 +1220,7 @@ body.keyboard-open .login-panel {
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
 }
 .form-row label {
-  font-size: 1.1rem;
+  font-size: 20px;
   color: rgba(255, 255, 255, 0.88);
   letter-spacing: 1px;
 }
@@ -1197,7 +1232,7 @@ body.keyboard-open .login-panel {
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(255, 255, 255, 0.07);
   color: #fff;
-  font-size: 1.05rem;
+  font-size: 20px;
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 .form-row input:focus,
@@ -1207,7 +1242,7 @@ body.keyboard-open .login-panel {
 }
 .form-row textarea { resize: vertical; }
 .radio-group { display: flex; gap: 18px; }
-.radio-group label { display: flex; align-items: center; gap: 6px; }
+.radio-group label { display: flex; align-items: center; gap: 6px; font-size: 19px; }
 .form-actions {
   display: flex;
   gap: 12px;
@@ -1232,7 +1267,9 @@ body.keyboard-open .login-panel {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 18px;
-  margin-top: 18px;
+  margin: 24px auto 0;
+  width: 100%;
+  max-width: 1100px;
 }
 .patient-card {
   padding: 16px;
@@ -1241,6 +1278,7 @@ body.keyboard-open .login-panel {
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(6px);
+  font-size: 19px;
 }
 .patient-card-header {
   display: flex;
@@ -1249,6 +1287,7 @@ body.keyboard-open .login-panel {
   font-size: 1.1rem;
   font-weight: 800;
 }
+.patient-card-header .pname { font-size: 22px; }
 .patient-card-header .pid {
   color: rgba(93, 246, 255, 0.9);
   font-family: 'Consolas', 'SFMono-Regular', monospace;

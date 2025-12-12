@@ -26,6 +26,23 @@
       btnDeviceSub: 'Settings',
       btnQuickLabel: '开始治疗',
       btnQuickSub: 'Start',
+      btnNewPatientLabel: '新建档案',
+      btnNewPatientSub: 'Create Profile',
+      btnPatientListLabel: '病例列表',
+      btnPatientListSub: 'Patient Files',
+      newPatientTitle: '新建档案',
+      patientListTitle: '病例列表',
+      patientListEmpty: '暂无病例，请先创建。',
+      patientSaved: '保存成功',
+      patientSaveFailed: '保存失败，请重试。',
+      patientNameRequired: '请输入姓名',
+      patientLoadFailed: '病例读取失败',
+      patientId: '患者编号',
+      patientName: '姓名',
+      patientGender: '性别',
+      patientPhone: '联系电话',
+      patientBirth: '出生日期',
+      patientNotes: '备注信息',
       quickTitle: '快速治疗',
       summaryOverline: '实时数据',
       summaryTitle: '压力 / 温度',
@@ -132,6 +149,23 @@
       btnDeviceSub: 'Hardware & Preferences',
       btnQuickLabel: 'Start Treatment',
       btnQuickSub: 'Quick Session',
+      btnNewPatientLabel: 'New Record',
+      btnNewPatientSub: 'Create Profile',
+      btnPatientListLabel: 'Case List',
+      btnPatientListSub: 'Patient Files',
+      newPatientTitle: 'New Record',
+      patientListTitle: 'Case List',
+      patientListEmpty: 'No records yet. Create one first.',
+      patientSaved: 'Saved',
+      patientSaveFailed: 'Save failed, try again.',
+      patientNameRequired: 'Name is required',
+      patientLoadFailed: 'Unable to read records',
+      patientId: 'Patient ID',
+      patientName: 'Name',
+      patientGender: 'Gender',
+      patientPhone: 'Phone',
+      patientBirth: 'Birth Date',
+      patientNotes: 'Notes',
       quickTitle: 'Quick Session',
       summaryOverline: 'Live Data',
       summaryTitle: 'Pressure / Temp',
@@ -233,6 +267,9 @@
 let currentLang = 'zh';
 const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
 
+const VIEWS = ['home', 'quick', 'settings', 'newPatient', 'patientList'];
+const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
+
   const MODE = { target: 20, t1: 25, t2: 35, t3: 50 };
   const TEMP_FIXED_C = 42.0;
   const AUTO_PORT = '/dev/ttyS1';
@@ -275,6 +312,16 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
       ['z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.'],
     ],
   };
+  const KEYBOARD_HOSTS = {
+    default: { zone: 'default', oskId: 'osk', imeId: 'imeCandidates', keysId: 'oskKeys' },
+    patient: {
+      zone: 'patient',
+      oskId: 'patientOsk',
+      imeId: 'patientImeCandidates',
+      keysId: 'patientOskKeys',
+    },
+  };
+  const getKeyboardHost = (zone) => KEYBOARD_HOSTS[zone] || KEYBOARD_HOSTS.default;
 
   // 阶段文案：r 上升阶段，h 保持阶段，p 脉冲阶段
   const STAGE_LABELS = {
@@ -306,6 +353,8 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     latest: { 0: null, 1: null, 2: null, 3: null },
     max: 360,
     currentView: 'home',
+    patients: [],
+    patientsLoaded: false,
     systemState: null,
     alarmState: null,
     shields: { left: false, right: false },
@@ -335,6 +384,7 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
   const keyboardState = {
     lang: 'zh',
     target: null,
+    zone: 'default',
     visible: false,
     composing: '',
     candidates: [],
@@ -360,13 +410,182 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
   const clampVolume = (val) => Math.max(0, Math.min(100, Math.round(Number(val) || 0)));
 
   function showView(view) {
-    const next = ['home', 'quick', 'settings'].includes(view) ? view : 'home';
+    const prev = state.currentView;
+    const next = VIEWS.includes(view) ? view : 'home';
     state.currentView = next;
     const shell = document.querySelector('.app-shell');
     if (shell) shell.setAttribute('data-view', next);
-    document.body.classList.remove('view-home', 'view-quick', 'view-settings');
+    document.body.classList.remove(...VIEW_CLASSES);
     document.body.classList.add(`view-${next}`);
+    if (prev !== next) hideKeyboard();
+    if (next === 'newPatient') {
+      ensurePatientsLoaded();
+      resetPatientForm();
+    } else if (next === 'patientList') {
+      ensurePatientsLoaded();
+      renderPatientList();
+    }
     console.info('[PPHC] view ->', next);
+  }
+
+  function computeNextPatientId() {
+    const nums = (state.patients || [])
+      .map((p) => Number(String(p?.id || '').replace(/\D/g, '')))
+      .filter((n) => Number.isFinite(n));
+    const next = nums.length ? Math.max(...nums) + 1 : 1;
+    return `P${String(next).padStart(4, '0')}`;
+  }
+
+  function setPatientIdValue() {
+    const input = document.getElementById('patientId');
+    if (!input) return null;
+    const next = computeNextPatientId();
+    input.value = next;
+    return next;
+  }
+
+  function setPatientFormMessage(msg, isError = false) {
+    const node = document.getElementById('patientFormMessage');
+    if (!node) return;
+    if (!msg) {
+      node.hidden = true;
+      node.textContent = '';
+      node.classList.remove('error');
+      return;
+    }
+    node.hidden = false;
+    node.textContent = msg;
+    node.classList.toggle('error', !!isError);
+  }
+
+  function resetPatientForm(clearMsg = true) {
+    const idInput = document.getElementById('patientId');
+    const nameInput = document.getElementById('patientName');
+    const phoneInput = document.getElementById('patientPhone');
+    const birthInput = document.getElementById('patientBirth');
+    const notesInput = document.getElementById('patientNotes');
+    if (nameInput) nameInput.value = '';
+    if (phoneInput) phoneInput.value = '';
+    if (birthInput) birthInput.value = '';
+    if (notesInput) notesInput.value = '';
+    const male = document.querySelector('input[name="patientGender"][value="男"]');
+    if (male) male.checked = true;
+    if (idInput) idInput.value = computeNextPatientId();
+    if (clearMsg) setPatientFormMessage(null);
+  }
+
+  function renderPatientList() {
+    const listNode = document.getElementById('patientList');
+    const emptyNode = document.getElementById('patientListEmpty');
+    if (!listNode) return;
+    listNode.innerHTML = '';
+    const patients = Array.isArray(state.patients) ? state.patients : [];
+    if (!patients.length) {
+      if (emptyNode) emptyNode.hidden = false;
+      return;
+    }
+    if (emptyNode) emptyNode.hidden = true;
+    patients.forEach((p) => {
+      const card = document.createElement('div');
+      card.className = 'patient-card';
+      const header = document.createElement('div');
+      header.className = 'patient-card-header';
+      const pid = document.createElement('span');
+      pid.className = 'pid';
+      pid.textContent = p.id || '--';
+      const pname = document.createElement('span');
+      pname.className = 'pname';
+      pname.textContent = p.name || '未命名';
+      header.append(pid, pname);
+      card.appendChild(header);
+
+      const meta = document.createElement('div');
+      meta.className = 'patient-meta';
+      [
+        ['性别', p.gender || '--'],
+        ['电话', p.phone || '--'],
+        ['出生', p.birth || '--'],
+        ['建档', p.createdAt ? (p.createdAt.split?.('T')?.[0] || p.createdAt) : '--'],
+      ].forEach(([label, val]) => {
+        const item = document.createElement('div');
+        item.textContent = `${label} ${val || '--'}`;
+        meta.appendChild(item);
+      });
+      card.appendChild(meta);
+
+      const notes = document.createElement('div');
+      notes.className = 'patient-notes';
+      notes.textContent = p.notes || '无备注';
+      card.appendChild(notes);
+      listNode.appendChild(card);
+    });
+  }
+
+  async function loadPatients() {
+    if (!api?.getPatients) {
+      state.patients = [];
+      state.patientsLoaded = true;
+      resetPatientForm();
+      renderPatientList();
+      return;
+    }
+    try {
+      const list = await api.getPatients();
+      state.patients = Array.isArray(list) ? list : [];
+      state.patientsLoaded = true;
+      resetPatientForm();
+      renderPatientList();
+    } catch (err) {
+      console.warn('[PPHC] load patients failed', err);
+      showAlert(t('patientLoadFailed'));
+    }
+  }
+
+  async function ensurePatientsLoaded() {
+    if (state.patientsLoaded) return state.patients;
+    await loadPatients();
+    return state.patients;
+  }
+
+  async function handlePatientSubmit(e) {
+    e.preventDefault();
+    const nameInput = document.getElementById('patientName');
+    const phoneInput = document.getElementById('patientPhone');
+    const birthInput = document.getElementById('patientBirth');
+    const notesInput = document.getElementById('patientNotes');
+    const genderInput = document.querySelector('input[name="patientGender"]:checked');
+    const name = nameInput?.value?.trim() || '';
+    if (!name) {
+      setPatientFormMessage(t('patientNameRequired'), true);
+      return;
+    }
+    setPatientFormMessage(null);
+    await ensurePatientsLoaded();
+    try {
+      const payload = {
+        name,
+        phone: phoneInput?.value?.trim() || '',
+        birth: birthInput?.value || '',
+        notes: notesInput?.value?.trim() || '',
+        gender: genderInput?.value || '男',
+      };
+      const saved = api?.addPatient
+        ? await api.addPatient(payload)
+        : { ...payload, id: computeNextPatientId(), createdAt: new Date().toISOString() };
+      if (saved && saved.id) {
+        state.patients = [...state.patients, saved];
+        state.patientsLoaded = true;
+        renderPatientList();
+        resetPatientForm();
+        setPatientFormMessage(t('patientSaved'));
+        showView('patientList');
+      } else {
+        setPatientFormMessage(t('patientSaveFailed'), true);
+      }
+    } catch (err) {
+      console.error('[PPHC] save patient failed', err);
+      setPatientFormMessage(t('patientSaveFailed'), true);
+    }
   }
 
   const getPressureTarget = () => {
@@ -417,7 +636,7 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     if (keyboardState.target && document.body.contains(keyboardState.target)) {
       return keyboardState.target;
     }
-    keyboardState.target = document.querySelector('.login-input');
+    keyboardState.target = document.querySelector('.login-input') || document.querySelector('.osk-input');
     return keyboardState.target;
   }
 
@@ -459,19 +678,26 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
   }
 
   function hideKeyboard() {
-    const osk = document.getElementById('osk');
-    const ime = document.getElementById('imeCandidates');
     keyboardState.visible = false;
-    if (osk) osk.classList.add('osk-hidden');
-    if (ime) ime.classList.add('osk-hidden');
+    Object.values(KEYBOARD_HOSTS).forEach(({ oskId, imeId }) => {
+      const osk = document.getElementById(oskId);
+      if (osk) osk.classList.add('osk-hidden');
+      const ime = document.getElementById(imeId);
+      if (ime) ime.classList.add('osk-hidden');
+    });
     document.body.classList.remove('keyboard-open');
   }
 
   function showKeyboard() {
-    const osk = document.getElementById('osk');
-    if (!osk) return;
+    const host = getKeyboardHost(keyboardState.zone);
     keyboardState.visible = true;
-    osk.classList.remove('osk-hidden');
+    Object.values(KEYBOARD_HOSTS).forEach((cfg) => {
+      const osk = document.getElementById(cfg.oskId);
+      if (osk) {
+        if (cfg === host) osk.classList.remove('osk-hidden');
+        else osk.classList.add('osk-hidden');
+      }
+    });
     document.body.classList.add('keyboard-open');
   }
 
@@ -551,35 +777,36 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
   }
 
   function renderKeyboardKeys() {
-    const keysWrap = document.getElementById('oskKeys');
-    if (!keysWrap) return;
-    keysWrap.innerHTML = '';
     const rows = KEYBOARD_LAYOUTS[keyboardState.lang] || KEYBOARD_LAYOUTS.zh;
-    rows.forEach((row) => {
-      const rowEl = document.createElement('div');
-      rowEl.className = 'osk-row';
-      row.forEach((label) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'osk-key';
-        btn.textContent = label;
-        const keyLower = String(label || '').toLowerCase();
-        if (keyLower === '←' || keyLower === 'backspace' || keyLower === '退格') {
-          btn.addEventListener('pointerdown', (e) => {
-            e.preventDefault();
-            startBackspaceRepeat();
-          });
-          btn.addEventListener('pointerup', () => stopBackspaceRepeat());
-          btn.addEventListener('pointerleave', () => stopBackspaceRepeat());
-          // avoid click handler to prevent double-delete; pointerdown already triggers one delete
-        } else {
-          btn.addEventListener('click', () => {
-            handleKeyboardKey(label);
-          });
-        }
-        rowEl.appendChild(btn);
+    Object.values(KEYBOARD_HOSTS).forEach(({ keysId }) => {
+      const keysWrap = document.getElementById(keysId);
+      if (!keysWrap) return;
+      keysWrap.innerHTML = '';
+      rows.forEach((row) => {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'osk-row';
+        row.forEach((label) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'osk-key';
+          btn.textContent = label;
+          const keyLower = String(label || '').toLowerCase();
+          if (keyLower === '←' || keyLower === 'backspace' || keyLower === '退格') {
+            btn.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              startBackspaceRepeat();
+            });
+            btn.addEventListener('pointerup', () => stopBackspaceRepeat());
+            btn.addEventListener('pointerleave', () => stopBackspaceRepeat());
+          } else {
+            btn.addEventListener('click', () => {
+              handleKeyboardKey(label);
+            });
+          }
+          rowEl.appendChild(btn);
+        });
+        keysWrap.appendChild(rowEl);
       });
-      keysWrap.appendChild(rowEl);
     });
   }
 
@@ -749,8 +976,17 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
   }
 
   function renderImeCandidates() {
-    const wrap = document.getElementById('imeCandidates');
+    const host = getKeyboardHost(keyboardState.zone);
+    const wrap = document.getElementById(host.imeId);
     if (!wrap) return;
+    Object.values(KEYBOARD_HOSTS).forEach(({ imeId }) => {
+      if (imeId === host.imeId) return;
+      const other = document.getElementById(imeId);
+      if (other) {
+        other.classList.add('osk-hidden');
+        other.innerHTML = '';
+      }
+    });
     if (keyboardState.lang !== 'zh' || !keyboardState.composing) {
       wrap.classList.add('osk-hidden');
       wrap.innerHTML = '';
@@ -903,6 +1139,8 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
 
   function setKeyboardTarget(input) {
     keyboardState.target = input || null;
+    const zone = input?.dataset?.oskZone || 'default';
+    keyboardState.zone = KEYBOARD_HOSTS[zone] ? zone : 'default';
     if (input) {
       focusEnd(input);
       showKeyboard();
@@ -946,7 +1184,8 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     const passInput = document.getElementById('loginPass');
     [userInput, passInput].forEach((input) => {
       if (!input) return;
-      input.value = '';
+      if (input.id === 'loginUser') input.value = LOGIN_CREDENTIALS.username;
+      else if (input.id === 'loginPass') input.value = LOGIN_CREDENTIALS.password;
       input.addEventListener('focus', () => {
         setKeyboardTarget(input);
       });
@@ -970,6 +1209,14 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     document.getElementById('loginForm')?.addEventListener('submit', (e) => {
       e.preventDefault();
       attemptLogin();
+    });
+  }
+
+  function bindOskInputs() {
+    const inputs = document.querySelectorAll('input[data-osk-target], textarea[data-osk-target], .osk-input');
+    inputs.forEach((input) => {
+      input.addEventListener('focus', () => setKeyboardTarget(input));
+      input.addEventListener('click', () => setKeyboardTarget(input));
     });
   }
 
@@ -1094,8 +1341,30 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     set('#btnHomeDevice small', 'btnDeviceSub');
     set('#btnHomeQuick .label', 'btnQuickLabel');
     set('#btnHomeQuick small', 'btnQuickSub');
+    set('#btnHomeNewPatient .label', 'btnNewPatientLabel');
+    set('#btnHomeNewPatient small', 'btnNewPatientSub');
+    set('#btnHomePatientList .label', 'btnPatientListLabel');
+    set('#btnHomePatientList small', 'btnPatientListSub');
     set('#quickScreen .section-title', 'quickTitle');
     set('#settingsScreen .section-title', 'settingsTitle');
+    set('#newPatientScreen .section-title', 'newPatientTitle');
+    set('#patientListScreen .section-title', 'patientListTitle');
+    const emptyTip = document.getElementById('patientListEmpty');
+    if (emptyTip && TRANSLATIONS[next]?.patientListEmpty) {
+      emptyTip.textContent = TRANSLATIONS[next].patientListEmpty;
+    }
+    const labelMap = {
+      '#lblPatientId': 'patientId',
+      '#lblPatientName': 'patientName',
+      '#lblPatientGender': 'patientGender',
+      '#lblPatientPhone': 'patientPhone',
+      '#lblPatientBirth': 'patientBirth',
+      '#lblPatientNotes': 'patientNotes',
+    };
+    Object.entries(labelMap).forEach(([selector, key]) => {
+      const el = document.querySelector(selector);
+      if (el && TRANSLATIONS[next]?.[key]) el.textContent = TRANSLATIONS[next][key];
+    });
     set('.summary-panel .panel-overline', 'summaryOverline');
     set('.summary-panel .panel-title', 'summaryTitle');
     set('.curve-panel .panel-overline', 'curveOverline');
@@ -1798,6 +2067,8 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     console.info('[PPHC] binding UI events');
     [
       'btnHomeQuick',
+      'btnHomeNewPatient',
+      'btnHomePatientList',
       'btnBackHome',
       'btnExit',
       'btnHomeDevice',
@@ -1811,6 +2082,10 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
       'confirmContinue',
       'shieldLostBack',
       'btnBackSettings',
+      'btnBackNewPatient',
+      'btnBackPatientList',
+      'btnGoPatientList',
+      'patientForm',
     ].forEach((id) => {
       if (!document.getElementById(id)) console.warn('[PPHC] missing element', id);
     });
@@ -1820,12 +2095,38 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
         playSound('shield');
       }
     });
+    document.getElementById('btnHomeNewPatient')?.addEventListener('click', () => {
+      ensurePatientsLoaded();
+      resetPatientForm();
+      showView('newPatient');
+    });
+    document.getElementById('btnHomePatientList')?.addEventListener('click', () => {
+      ensurePatientsLoaded();
+      showView('patientList');
+    });
     document.getElementById('btnBackHome')?.addEventListener('click', () => showView('home'));
     document.getElementById('btnExit')?.addEventListener('click', () => {
       if (api && api.exitApp) api.exitApp();
       else window.close();
     });
     document.getElementById('btnHomeDevice')?.addEventListener('click', () => showView('settings'));
+    document.getElementById('btnBackNewPatient')?.addEventListener('click', () =>
+      showView('home')
+    );
+    document.getElementById('btnBackPatientList')?.addEventListener('click', () =>
+      showView('home')
+    );
+    document.getElementById('btnGoPatientList')?.addEventListener('click', () => {
+      ensurePatientsLoaded();
+      showView('patientList');
+    });
+    document.getElementById('patientForm')?.addEventListener('submit', handlePatientSubmit);
+    document.getElementById('patientId')?.addEventListener('click', async () => {
+      await ensurePatientsLoaded();
+      setPatientIdValue();
+      const input = document.getElementById('patientId');
+      if (input) setKeyboardTarget(input);
+    });
 
     document.getElementById('btnStartStop')?.addEventListener('click', () => {
       console.info('[PPHC] start/stop clicked, connected=', state.connected, 'running=', state.running);
@@ -1998,6 +2299,7 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     console.info('[PPHC] init start');
     initLoginOverlay();
     bindEvents();
+    bindOskInputs();
     bindSettingsControls();
     wireIpc();
     updateModeMeta();
@@ -2006,6 +2308,7 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     syncSystemVolume();
     syncPlayChime();
     applyLanguage(state.settings.language || 'zh');
+    ensurePatientsLoaded();
     // 默认进入 home
     showView(state.currentView || 'home');
     const tChip = document.getElementById('tempFixedValue');

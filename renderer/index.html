@@ -38,6 +38,13 @@
             exitApp: noop,
             getBrightness: async () => ({ percent: 80, raw: 0, max: 255 }),
             setBrightness: async () => ({ percent: 80, raw: 0, max: 255 }),
+            getPatients: async () => [],
+            addPatient: async (patient) => ({
+              id: `P${String(Date.now()).slice(-4)}`,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              ...patient,
+            }),
             onSerialData: () => {},
             onConnectionChanged: () => {},
             onHeartbeatAck: () => {},
@@ -73,6 +80,7 @@
               id="loginUser"
               class="login-input"
               inputmode="none"
+              value="admin"
               autocomplete="off"
               spellcheck="false"
               data-osk-target="user"
@@ -85,6 +93,7 @@
               id="loginPass"
               class="login-input"
               inputmode="none"
+              value="admin"
               autocomplete="off"
               spellcheck="false"
               data-osk-target="pass"
@@ -140,13 +149,21 @@
                 <p class="hero-desc">面向干眼诊疗的恒温恒压热脉动平台，融合九辰医疗 9C-U-TPS 研发经验与安全控制实力。</p>
               </div>
               <div class="hero-actions-home">
+                <button id="btnHomeQuick" class="hero-btn primary">
+                  <span class="label">开始治疗</span>
+                  <small>Start Session</small>
+                </button>
                 <button id="btnHomeDevice" class="hero-btn secondary">
-                  <span class="label">设置</span>
+                  <span class="label">设备设置</span>
                   <small>Device Settings</small>
                 </button>
-                <button id="btnHomeQuick" class="hero-btn primary">
-                  <span class="label">快速治疗</span>
-                  <small>Start Session</small>
+                <button id="btnHomeNewPatient" class="hero-btn tertiary">
+                  <span class="label">新建档案</span>
+                  <small>Create Profile</small>
+                </button>
+                <button id="btnHomePatientList" class="hero-btn tertiary">
+                  <span class="label">病例列表</span>
+                  <small>Patient Files</small>
                 </button>
               </div>
             </div>
@@ -360,6 +377,118 @@
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section id="newPatientScreen" class="screen new-patient-screen">
+        <div class="form-shell">
+          <header class="top-bar">
+            <button id="btnBackNewPatient" class="icon-back" aria-label="返回主页"><span>←</span></button>
+            <div class="section-title">新建档案</div>
+            <div class="top-placeholder"></div>
+          </header>
+
+          <form id="patientForm" class="patient-form">
+            <div class="form-row">
+              <label for="patientId" id="lblPatientId">患者编号</label>
+              <input
+                type="text"
+                id="patientId"
+                name="patientId"
+                readonly
+                class="osk-input"
+                data-osk-target="patient-id"
+                data-osk-zone="patient"
+              />
+            </div>
+            <div class="form-row">
+              <label for="patientName" id="lblPatientName">姓名</label>
+              <input
+                type="text"
+                id="patientName"
+                name="patientName"
+                placeholder="请输入姓名"
+                class="osk-input"
+                data-osk-target="patient-name"
+                data-osk-zone="patient"
+              />
+            </div>
+            <div class="form-row">
+              <label id="lblPatientGender">性别</label>
+              <div class="radio-group">
+                <label><input type="radio" name="patientGender" value="男" checked /> 男</label>
+                <label><input type="radio" name="patientGender" value="女" /> 女</label>
+              </div>
+            </div>
+            <div class="form-row">
+              <label for="patientPhone" id="lblPatientPhone">联系电话</label>
+              <input
+                type="tel"
+                id="patientPhone"
+                name="patientPhone"
+                inputmode="tel"
+                placeholder="11 位手机号"
+                class="osk-input"
+                data-osk-target="patient-phone"
+                data-osk-zone="patient"
+              />
+            </div>
+            <div class="form-row">
+              <label for="patientBirth" id="lblPatientBirth">出生日期</label>
+              <input
+                type="date"
+                id="patientBirth"
+                name="patientBirth"
+                class="osk-input"
+                data-osk-target="patient-birth"
+                data-osk-zone="patient"
+              />
+            </div>
+            <div class="form-row">
+              <label for="patientNotes" id="lblPatientNotes">备注信息</label>
+              <textarea
+                id="patientNotes"
+                name="patientNotes"
+                rows="3"
+                placeholder="记录症状、注意事项等"
+                class="osk-input"
+                data-osk-target="patient-notes"
+                data-osk-zone="patient"
+              ></textarea>
+            </div>
+            <div class="form-actions">
+              <button type="button" id="btnGoPatientList" class="action subtle">查看列表</button>
+              <button type="submit" id="btnSavePatient" class="action start">保存档案</button>
+            </div>
+            <div id="patientFormMessage" class="form-msg" hidden></div>
+          </form>
+          <div class="osk osk-hidden patient-osk" id="patientOsk" data-lang="zh">
+            <div id="patientImeCandidates" class="ime-candidates osk-hidden"></div>
+            <div class="osk-header">
+              <div>
+                <div class="osk-overline">屏幕键盘</div>
+                <div class="osk-title">Screen Keyboard</div>
+              </div>
+              <div class="osk-lang">
+                <button type="button" class="osk-lang-btn active" data-lang="zh">中文</button>
+                <button type="button" class="osk-lang-btn" data-lang="en">English</button>
+              </div>
+            </div>
+            <div class="osk-keys" id="patientOskKeys"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="patientListScreen" class="screen patient-list-screen">
+        <div class="form-shell">
+          <header class="top-bar">
+            <button id="btnBackPatientList" class="icon-back" aria-label="返回主页"><span>←</span></button>
+            <div class="section-title">病例列表</div>
+            <div class="top-placeholder"></div>
+          </header>
+
+          <div id="patientListEmpty" class="empty-tip" hidden>暂无病例，请先创建。</div>
+          <div id="patientList" class="patient-list"></div>
         </div>
       </section>
 
