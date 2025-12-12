@@ -586,6 +586,174 @@ canvas{width:100%;height:auto;display:block}
 .modal-title{font-size:22px;font-weight:600;margin-bottom:10px}
 .modal-body p{color:var(--muted)}
 
+/* Large custom date picker */
+.date-picker-body {
+  width: min(900px, 92vw);
+  padding: 32px 36px;
+}
+.date-picker-header {
+  display: grid;
+  grid-template-columns: 96px 1fr 96px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.date-picker-title {
+  cursor: pointer;
+  user-select: none;
+}
+.date-picker-title:hover {
+  opacity: 0.9;
+}
+.date-picker-year-panel {
+  width: 140px;
+  margin: 2px auto 6px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.date-picker-year-title { display: none; }
+.date-picker-year-list {
+  max-height: 100px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: y mandatory;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  padding: 0;
+}
+.date-picker-year-list::-webkit-scrollbar {
+  width: 18px;
+}
+.date-picker-year-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+}
+.date-picker-year-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  min-height: 48px;
+}
+.date-picker-year-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.65);
+}
+.date-picker-year-item {
+  height: 26px;
+  border-radius: 0;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  font-weight: 800;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: color 0.15s, transform 0.08s;
+  scroll-snap-align: center;
+}
+.date-picker-year-item:hover {
+  background: transparent;
+  color: #fff;
+  transform: translateY(-1px);
+}
+.date-picker-year-item.selected {
+  background: transparent;
+  color: rgba(93, 246, 255, 0.95);
+  text-shadow: 0 0 10px rgba(93, 246, 255, 0.6);
+}
+
+/* Larger touch-friendly scrollbars on patient screens */
+.new-patient-screen::-webkit-scrollbar,
+.patient-list-screen::-webkit-scrollbar {
+  width: 20px;
+}
+.new-patient-screen::-webkit-scrollbar-track,
+.patient-list-screen::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+.new-patient-screen::-webkit-scrollbar-thumb,
+.patient-list-screen::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  min-height: 64px;
+}
+.new-patient-screen::-webkit-scrollbar-thumb:hover,
+.patient-list-screen::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+.date-picker-year-actions { display: none; }
+.date-picker-header .ghost-btn {
+  font-size: 28px;
+  padding: 14px 0;
+  border-radius: 16px;
+}
+.date-picker-title {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.date-picker-weekdays,
+.date-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+.date-picker-weekdays {
+  margin-top: 8px;
+  margin-bottom: 6px;
+  font-size: 18px;
+  color: rgba(255,255,255,0.8);
+  text-align: center;
+}
+.date-picker-grid {
+  font-size: 22px;
+  margin-bottom: 14px;
+}
+.date-picker-cell {
+  height: 74px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.08s, border-color 0.2s;
+}
+.date-picker-cell:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.18);
+  transform: translateY(-2px);
+}
+.date-picker-cell.outside {
+  opacity: 0.35;
+}
+.date-picker-cell.today {
+  border-color: rgba(93,246,255,0.9);
+  box-shadow: inset 0 0 0 1px rgba(93,246,255,0.6);
+}
+.date-picker-cell.selected {
+  background: linear-gradient(135deg, rgba(93,246,255,0.8), rgba(44,109,255,0.9));
+  color: #041024;
+  border-color: transparent;
+}
+.date-picker-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.date-picker-actions .action {
+  font-size: 20px;
+  padding: 12px 18px;
+  border-radius: 14px;
+}
+
 .crown {
   display: flex;
   gap: 18px;
@@ -1235,6 +1403,11 @@ body.keyboard-open .new-patient-screen {
   font-size: 20px;
   transition: border-color 0.2s ease, background 0.2s ease;
 }
+.form-row input[type="date"] {
+  font-size: 24px;
+  padding: 20px 22px;
+  height: 68px;
+}
 .form-row input:focus,
 .form-row textarea:focus {
   border-color: rgba(93, 246, 255, 0.7);
@@ -1264,12 +1437,63 @@ body.keyboard-open .new-patient-screen {
   color: #ffc4c4;
 }
 .patient-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   margin: 24px auto 0;
   width: 100%;
   max-width: 1100px;
+  overflow-x: auto;
+}
+.patient-table {
+  width: 100%;
+  min-width: 980px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(10,24,48,0.72);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+}
+.patient-row {
+  display: grid;
+  grid-template-columns: 140px 160px 100px 200px 160px 1fr 170px;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  font-size: 19px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.patient-row:last-child { border-bottom: none; }
+.patient-row.header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(255,255,255,0.12);
+  font-weight: 800;
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.patient-row:nth-child(even):not(.header) {
+  background: rgba(255,255,255,0.03);
+}
+.patient-row:hover:not(.header) {
+  background: rgba(255,255,255,0.06);
+}
+.patient-cell {
+  padding: 4px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.patient-cell.notes {
+  white-space: normal;
+  line-height: 1.5;
+}
+.patient-cell.id {
+  font-family: 'Consolas', 'SFMono-Regular', monospace;
+  color: rgba(93, 246, 255, 0.9);
+  font-weight: 700;
 }
 .patient-card {
   padding: 16px;
@@ -1279,6 +1503,7 @@ body.keyboard-open .new-patient-screen {
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(6px);
   font-size: 19px;
+  width: 100%;
 }
 .patient-card-header {
   display: flex;

@@ -43,6 +43,11 @@
       patientPhone: '联系电话',
       patientBirth: '出生日期',
       patientNotes: '备注信息',
+      patientCreatedAt: '建档日期',
+      datePickerToday: '今天',
+      datePickerCancel: '取消',
+      datePickerBack: '返回',
+      datePickerSelectYear: '选择年份',
       quickTitle: '快速治疗',
       summaryOverline: '实时数据',
       summaryTitle: '压力 / 温度',
@@ -166,6 +171,11 @@
       patientPhone: 'Phone',
       patientBirth: 'Birth Date',
       patientNotes: 'Notes',
+      patientCreatedAt: 'Created',
+      datePickerToday: 'Today',
+      datePickerCancel: 'Cancel',
+      datePickerBack: 'Back',
+      datePickerSelectYear: 'Select Year',
       quickTitle: 'Quick Session',
       summaryOverline: 'Live Data',
       summaryTitle: 'Pressure / Temp',
@@ -474,6 +484,148 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (clearMsg) setPatientFormMessage(null);
   }
 
+  const datePickerState = {
+    year: new Date().getFullYear(),
+    month: new Date().getMonth(),
+    selected: null,
+    view: 'calendar',
+  };
+
+  function formatDateYMD(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function parseDateYMD(str) {
+    const m = String(str || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return null;
+    const y = Number(m[1]);
+    const mo = Number(m[2]) - 1;
+    const d = Number(m[3]);
+    const dt = new Date(y, mo, d);
+    if (Number.isNaN(dt.getTime())) return null;
+    if (dt.getFullYear() !== y || dt.getMonth() !== mo || dt.getDate() !== d) return null;
+    return dt;
+  }
+
+  function getWeekdayLabels() {
+    return currentLang === 'en'
+      ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+      : ['日', '一', '二', '三', '四', '五', '六'];
+  }
+
+  function renderYearPicker() {
+    const panel = document.getElementById('datePickerYearPanel');
+    const listNode = document.getElementById('datePickerYearList');
+    const titleNode = document.getElementById('datePickerYearTitle');
+    const backBtn = document.getElementById('datePickerBack');
+    if (!panel || !listNode) return;
+    if (titleNode) titleNode.textContent = t('datePickerSelectYear');
+    if (backBtn) backBtn.textContent = t('datePickerBack');
+    listNode.innerHTML = '';
+
+    const nowYear = new Date().getFullYear();
+    const startYear = nowYear - 80;
+    const endYear = nowYear + 10;
+    for (let y = startYear; y <= endYear; y += 1) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'date-picker-year-item';
+      if (y === datePickerState.year) btn.classList.add('selected');
+      btn.textContent = String(y);
+      btn.addEventListener('click', () => {
+        datePickerState.year = y;
+        datePickerState.view = 'calendar';
+        renderDatePicker();
+      });
+      listNode.appendChild(btn);
+    }
+
+    // scroll current year into view
+    const selected = listNode.querySelector('.date-picker-year-item.selected');
+    if (selected) {
+      selected.scrollIntoView({ block: 'center' });
+    }
+  }
+
+  function renderDatePicker() {
+    const title = document.getElementById('datePickerTitle');
+    const weekdaysNode = document.getElementById('datePickerWeekdays');
+    const gridNode = document.getElementById('datePickerGrid');
+    const actionsNode = document.querySelector('.date-picker-actions');
+    const yearPanel = document.getElementById('datePickerYearPanel');
+    if (!gridNode) return;
+    const inYearView = datePickerState.view === 'year';
+    if (yearPanel) yearPanel.hidden = !inYearView;
+    if (weekdaysNode) weekdaysNode.hidden = inYearView;
+    gridNode.hidden = inYearView;
+    if (actionsNode) actionsNode.hidden = inYearView;
+    if (inYearView) {
+      renderYearPicker();
+      return;
+    }
+    if (title) {
+      const monthNum = String(datePickerState.month + 1).padStart(2, '0');
+      title.textContent = `${datePickerState.year}-${monthNum}`;
+    }
+    if (weekdaysNode) {
+      weekdaysNode.innerHTML = '';
+      getWeekdayLabels().forEach((w) => {
+        const el = document.createElement('div');
+        el.textContent = w;
+        weekdaysNode.appendChild(el);
+      });
+    }
+    gridNode.innerHTML = '';
+    const first = new Date(datePickerState.year, datePickerState.month, 1);
+    const startWeekday = first.getDay();
+    const start = new Date(datePickerState.year, datePickerState.month, 1 - startWeekday);
+    const todayStr = formatDateYMD(new Date());
+
+    for (let i = 0; i < 42; i += 1) {
+      const dt = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'date-picker-cell';
+      const dtStr = formatDateYMD(dt);
+      cell.textContent = String(dt.getDate());
+      if (dt.getMonth() !== datePickerState.month) cell.classList.add('outside');
+      if (dtStr === todayStr) cell.classList.add('today');
+      if (datePickerState.selected && dtStr === datePickerState.selected) cell.classList.add('selected');
+      cell.addEventListener('click', () => {
+        datePickerState.selected = dtStr;
+        const input = document.getElementById('patientBirth');
+        if (input) input.value = dtStr;
+        closeDatePicker();
+      });
+      gridNode.appendChild(cell);
+    }
+
+    const btnToday = document.getElementById('datePickerToday');
+    const btnCancel = document.getElementById('datePickerCancel');
+    if (btnToday) btnToday.textContent = t('datePickerToday');
+    if (btnCancel) btnCancel.textContent = t('datePickerCancel');
+  }
+
+  function openDatePicker(initialValue) {
+    const modal = document.getElementById('datePickerModal');
+    if (!modal) return;
+    const initDate = parseDateYMD(initialValue) || new Date();
+    datePickerState.year = initDate.getFullYear();
+    datePickerState.month = initDate.getMonth();
+    datePickerState.selected = formatDateYMD(initDate);
+    datePickerState.view = 'calendar';
+    modal.hidden = false;
+    renderDatePicker();
+  }
+
+  function closeDatePicker() {
+    const modal = document.getElementById('datePickerModal');
+    if (modal) modal.hidden = true;
+  }
+
   function renderPatientList() {
     const listNode = document.getElementById('patientList');
     const emptyNode = document.getElementById('patientListEmpty');
@@ -485,40 +637,51 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       return;
     }
     if (emptyNode) emptyNode.hidden = true;
-    patients.forEach((p) => {
-      const card = document.createElement('div');
-      card.className = 'patient-card';
-      const header = document.createElement('div');
-      header.className = 'patient-card-header';
-      const pid = document.createElement('span');
-      pid.className = 'pid';
-      pid.textContent = p.id || '--';
-      const pname = document.createElement('span');
-      pname.className = 'pname';
-      pname.textContent = p.name || '未命名';
-      header.append(pid, pname);
-      card.appendChild(header);
+    const table = document.createElement('div');
+    table.className = 'patient-table';
 
-      const meta = document.createElement('div');
-      meta.className = 'patient-meta';
-      [
-        ['性别', p.gender || '--'],
-        ['电话', p.phone || '--'],
-        ['出生', p.birth || '--'],
-        ['建档', p.createdAt ? (p.createdAt.split?.('T')?.[0] || p.createdAt) : '--'],
-      ].forEach(([label, val]) => {
-        const item = document.createElement('div');
-        item.textContent = `${label} ${val || '--'}`;
-        meta.appendChild(item);
-      });
-      card.appendChild(meta);
-
-      const notes = document.createElement('div');
-      notes.className = 'patient-notes';
-      notes.textContent = p.notes || '无备注';
-      card.appendChild(notes);
-      listNode.appendChild(card);
+    const headerRow = document.createElement('div');
+    headerRow.className = 'patient-row header';
+    const headerCells = [
+      { key: 'patientId', className: 'id' },
+      { key: 'patientName', className: 'name' },
+      { key: 'patientGender', className: 'gender' },
+      { key: 'patientPhone', className: 'phone' },
+      { key: 'patientBirth', className: 'birth' },
+      { key: 'patientNotes', className: 'notes' },
+      { key: 'patientCreatedAt', className: 'created' },
+    ];
+    headerCells.forEach(({ key, className }) => {
+      const cell = document.createElement('div');
+      cell.className = `patient-cell ${className}`;
+      cell.textContent = t(key);
+      headerRow.appendChild(cell);
     });
+    table.appendChild(headerRow);
+
+    patients.forEach((p) => {
+      const row = document.createElement('div');
+      row.className = 'patient-row';
+      const created = p.createdAt ? (p.createdAt.split?.('T')?.[0] || p.createdAt) : '--';
+      const values = {
+        id: p.id || '--',
+        name: p.name || '--',
+        gender: p.gender || '--',
+        phone: p.phone || '--',
+        birth: p.birth || '--',
+        notes: p.notes || '--',
+        created,
+      };
+      ['id', 'name', 'gender', 'phone', 'birth', 'notes', 'created'].forEach((col) => {
+        const cell = document.createElement('div');
+        cell.className = `patient-cell ${col}`;
+        cell.textContent = values[col];
+        row.appendChild(cell);
+      });
+      table.appendChild(row);
+    });
+
+    listNode.appendChild(table);
   }
 
   async function loadPatients() {
@@ -999,6 +1162,18 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     const buffer = keyboardState.composing.toLowerCase();
     const top = findPinyinCandidates(buffer);
     keyboardState.candidates = top;
+
+    // Auto-commit when only one real candidate exists (not the raw pinyin buffer).
+    if (
+      !keyboardState.dictLoading &&
+      Array.isArray(top) &&
+      top.length === 1 &&
+      String(top[0]) !== buffer
+    ) {
+      commitCandidate(top[0]);
+      return;
+    }
+
     const pageSize = 10;
     const pageCount = Math.max(1, Math.ceil((top.length || 1) / pageSize));
     keyboardState.candidatePage = Math.min(keyboardState.candidatePage, pageCount - 1);
@@ -1082,6 +1257,17 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (!target) return;
     const ch = String(label || '').trim();
     if (!ch) return;
+    if (/^\d+$/.test(ch)) {
+      // Numbers should be inserted directly without IME composing.
+      if (keyboardState.composing) {
+        keyboardState.composing = '';
+        keyboardState.candidates = [];
+        keyboardState.candidatePage = 0;
+        renderImeCandidates();
+      }
+      insertTextAtCursor(target, ch);
+      return;
+    }
     loadPinyinIndex();
     keyboardState.composing += ch.toLowerCase();
     keyboardState.candidatePage = 0;
@@ -1215,6 +1401,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
   function bindOskInputs() {
     const inputs = document.querySelectorAll('input[data-osk-target], textarea[data-osk-target], .osk-input');
     inputs.forEach((input) => {
+      if (input.classList.contains('date-input')) return;
       input.addEventListener('focus', () => setKeyboardTarget(input));
       input.addEventListener('click', () => setKeyboardTarget(input));
     });
@@ -1365,6 +1552,9 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       const el = document.querySelector(selector);
       if (el && TRANSLATIONS[next]?.[key]) el.textContent = TRANSLATIONS[next][key];
     });
+    const dpModal = document.getElementById('datePickerModal');
+    if (dpModal && !dpModal.hidden) renderDatePicker();
+    if (state.currentView === 'patientList') renderPatientList();
     set('.summary-panel .panel-overline', 'summaryOverline');
     set('.summary-panel .panel-title', 'summaryTitle');
     set('.curve-panel .panel-overline', 'curveOverline');
@@ -2126,6 +2316,50 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       setPatientIdValue();
       const input = document.getElementById('patientId');
       if (input) setKeyboardTarget(input);
+    });
+    document.getElementById('patientBirth')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      hideKeyboard();
+      const val = e.currentTarget?.value || '';
+      openDatePicker(val);
+    });
+    document.getElementById('datePrevMonth')?.addEventListener('click', () => {
+      datePickerState.month -= 1;
+      if (datePickerState.month < 0) {
+        datePickerState.month = 11;
+        datePickerState.year -= 1;
+      }
+      renderDatePicker();
+    });
+    document.getElementById('dateNextMonth')?.addEventListener('click', () => {
+      datePickerState.month += 1;
+      if (datePickerState.month > 11) {
+        datePickerState.month = 0;
+        datePickerState.year += 1;
+      }
+      renderDatePicker();
+    });
+    document.getElementById('datePickerToday')?.addEventListener('click', () => {
+      const today = new Date();
+      datePickerState.year = today.getFullYear();
+      datePickerState.month = today.getMonth();
+      datePickerState.selected = formatDateYMD(today);
+      const input = document.getElementById('patientBirth');
+      if (input) input.value = datePickerState.selected;
+      closeDatePicker();
+    });
+    document.getElementById('datePickerTitle')?.addEventListener('click', () => {
+      datePickerState.view = datePickerState.view === 'year' ? 'calendar' : 'year';
+      renderDatePicker();
+    });
+    document.getElementById('datePickerBack')?.addEventListener('click', () => {
+      datePickerState.view = 'calendar';
+      renderDatePicker();
+    });
+    document.getElementById('datePickerCancel')?.addEventListener('click', closeDatePicker);
+    document.getElementById('datePickerModal')?.addEventListener('click', (e) => {
+      if (e.target?.id === 'datePickerModal') closeDatePicker();
     });
 
     document.getElementById('btnStartStop')?.addEventListener('click', () => {

@@ -436,12 +436,14 @@
             <div class="form-row">
               <label for="patientBirth" id="lblPatientBirth">出生日期</label>
               <input
-                type="date"
+                type="text"
                 id="patientBirth"
                 name="patientBirth"
-                class="osk-input"
+                class="osk-input date-input"
                 data-osk-target="patient-birth"
                 data-osk-zone="patient"
+                readonly
+                placeholder="YYYY-MM-DD"
               />
             </div>
             <div class="form-row">
@@ -478,6 +480,29 @@
           </div>
         </div>
       </section>
+
+      <div id="datePickerModal" class="modal date-picker-modal" hidden>
+        <div class="modal-body date-picker-body">
+          <div class="date-picker-header">
+            <button type="button" id="datePrevMonth" class="ghost-btn">←</button>
+            <div id="datePickerTitle" class="date-picker-title">2025-01</div>
+            <button type="button" id="dateNextMonth" class="ghost-btn">→</button>
+          </div>
+          <div id="datePickerYearPanel" class="date-picker-year-panel" hidden>
+            <div id="datePickerYearTitle" class="date-picker-year-title">选择年份</div>
+            <div id="datePickerYearList" class="date-picker-year-list"></div>
+            <div class="date-picker-year-actions">
+              <button type="button" id="datePickerBack" class="action subtle">返回</button>
+            </div>
+          </div>
+          <div id="datePickerWeekdays" class="date-picker-weekdays"></div>
+          <div id="datePickerGrid" class="date-picker-grid"></div>
+          <div class="date-picker-actions">
+            <button type="button" id="datePickerToday" class="action subtle">今天</button>
+            <button type="button" id="datePickerCancel" class="action subtle">取消</button>
+          </div>
+        </div>
+      </div>
 
       <section id="patientListScreen" class="screen patient-list-screen">
         <div class="form-shell">
