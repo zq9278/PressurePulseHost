@@ -3,8 +3,10 @@
 // ① 必须先拿到 app 对象，再设置 GPU 开关
 const { app, BrowserWindow, ipcMain } = require('electron');
 
-// Disable GPU to avoid crashes when GLES drivers cannot be loaded
-app.disableHardwareAcceleration();
+// Disable GPU on Linux to avoid crashes when GLES drivers cannot be loaded; keep GPU on Windows for smoother UI
+if (process.platform === 'linux') {
+  app.disableHardwareAcceleration();
+}
 
 // ===== GPU / display ?? =====
 const useWayland =
@@ -29,11 +31,15 @@ const { SerialManager } = require('./serial');
 const proto = require('./protocol');
 const { Ws2812Driver, DEFAULT_COLORS } = require('./ws2812');
 
-// Preemptively turn off backlight before Electron window creation to avoid white flash
-try {
-  fs.writeFileSync('/sys/class/backlight/backlight2/brightness', '0');
-} catch (err) {
-  console.warn('[PPHC] pre-start backlight off failed', err?.message || err);
+const IS_LINUX = process.platform === 'linux';
+
+// Preemptively turn off backlight before Electron window creation to avoid white flash (Linux only)
+if (IS_LINUX) {
+  try {
+    fs.writeFileSync('/sys/class/backlight/backlight2/brightness', '0');
+  } catch (err) {
+    console.warn('[PPHC] pre-start backlight off failed', err?.message || err);
+  }
 }
 
 const expandPath = (p) => {
@@ -44,10 +50,10 @@ const expandPath = (p) => {
 
 let mainWindow;
 const serial = new SerialManager();
-const leds = process.platform === 'linux' ? new Ws2812Driver({ ledCount: 51, defaultColor: DEFAULT_COLORS.idle }) : null;
+const leds = IS_LINUX ? new Ws2812Driver({ ledCount: 51, defaultColor: DEFAULT_COLORS.idle }) : null;
 
-const BRIGHTNESS_PATH = '/sys/class/backlight/backlight2/brightness';
-const MAX_BRIGHTNESS_PATH = '/sys/class/backlight/backlight2/max_brightness';
+const BRIGHTNESS_PATH = IS_LINUX ? '/sys/class/backlight/backlight2/brightness' : null;
+const MAX_BRIGHTNESS_PATH = IS_LINUX ? '/sys/class/backlight/backlight2/max_brightness' : null;
 const DEFAULT_MAX_BRIGHTNESS = 255;
 const SETTINGS_PATH = (() => {
   // 开发时写到项目根目录，打包后写到可执行文件同目录
@@ -63,6 +69,7 @@ let currentSettings = { ...DEFAULT_SETTINGS };
 let settingsFresh = true;
 
 async function readNumber(filePath) {
+  if (!IS_LINUX || !filePath) throw new Error('unsupported platform');
   const raw = await fs.promises.readFile(filePath, 'utf8');
   const num = Number.parseInt(String(raw).trim(), 10);
   if (Number.isNaN(num)) throw new Error(`Invalid numeric content from ${filePath}`);
@@ -70,6 +77,7 @@ async function readNumber(filePath) {
 }
 
 async function resolveMaxBrightness() {
+  if (!IS_LINUX || !MAX_BRIGHTNESS_PATH) return DEFAULT_MAX_BRIGHTNESS;
   try {
     return await readNumber(MAX_BRIGHTNESS_PATH);
   } catch (err) {
@@ -79,6 +87,12 @@ async function resolveMaxBrightness() {
 }
 
 async function getBrightnessPercent() {
+  if (!IS_LINUX || !BRIGHTNESS_PATH) {
+    const percent = Number.isFinite(currentSettings.brightness)
+      ? Math.max(0, Math.min(100, currentSettings.brightness))
+      : 80;
+    return { raw: 0, max: DEFAULT_MAX_BRIGHTNESS, percent };
+  }
   const max = await resolveMaxBrightness();
   const raw = await readNumber(BRIGHTNESS_PATH);
   const percent = Math.round((raw / max) * 100);
@@ -90,6 +104,15 @@ async function getBrightnessPercent() {
 }
 
 async function setBrightnessPercent(percent, opts = {}) {
+  if (!IS_LINUX || !BRIGHTNESS_PATH) {
+    const pctRaw = Number(percent);
+    const pct = Number.isFinite(pctRaw) ? Math.max(0, Math.min(100, pctRaw)) : 0;
+    if (!opts.skipSave) {
+      currentSettings.brightness = pct;
+      saveSettings().catch(() => {});
+    }
+    return { raw: 0, max: DEFAULT_MAX_BRIGHTNESS, percent: pct };
+  }
   const max = await resolveMaxBrightness();
   const pctRaw = Number(percent);
   const pct = Number.isFinite(pctRaw) ? Math.max(0, Math.min(100, pctRaw)) : 0;
@@ -139,6 +162,13 @@ async function saveSettings() {
 }
 
 async function setVolumePercent(percent) {
+  if (!IS_LINUX) {
+    const pctRaw = Number(percent) || 0;
+    const pctClamped = Math.max(0, Math.min(100, pctRaw));
+    currentSettings.volume = pctClamped;
+    saveSettings().catch(() => {});
+    return { percent: pctClamped, applied: null };
+  }
   const pctRaw = Number(percent) || 0;
   const pctClamped = Math.max(0, Math.min(100, pctRaw));
   let target = 0;
@@ -167,6 +197,7 @@ async function setVolumePercent(percent) {
 }
 
 function runAmixer(args) {
+  if (!IS_LINUX) return Promise.resolve(true);
   return new Promise((resolve, reject) => {
     const child = spawn('amixer', args, { stdio: 'ignore' });
     child.on('error', reject);
@@ -178,6 +209,7 @@ function runAmixer(args) {
 }
 
 async function ensureAudioOutputsOn() {
+  if (!IS_LINUX) return;
   const tasks = [
     ['-c', '0', 'set', 'Speaker', 'on'],
     ['-c', '0', 'set', 'Headphone', 'on'],
@@ -193,6 +225,7 @@ async function ensureAudioOutputsOn() {
 }
 
 async function ensureAudioOutputsOff() {
+  if (!IS_LINUX) return;
   const tasks = [
     ['-c', '0', 'set', 'Speaker', 'off'],
     ['-c', '0', 'set', 'Headphone', 'off'],
@@ -208,6 +241,7 @@ async function ensureAudioOutputsOff() {
 }
 
 async function applyChimeSetting() {
+  if (!IS_LINUX) return;
   if (settingsFresh && currentSettings.playChime) {
     await ensureAudioOutputsOn().catch(() => {});
     return;
@@ -356,16 +390,18 @@ async function broadcastPorts() {
 app.whenReady().then(() => {
   loadSettings();
   // 启动即关背光，1 秒后再恢复为目标亮度
-  setBrightnessPercent(0, { skipSave: true }).catch(() => {});
-  setTimeout(() => {
-    if (Number.isFinite(currentSettings.brightness)) {
-      setBrightnessPercent(currentSettings.brightness).catch(() => {});
+  if (IS_LINUX) {
+    setBrightnessPercent(0, { skipSave: true }).catch(() => {});
+    setTimeout(() => {
+      if (Number.isFinite(currentSettings.brightness)) {
+        setBrightnessPercent(currentSettings.brightness).catch(() => {});
+      }
+    }, 500);
+    if (Number.isFinite(currentSettings.volume)) {
+      setVolumePercent(currentSettings.volume).catch(() => {});
     }
-  }, 500);
-  if (Number.isFinite(currentSettings.volume)) {
-    setVolumePercent(currentSettings.volume).catch(() => {});
+    applyChimeSetting().catch(() => {});
   }
-  applyChimeSetting().catch(() => {});
   createWindow();
 
   try {

@@ -50,6 +50,67 @@
         }
       })();
     </script>
+    <div id="loginOverlay" class="login-overlay active" aria-live="polite">
+      <div class="login-panel">
+        <div class="login-branding">
+          <div class="brand-logo">
+            <img src="../resoure/logo.png" alt="九辰医疗" />
+            <div class="brand-text">
+              <strong>九辰医疗</strong>
+              <span>Pressure Pulse Host</span>
+            </div>
+          </div>
+          <div class="brand-title">
+            <h1>系统登录</h1>
+            <p>请使用授权账号登录以进入控制界面</p>
+          </div>
+        </div>
+        <form id="loginForm" autocomplete="off">
+          <label class="login-field">
+            <span>用户名</span>
+            <input
+              type="text"
+              id="loginUser"
+              class="login-input"
+              inputmode="none"
+              autocomplete="off"
+              spellcheck="false"
+              data-osk-target="user"
+            />
+          </label>
+          <label class="login-field">
+            <span>密码</span>
+            <input
+              type="password"
+              id="loginPass"
+              class="login-input"
+              inputmode="none"
+              autocomplete="off"
+              spellcheck="false"
+              data-osk-target="pass"
+            />
+          </label>
+          <div class="login-error" id="loginError" hidden>账号或密码错误，请重试。</div>
+          <div class="login-actions">
+            <button type="button" id="loginSubmit" class="action primary-toggle">登录</button>
+          </div>
+        </form>
+      </div>
+      <div class="osk osk-hidden" id="osk" data-lang="zh">
+        <div id="imeCandidates" class="ime-candidates osk-hidden"></div>
+        <div class="osk-header">
+          <div>
+            <div class="osk-overline">屏幕键盘</div>
+            <div class="osk-title">Screen Keyboard</div>
+          </div>
+          <div class="osk-lang">
+            <button type="button" class="osk-lang-btn active" data-lang="zh">中文</button>
+            <button type="button" class="osk-lang-btn" data-lang="en">English</button>
+          </div>
+        </div>
+        <div class="osk-keys" id="oskKeys"></div>
+      </div>
+    </div>
     <div class="bg-board"></div>
     <div class="app-shell" data-view="home">
       <div class="window-controls">

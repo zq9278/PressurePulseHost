@@ -256,6 +256,26 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     console.log('[PPHC] web debug mode enabled - serial and device calls are stubbed');
   }
 
+  const LOGIN_CREDENTIALS = {
+    username: 'admin',
+    password: 'admin',
+  };
+
+  const KEYBOARD_LAYOUTS = {
+    en: [
+      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+      ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+      ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'Space', '←', 'Clear'],
+      ['z', 'x', 'c', 'v', 'b', 'n', 'm', '@', '.'],
+    ],
+    zh: [
+      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+      ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+      ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'Space', '←', 'Clear'],
+      ['z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.'],
+    ],
+  };
+
   // 阶段文案：r 上升阶段，h 保持阶段，p 脉冲阶段
   const STAGE_LABELS = {
     r: 'modeLabelRise',
@@ -269,12 +289,15 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
   };
 
   const state = {
+    loggedIn: false,
     connected: false,
     connecting: false,
     autoConnectTimer: null,
+    heroClockTimer: null,
     mode: 1,
     running: false,
     countdownTimer: null,
+    telemetryTimer: null,
     countdownEnd: 0,
     heartbeatTimer: null,
     heartbeatSeed: 0x55,
@@ -308,6 +331,28 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
       temp: TEMP_FIXED_C,
     },
   };
+
+  const keyboardState = {
+    lang: 'zh',
+    target: null,
+    visible: false,
+    composing: '',
+    candidates: [],
+    candidatePage: 0,
+    dictLoading: false,
+  };
+  let backspaceRepeatTimer = null;
+  let backspaceRepeatDelay = null;
+
+  // Pinyin dictionary populated from @pinyin-pro/data (complete.json for max coverage)
+  let PINYIN_INDEX = null;
+  let PINYIN_PREFIX_INDEX = null;
+  let PINYIN_LOAD_PROMISE = null;
+  const PINYIN_DICT_URL = new URL(
+    '../node_modules/@pinyin-pro/data/json/complete.json',
+    window.location.href
+  ).toString();
+
 
   let brightnessApplyTimer = null;
   let volumeApplyTimer = null;
@@ -367,6 +412,564 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
       target: () => getTempTarget(),
     },
   ];
+
+  function getKeyboardTarget() {
+    if (keyboardState.target && document.body.contains(keyboardState.target)) {
+      return keyboardState.target;
+    }
+    keyboardState.target = document.querySelector('.login-input');
+    return keyboardState.target;
+  }
+
+  function focusEnd(target) {
+    if (!target) return;
+    const len = target.value.length;
+    if (typeof target.setSelectionRange === 'function') {
+      target.focus();
+      target.setSelectionRange(len, len);
+    }
+  }
+
+  function insertTextAtCursor(target, text) {
+    if (!target) return;
+    if (document.activeElement !== target) {
+      focusEnd(target);
+    }
+    const start = typeof target.selectionStart === 'number' ? target.selectionStart : target.value.length;
+    const end = typeof target.selectionEnd === 'number' ? target.selectionEnd : target.value.length;
+    const before = target.value.slice(0, start);
+    const after = target.value.slice(end);
+    target.value = `${before}${text}${after}`;
+    const pos = target.value.length;
+    if (typeof target.setSelectionRange === 'function') {
+      target.setSelectionRange(pos, pos);
+    }
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function insertTextAtEnd(target, text) {
+    if (!target) return;
+    target.focus();
+    const end = target.value.length;
+    target.value = `${target.value}${text}`;
+    if (typeof target.setSelectionRange === 'function') {
+      target.setSelectionRange(end + text.length, end + text.length);
+    }
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function hideKeyboard() {
+    const osk = document.getElementById('osk');
+    const ime = document.getElementById('imeCandidates');
+    keyboardState.visible = false;
+    if (osk) osk.classList.add('osk-hidden');
+    if (ime) ime.classList.add('osk-hidden');
+  }
+
+  function showKeyboard() {
+    const osk = document.getElementById('osk');
+    if (!osk) return;
+    keyboardState.visible = true;
+    osk.classList.remove('osk-hidden');
+  }
+
+  function handleKeyboardAction(action) {
+    const target = getKeyboardTarget();
+    if (!target) return;
+    const actionKey = action?.toLowerCase?.() || action;
+    const isSpaceKey = actionKey === 'space' || actionKey === '空格';
+    const isBackspaceKey =
+      actionKey === 'backspace' || actionKey === '退格' || actionKey === '←';
+
+    if (keyboardState.lang === 'zh') {
+      if (action === 'enter') {
+        const cand = keyboardState.candidates?.[0] || keyboardState.composing;
+        if (cand) commitCandidate(cand);
+        else attemptLogin();
+        return;
+      }
+      if (isBackspaceKey) {
+        if (keyboardState.composing) {
+          keyboardState.composing = keyboardState.composing.slice(0, -1);
+          if (keyboardState.composing.length === 0) {
+            keyboardState.candidatePage = 0;
+          }
+          renderImeCandidates();
+          return;
+        }
+        // no composing text, delete from input end
+      }
+      if (action === 'clear') {
+        keyboardState.composing = '';
+        keyboardState.candidates = [];
+        keyboardState.candidatePage = 0;
+        renderImeCandidates();
+        target.value = '';
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+        return;
+      }
+    }
+    switch (action) {
+      case 'space':
+      case '空格':
+        insertTextAtCursor(target, ' ');
+        keyboardState.composing = '';
+        keyboardState.candidates = [];
+        keyboardState.candidatePage = 0;
+        renderImeCandidates();
+        break;
+      case 'clear':
+        target.value = '';
+        if (typeof target.setSelectionRange === 'function') target.setSelectionRange(0, 0);
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+        break;
+      case 'backspace':
+      case '退格': {
+        const start = target.selectionStart ?? target.value.length;
+        const end = target.selectionEnd ?? target.value.length;
+        if (start === end && start > 0) {
+          const next = target.value.slice(0, start - 1) + target.value.slice(end);
+          target.value = next;
+          const pos = start - 1;
+          if (typeof target.setSelectionRange === 'function') target.setSelectionRange(pos, pos);
+        } else if (start !== end) {
+          const next = target.value.slice(0, start) + target.value.slice(end);
+          target.value = next;
+          if (typeof target.setSelectionRange === 'function') target.setSelectionRange(start, start);
+        }
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+        break;
+      }
+      case 'enter':
+        attemptLogin();
+        break;
+      default:
+        break;
+    }
+  }
+
+  function renderKeyboardKeys() {
+    const keysWrap = document.getElementById('oskKeys');
+    if (!keysWrap) return;
+    keysWrap.innerHTML = '';
+    const rows = KEYBOARD_LAYOUTS[keyboardState.lang] || KEYBOARD_LAYOUTS.zh;
+    rows.forEach((row) => {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'osk-row';
+      row.forEach((label) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'osk-key';
+        btn.textContent = label;
+        const keyLower = String(label || '').toLowerCase();
+        if (keyLower === '←' || keyLower === 'backspace' || keyLower === '退格') {
+          btn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            startBackspaceRepeat();
+          });
+          btn.addEventListener('pointerup', () => stopBackspaceRepeat());
+          btn.addEventListener('pointerleave', () => stopBackspaceRepeat());
+          // avoid click handler to prevent double-delete; pointerdown already triggers one delete
+        } else {
+          btn.addEventListener('click', () => {
+            handleKeyboardKey(label);
+          });
+        }
+        rowEl.appendChild(btn);
+      });
+      keysWrap.appendChild(rowEl);
+    });
+  }
+
+  function setKeyboardLang(lang) {
+    const next = lang === 'en' ? 'en' : 'zh';
+    keyboardState.lang = next;
+    keyboardState.composing = '';
+    keyboardState.candidates = [];
+    keyboardState.candidatePage = 0;
+    renderImeCandidates();
+    document.querySelectorAll('.osk-lang-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.lang === next);
+    });
+    renderKeyboardKeys();
+  }
+
+  function stopBackspaceRepeat() {
+    if (backspaceRepeatTimer) {
+      clearInterval(backspaceRepeatTimer);
+      backspaceRepeatTimer = null;
+    }
+    if (backspaceRepeatDelay) {
+      clearTimeout(backspaceRepeatDelay);
+      backspaceRepeatDelay = null;
+    }
+  }
+
+  function startBackspaceRepeat() {
+    handleKeyboardAction('backspace');
+    stopBackspaceRepeat();
+    backspaceRepeatDelay = setTimeout(() => {
+      backspaceRepeatTimer = setInterval(() => {
+        handleKeyboardAction('backspace');
+      }, 220);
+    }, 400);
+  }
+
+  function stopBackspaceRepeat() {
+    if (backspaceRepeatTimer) {
+      clearInterval(backspaceRepeatTimer);
+      backspaceRepeatTimer = null;
+    }
+  }
+
+  function startBackspaceRepeat() {
+    handleKeyboardAction('backspace');
+    stopBackspaceRepeat();
+    backspaceRepeatTimer = setInterval(() => {
+      handleKeyboardAction('backspace');
+    }, 120);
+  }
+
+  function bindKeyboardControls() {
+    document.querySelectorAll('.osk-lang-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setKeyboardLang(btn.dataset.lang);
+      });
+    });
+    document.querySelectorAll('.osk-action').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        handleKeyboardAction(btn.dataset.action);
+      });
+    });
+  }
+
+  const TONE_MAP = {
+    ā: 'a', á: 'a', ǎ: 'a', à: 'a',
+    ō: 'o', ó: 'o', ǒ: 'o', ò: 'o',
+    ē: 'e', é: 'e', ě: 'e', è: 'e',
+    ī: 'i', í: 'i', ǐ: 'i', ì: 'i',
+    ū: 'u', ú: 'u', ǔ: 'u', ù: 'u',
+    ǖ: 'v', ǘ: 'v', ǚ: 'v', ǜ: 'v', ü: 'v',
+    Ā: 'a', Á: 'a', Ǎ: 'a', À: 'a',
+    Ō: 'o', Ó: 'o', Ǒ: 'o', Ò: 'o',
+    Ē: 'e', É: 'e', Ě: 'e', È: 'e',
+    Ī: 'i', Í: 'i', Ǐ: 'i', Ì: 'i',
+    Ū: 'u', Ú: 'u', Ǔ: 'u', Ù: 'u',
+    Ǖ: 'v', Ǘ: 'v', Ǚ: 'v', Ǜ: 'v', Ü: 'v',
+  };
+
+  function normalizePinyinKey(pyStr) {
+    const raw = String(pyStr || '');
+    let out = '';
+    for (let i = 0; i < raw.length; i += 1) {
+      const ch = raw[i];
+      out += TONE_MAP[ch] || ch;
+    }
+    return out.replace(/\s+/g, '').toLowerCase();
+  }
+
+  async function loadPinyinIndex() {
+    if (PINYIN_LOAD_PROMISE) return PINYIN_LOAD_PROMISE;
+    keyboardState.dictLoading = true;
+    renderImeCandidates();
+    const insertCandidate = (map, key, word, freq, cap = 100) => {
+      const arr = map[key] || [];
+      arr.push({ word, freq });
+      arr.sort((a, b) => (b.freq || 0) - (a.freq || 0));
+      if (arr.length > cap) arr.length = cap; // keep top candidates per key to bound memory
+      map[key] = arr;
+    };
+
+    PINYIN_LOAD_PROMISE = fetch(PINYIN_DICT_URL)
+      .then((res) => res.json())
+      .then(async (json) => {
+        const map = {};
+        const prefixMap = {};
+        const entries = Object.entries(json || {});
+        const chunk = 800;
+        for (let idx = 0; idx < entries.length; idx += chunk) {
+          const end = Math.min(idx + chunk, entries.length);
+          for (let i = idx; i < end; i += 1) {
+            const [word, val] = entries[i];
+            const py = Array.isArray(val) ? val[0] : null;
+            const freq = Array.isArray(val) ? val[1] || 0 : 0;
+            if (!py || !word) continue;
+            const key = normalizePinyinKey(py);
+            if (!key) continue;
+            insertCandidate(map, key, word, freq, 100);
+            const maxPrefix = Math.min(6, key.length);
+            for (let l = 1; l <= maxPrefix; l += 1) {
+              const pref = key.slice(0, l);
+              insertCandidate(prefixMap, pref, word, freq, 80);
+            }
+          }
+          if (end < entries.length) {
+            // yield to UI thread to avoid stutter
+            // eslint-disable-next-line no-await-in-loop
+            await new Promise((resolve) => setTimeout(resolve, 0));
+          }
+        }
+        PINYIN_INDEX = map;
+        PINYIN_PREFIX_INDEX = prefixMap;
+      })
+      .catch((err) => {
+        console.warn('[IME] load pinyin dict failed', err);
+        PINYIN_INDEX = {};
+        PINYIN_PREFIX_INDEX = {};
+      })
+      .finally(() => {
+        keyboardState.dictLoading = false;
+        renderImeCandidates();
+      });
+    return PINYIN_LOAD_PROMISE;
+  }
+
+  function findPinyinCandidates(buffer) {
+    const buf = String(buffer || '').toLowerCase();
+    if (!buf) return [];
+    if (!PINYIN_INDEX) {
+      loadPinyinIndex().then(() => renderImeCandidates());
+      return keyboardState.dictLoading ? [] : [buf];
+    }
+    const exact = PINYIN_INDEX[buf] || [];
+    if (exact.length) return exact.map((e) => e.word);
+    const pref = PINYIN_PREFIX_INDEX?.[buf] || [];
+    if (pref.length) return pref.map((e) => e.word);
+    const extendedKeys = Object.keys(PINYIN_INDEX || {}).filter((k) => k.startsWith(buf));
+    if (extendedKeys.length) {
+      const extended = extendedKeys
+        .slice(0, 200)
+        .flatMap((k) => PINYIN_INDEX[k] || [])
+        .slice(0, 200);
+      if (extended.length) return extended.map((e) => e.word);
+    }
+    return [buf];
+  }
+
+  function renderImeCandidates() {
+    const wrap = document.getElementById('imeCandidates');
+    if (!wrap) return;
+    if (keyboardState.lang !== 'zh' || !keyboardState.composing) {
+      wrap.classList.add('osk-hidden');
+      wrap.innerHTML = '';
+      keyboardState.candidates = [];
+      keyboardState.candidatePage = 0;
+      return;
+    }
+    wrap.classList.remove('osk-hidden');
+    wrap.innerHTML = '';
+    const buffer = keyboardState.composing.toLowerCase();
+    const top = findPinyinCandidates(buffer);
+    keyboardState.candidates = top;
+    const pageSize = 10;
+    const pageCount = Math.max(1, Math.ceil((top.length || 1) / pageSize));
+    keyboardState.candidatePage = Math.min(keyboardState.candidatePage, pageCount - 1);
+
+    const composeLabel = document.createElement('div');
+    composeLabel.className = 'ime-compose';
+    composeLabel.textContent = keyboardState.composing || '(无拼音)';
+    wrap.appendChild(composeLabel);
+
+    const list = document.createElement('div');
+    list.className = 'ime-list';
+    wrap.appendChild(list);
+
+    if (keyboardState.dictLoading && !top.length) {
+      const loading = document.createElement('div');
+      loading.className = 'ime-candidate';
+      loading.textContent = '词库加载中...';
+      list.appendChild(loading);
+      return;
+    }
+    const start = keyboardState.candidatePage * pageSize;
+    const slice = top.slice(start, start + pageSize);
+    slice.forEach((cand, idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ime-candidate';
+      btn.textContent = `${start + idx + 1}.${cand}`;
+      btn.addEventListener('click', () => commitCandidate(cand));
+      list.appendChild(btn);
+    });
+
+    if (pageCount > 1) {
+      const pager = document.createElement('div');
+      pager.className = 'ime-pager';
+      const prev = document.createElement('button');
+      prev.type = 'button';
+      prev.className = 'ime-pager-btn';
+      prev.textContent = '上一页';
+      prev.disabled = keyboardState.candidatePage === 0;
+      prev.addEventListener('click', () => changeCandidatePage(-1));
+      const info = document.createElement('div');
+      info.className = 'ime-pager-info';
+      info.textContent = `${keyboardState.candidatePage + 1} / ${pageCount}`;
+      const next = document.createElement('button');
+      next.type = 'button';
+      next.className = 'ime-pager-btn';
+      next.textContent = '下一页';
+      next.disabled = keyboardState.candidatePage >= pageCount - 1;
+      next.addEventListener('click', () => changeCandidatePage(1));
+      pager.appendChild(prev);
+      pager.appendChild(info);
+      pager.appendChild(next);
+      wrap.appendChild(pager);
+    }
+  }
+
+  function changeCandidatePage(delta) {
+    const size = 10;
+    const total = keyboardState.candidates?.length || 0;
+    if (!total) return;
+    const pageCount = Math.max(1, Math.ceil(total / size));
+    keyboardState.candidatePage = Math.min(
+      pageCount - 1,
+      Math.max(0, keyboardState.candidatePage + delta)
+    );
+    renderImeCandidates();
+  }
+
+  function commitCandidate(text) {
+    const target = getKeyboardTarget();
+    if (!target) return;
+    insertTextAtEnd(target, text);
+    keyboardState.composing = '';
+    keyboardState.candidates = [];
+    keyboardState.candidatePage = 0;
+    renderImeCandidates();
+  }
+
+  function handleZhKey(label) {
+    const target = getKeyboardTarget();
+    if (!target) return;
+    const ch = String(label || '').trim();
+    if (!ch) return;
+    loadPinyinIndex();
+    keyboardState.composing += ch.toLowerCase();
+    keyboardState.candidatePage = 0;
+    renderImeCandidates();
+  }
+
+  function handleEnKey(label) {
+    insertTextAtCursor(getKeyboardTarget(), label);
+  }
+
+  function handleKeyboardKey(label) {
+    const key = String(label || '').toLowerCase();
+    if (key === 'space' || key === '空格') {
+      handleKeyboardAction('space');
+      return;
+    }
+    if (key === 'backspace' || key === '退格' || key === '←') {
+      handleKeyboardAction('backspace');
+      return;
+    }
+    if (key === 'clear') {
+      handleKeyboardAction('clear');
+      return;
+    }
+    if (keyboardState.lang === 'zh') {
+      handleZhKey(label);
+    } else {
+      handleEnKey(label);
+    }
+  }
+
+  function setLoginError(msg) {
+    const node = document.getElementById('loginError');
+    if (!node) return;
+    if (!msg) {
+      node.hidden = true;
+      return;
+    }
+    node.textContent = msg;
+    node.hidden = false;
+  }
+
+  function attemptLogin() {
+    const userRaw = document.getElementById('loginUser')?.value ?? '';
+    const pass = document.getElementById('loginPass')?.value ?? '';
+    const user = userRaw.trim().toLowerCase();
+    if (user === LOGIN_CREDENTIALS.username && pass === LOGIN_CREDENTIALS.password) {
+      setLoginError(null);
+      completeLogin();
+      return true;
+    }
+    setLoginError('账号或密码错误，请重试。');
+    return false;
+  }
+
+  function setKeyboardTarget(input) {
+    keyboardState.target = input || null;
+    if (input) {
+      focusEnd(input);
+      showKeyboard();
+      renderImeCandidates();
+    }
+  }
+
+  function completeLogin() {
+    if (state.loggedIn) return;
+    state.loggedIn = true;
+    document.body.classList.remove('login-locked');
+    document.body.classList.remove('view-login');
+    const overlay = document.getElementById('loginOverlay');
+    if (overlay) {
+      overlay.classList.remove('active');
+      overlay.classList.add('hidden');
+      setTimeout(() => {
+        overlay?.remove();
+      }, 600);
+    }
+    keyboardState.target = null;
+    showView('home');
+    scheduleAutoConnect(0);
+    ensureTelemetryLoop();
+    startHeroClock();
+    updateTelemetry();
+  }
+
+  function initLoginOverlay() {
+    const overlay = document.getElementById('loginOverlay');
+    if (!overlay) {
+      state.loggedIn = true;
+      document.body.classList.remove('login-locked');
+      document.body.classList.remove('view-login');
+      return;
+    }
+    document.body.classList.add('login-locked');
+    document.body.classList.add('view-login');
+    overlay.classList.add('active');
+    const userInput = document.getElementById('loginUser');
+    const passInput = document.getElementById('loginPass');
+    [userInput, passInput].forEach((input) => {
+      if (!input) return;
+      input.value = '';
+      input.addEventListener('focus', () => {
+        setKeyboardTarget(input);
+      });
+      input.addEventListener('click', () => {
+        setKeyboardTarget(input);
+      });
+    });
+    keyboardState.target = null;
+    bindKeyboardControls();
+    setKeyboardLang('zh');
+    // preload dict in idle time to reduce首次输入抖动
+    setTimeout(() => loadPinyinIndex(), 0);
+    setLoginError(null);
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target && e.target.id === 'loginOverlay') {
+        hideKeyboard();
+      }
+    });
+    document.getElementById('loginSubmit')?.addEventListener('click', attemptLogin);
+    document.getElementById('loginForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      attemptLogin();
+    });
+  }
 
   function isShieldHealthy(side) {
     const presentRaw = state.shields[side];
@@ -920,6 +1523,7 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
   }
 
   function updateTelemetry() {
+    if (!state.loggedIn) return;
     const pl = $('#pressureLeft');
     const pr = $('#pressureRight');
     const pll = $('#pressureLeftLabel');
@@ -940,6 +1544,17 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
       drawSparkline(target.canvas(), state.buf[target.key], target.color, target)
     );
     updateHeartbeatUI();
+  }
+
+  function ensureTelemetryLoop() {
+    if (state.telemetryTimer) return;
+    state.telemetryTimer = setInterval(updateTelemetry, 200);
+  }
+
+  function startHeroClock() {
+    if (state.heroClockTimer) return;
+    updateHeroClock();
+    state.heroClockTimer = setInterval(updateHeroClock, 30000);
   }
 
   function updateRunState() {
@@ -1379,6 +1994,7 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
 
   function init() {
     console.info('[PPHC] init start');
+    initLoginOverlay();
     bindEvents();
     bindSettingsControls();
     wireIpc();
@@ -1388,14 +2004,15 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
     syncSystemVolume();
     syncPlayChime();
     applyLanguage(state.settings.language || 'zh');
-    setInterval(updateTelemetry, 200);
-    updateHeroClock();
-    setInterval(updateHeroClock, 30000);
     // 默认进入 home
     showView(state.currentView || 'home');
     const tChip = document.getElementById('tempFixedValue');
     if (tChip) tChip.textContent = `${TEMP_FIXED_C.toFixed(1)}℃`;
-    scheduleAutoConnect(0);
+    if (state.loggedIn) {
+      scheduleAutoConnect(0);
+      ensureTelemetryLoop();
+      startHeroClock();
+    }
     console.info('[PPHC] init done');
   }
 
