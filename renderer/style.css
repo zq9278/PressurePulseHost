@@ -934,6 +934,13 @@ body.keyboard-open .login-panel {
   justify-content: flex-end;
 }
 
+.login-actions .action.primary-toggle {
+  min-width: 260px;
+  padding: 18px 32px;
+  border-radius: 20px;
+  font-size: 1.2rem;
+}
+
 .login-error {
   color: #ff6b6b;
   font-size: 0.95rem;
