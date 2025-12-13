@@ -73,6 +73,9 @@
       updateNotAvailable: '当前已是最新版本',
       updateCheckFailed: '检查更新失败',
       quickTitle: '快速治疗',
+      quickPatientTitle: '患者选择',
+      quickPatientSelectedNone: '未选择',
+      quickPatientEmpty: '暂无患者，请先创建档案。',
       summaryOverline: '实时数据',
       summaryTitle: '压力 / 温度',
       curveOverline: '实时曲线',
@@ -101,6 +104,10 @@
       durationStrong: '',
       start: '开始',
       stop: '停止',
+      exportAfterTreatmentTitle: '治疗完成',
+      exportAfterTreatmentText: '是否需要导出报告？',
+      exportAfterTreatmentNo: '暂不导出',
+      exportAfterTreatmentYes: '导出报告',
       running: '运行中',
       standby: '待机',
       runStateLabel: '挤压状态',
@@ -293,6 +300,9 @@
       updateNotAvailable: 'Already up to date',
       updateCheckFailed: 'Update check failed',
       quickTitle: 'Quick Session',
+      quickPatientTitle: 'Patient',
+      quickPatientSelectedNone: 'Not selected',
+      quickPatientEmpty: 'No patients yet. Create a profile first.',
       summaryOverline: 'Live Data',
       summaryTitle: 'Pressure / Temp',
       curveOverline: 'Live Curves',
@@ -321,6 +331,10 @@
       durationStrong: '',
       start: 'Start',
       stop: 'Stop',
+      exportAfterTreatmentTitle: 'Session Complete',
+      exportAfterTreatmentText: 'Export report now?',
+      exportAfterTreatmentNo: 'Not now',
+      exportAfterTreatmentYes: 'Export',
       running: 'Running',
       standby: 'Standby',
       runStateLabel: 'Run State',
@@ -570,6 +584,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     activePatient: null,
     lastTreatment: null,
     selectedPatientId: null,
+    treatmentPatientId: null,
     systemState: null,
     alarmState: null,
     shields: { left: false, right: false },
@@ -638,6 +653,11 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (next === 'settings') {
       updateSettingsUI();
       setSettingsModule(state.settingsActiveModule || 'display');
+    } else if (next === 'quick') {
+      ensurePatientsLoaded().then(() => {
+        if (state.currentView === 'quick') renderQuickPatientPicker();
+      });
+      renderQuickPatientPicker();
     } else if (next === 'newPatient') {
       ensurePatientsLoaded();
       resetPatientForm();
@@ -905,6 +925,91 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     listNode.appendChild(table);
   }
 
+  function getPatientById(id) {
+    const key = String(id || '').trim();
+    if (!key) return null;
+    return (Array.isArray(state.patients) ? state.patients : []).find(
+      (p) => String(p?.id || '').trim() === key
+    );
+  }
+
+  function ensureTreatmentPatientSelected() {
+    if (String(state.treatmentPatientId || '').trim()) return;
+    const fromPatientList = String(state.selectedPatientId || '').trim();
+    if (fromPatientList) {
+      state.treatmentPatientId = fromPatientList;
+      return;
+    }
+    const fromActive = String(state.activePatient?.id || '').trim();
+    if (fromActive) {
+      state.treatmentPatientId = fromActive;
+      return;
+    }
+    const first = (Array.isArray(state.patients) ? state.patients : [])[0]?.id;
+    if (first) state.treatmentPatientId = String(first);
+  }
+
+  function renderQuickPatientPicker() {
+    const listNode = document.getElementById('quickPatientList');
+    const selectedNode = document.getElementById('quickPatientSelected');
+    if (!listNode && !selectedNode) return;
+    if (listNode) setupDragScroll(listNode);
+
+    const patients = Array.isArray(state.patients) ? state.patients : [];
+    const sortedPatients = patients.slice().sort((a, b) => {
+      const aTime = a?.createdAt ? Date.parse(a.createdAt) : NaN;
+      const bTime = b?.createdAt ? Date.parse(b.createdAt) : NaN;
+      if (Number.isFinite(aTime) && Number.isFinite(bTime) && aTime !== bTime) return bTime - aTime;
+      const aNum = Number(String(a?.id || '').replace(/\D/g, '')) || 0;
+      const bNum = Number(String(b?.id || '').replace(/\D/g, '')) || 0;
+      if (aNum !== bNum) return bNum - aNum;
+      return String(b?.id || '').localeCompare(String(a?.id || ''));
+    });
+    ensureTreatmentPatientSelected();
+    const activeId = String(state.treatmentPatientId || '').trim();
+    const activePatient = activeId ? getPatientById(activeId) : null;
+
+    if (selectedNode) {
+      if (activePatient) {
+        selectedNode.textContent = `${activePatient.id}${activePatient.name ? ` · ${activePatient.name}` : ''}`;
+      } else if (activeId) {
+        selectedNode.textContent = activeId;
+      } else {
+        selectedNode.textContent = t('quickPatientSelectedNone');
+      }
+    }
+
+    if (!listNode) return;
+    listNode.innerHTML = '';
+
+    if (!sortedPatients.length) {
+      listNode.innerHTML = `<div class="empty-tip">${t('quickPatientEmpty')}</div>`;
+      return;
+    }
+
+    sortedPatients.forEach((p) => {
+      const id = String(p?.id || '').trim();
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'quick-patient-item';
+      btn.classList.toggle('active', !!id && id === activeId);
+
+      const idNode = document.createElement('strong');
+      idNode.textContent = id || '--';
+      const nameNode = document.createElement('span');
+      nameNode.textContent = p?.name || '--';
+      const meta = document.createElement('small');
+      meta.textContent = [p?.gender, p?.phone].filter(Boolean).join(' · ') || '—';
+
+      btn.append(idNode, nameNode, meta);
+      btn.addEventListener('click', () => {
+        state.treatmentPatientId = id || null;
+        renderQuickPatientPicker();
+      });
+      listNode.appendChild(btn);
+    });
+  }
+
   const REPORT_TIPS = {
     zh: [
       '治疗后 24 小时内避免揉眼，减少长时间用眼。',
@@ -1156,7 +1261,9 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
         state.selectedPatientId = null;
         await ensurePatientsLoaded();
         state.patients = state.patients.filter((p) => String(p?.id || '').trim() !== id);
+        if (String(state.treatmentPatientId || '').trim() === id) state.treatmentPatientId = null;
         renderPatientList();
+        renderQuickPatientPicker();
         showAlert(t('patientDeleted'), 3500, 'success');
       } else {
         showAlert(t('patientDeleteFailed'), 3500, 'error');
@@ -1172,9 +1279,11 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       const res = api?.clearPatients ? await api.clearPatients() : null;
       if (res?.success) {
         state.selectedPatientId = null;
+        state.treatmentPatientId = null;
         state.patients = [];
         state.patientsLoaded = true;
         renderPatientList();
+        renderQuickPatientPicker();
         showAlert(t('patientsCleared'), 3500, 'success');
       } else {
         showAlert(t('patientsClearFailed'), 3500, 'error');
@@ -1395,6 +1504,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       state.patientsLoaded = true;
       resetPatientForm();
       renderPatientList();
+      renderQuickPatientPicker();
       return;
     }
     try {
@@ -1403,6 +1513,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       state.patientsLoaded = true;
       resetPatientForm();
       renderPatientList();
+      renderQuickPatientPicker();
     } catch (err) {
       console.warn('[PPHC] load patients failed', err);
       showAlert(t('patientLoadFailed'));
@@ -1444,6 +1555,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
         state.patients = [...state.patients, saved];
         state.patientsLoaded = true;
         renderPatientList();
+        renderQuickPatientPicker();
         resetPatientForm();
         setPatientFormMessage(t('patientSaved'));
         showView('patientList');
@@ -2325,8 +2437,10 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (state.currentView === 'report') renderReport();
     if (state.currentView === 'reportArchive') loadReportArchive();
     if (state.currentView === 'engineer') renderEngineer();
+    renderQuickPatientPicker();
     set('.summary-panel .panel-overline', 'summaryOverline');
     set('.summary-panel .panel-title', 'summaryTitle');
+    set('#quickPatientTitle', 'quickPatientTitle');
     set('.curve-panel .panel-overline', 'curveOverline');
     set('.curve-panel .panel-title', 'curveTitle');
 
@@ -2494,6 +2608,11 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
 
     set('#confirmCancel', 'confirmCancel');
     set('#confirmContinue', 'confirmContinue');
+
+    set('#exportAfterTreatmentTitle', 'exportAfterTreatmentTitle');
+    set('#exportAfterTreatmentText', 'exportAfterTreatmentText');
+    set('#btnExportAfterNo', 'exportAfterTreatmentNo');
+    set('#btnExportAfterYes', 'exportAfterTreatmentYes');
 
     updateRunState();
     setModeStage(state.modeStage);
@@ -3131,6 +3250,107 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     }, duration);
   }
 
+  function setupDragScroll(node) {
+    if (!node || node._dragScrollSetup) return;
+    node._dragScrollSetup = true;
+    let activePointer = null;
+    let startY = 0;
+    let startScrollTop = 0;
+    let dragging = false;
+    let hasCapture = false;
+    const DRAG_THRESHOLD_PX = 14;
+
+    node.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      activePointer = e.pointerId;
+      startY = e.clientY;
+      startScrollTop = node.scrollTop;
+      dragging = false;
+      hasCapture = false;
+      node._suppressClick = false;
+    });
+
+    node.addEventListener('pointermove', (e) => {
+      if (activePointer == null || e.pointerId !== activePointer) return;
+      const dy = e.clientY - startY;
+      if (!dragging && Math.abs(dy) > DRAG_THRESHOLD_PX) {
+        dragging = true;
+        node._suppressClick = true;
+        try {
+          node.setPointerCapture(activePointer);
+          hasCapture = true;
+        } catch {}
+        node.classList.add('dragging');
+      }
+      if (!dragging) return;
+      node.scrollTop = startScrollTop - dy;
+      node._suppressClick = true;
+      e.preventDefault();
+    });
+
+    const end = (e) => {
+      if (activePointer == null || e.pointerId !== activePointer) return;
+      if (hasCapture) {
+        try {
+          node.releasePointerCapture(activePointer);
+        } catch {}
+      }
+      activePointer = null;
+      hasCapture = false;
+      node.classList.remove('dragging');
+      setTimeout(() => {
+        node._suppressClick = false;
+      }, 0);
+    };
+
+    node.addEventListener('pointerup', end);
+    node.addEventListener('pointercancel', end);
+
+    node.addEventListener(
+      'click',
+      (e) => {
+        if (!node._suppressClick) return;
+        e.preventDefault();
+        e.stopPropagation();
+      },
+      true
+    );
+  }
+
+  function closeExportAfterTreatmentModal() {
+    const modal = document.getElementById('exportAfterTreatmentModal');
+    if (modal) modal.hidden = true;
+  }
+
+  function openExportAfterTreatmentModal() {
+    const modal = document.getElementById('exportAfterTreatmentModal');
+    if (!modal) return;
+    const title = document.getElementById('exportAfterTreatmentTitle');
+    if (title) title.textContent = t('exportAfterTreatmentTitle');
+    const text = document.getElementById('exportAfterTreatmentText');
+    if (text) {
+      const base = t('exportAfterTreatmentText');
+      const patient = getPatientById(state.treatmentPatientId) || state.activePatient;
+      if (patient && (patient.id || patient.name)) {
+        const line =
+          currentLang === 'en'
+            ? `Patient: ${[patient.id, patient.name].filter(Boolean).join(' · ')}`
+            : `患者：${[patient.id, patient.name].filter(Boolean).join(' · ')}`;
+        text.textContent = `${base} ${line}`;
+      } else {
+        text.textContent = base;
+      }
+    }
+    modal.hidden = false;
+  }
+
+  async function confirmExportAfterTreatment() {
+    closeExportAfterTreatmentModal();
+    state.activePatient = getPatientById(state.treatmentPatientId) || state.activePatient || null;
+    renderReport();
+    await handleExportReportPdf();
+  }
+
   function updateCountdown() {
     const node = document.getElementById('countdown');
     if (!node || !state.running) return;
@@ -3150,7 +3370,9 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
         state.countdownTimer = null;
       }
       updateRunState();
-      showAlert(t('countdownDone'));
+      setModeStage('--');
+      playSound('stop');
+      openExportAfterTreatmentModal();
     }
   }
 
@@ -3577,6 +3799,8 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
         if (confirm && !confirm.hidden) confirm.hidden = true;
         const lost = document.getElementById('shieldLostModal');
         if (lost && !lost.hidden) lost.hidden = true;
+        const exportModal = document.getElementById('exportAfterTreatmentModal');
+        if (exportModal && !exportModal.hidden) exportModal.hidden = true;
         state.pendingSides = null;
       }
     });
@@ -3599,6 +3823,16 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     });
     document.getElementById('shieldLostBack')?.addEventListener('click', () => {
       clearShieldLostModal();
+    });
+
+    document.getElementById('btnExportAfterNo')?.addEventListener('click', () => {
+      closeExportAfterTreatmentModal();
+    });
+    document.getElementById('btnExportAfterYes')?.addEventListener('click', () => {
+      confirmExportAfterTreatment();
+    });
+    document.getElementById('exportAfterTreatmentModal')?.addEventListener('click', (e) => {
+      if (e.target?.id === 'exportAfterTreatmentModal') closeExportAfterTreatmentModal();
     });
 
     document.getElementById('btnBackSettings')?.addEventListener('click', () =>

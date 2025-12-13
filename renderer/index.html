@@ -207,48 +207,60 @@
 
           <div class="quick-grid">
             <div class="telemetry-area">
-              <div class="surface summary-panel">
-                <div class="panel-headline">
-                  <div>
-                    <div class="panel-overline">实时读数</div>
-                    <div class="panel-title">压力 / 温度</div>
-                  </div>
-                  <div class="live-chip">实时刷新</div>
-                  <div class="live-chip stage-chip stage-idle" id="modeStageChip">
-                    <span class="stage-eyebrow">当前阶段</span>
-                    <div class="stage-main">
-                      <span class="stage-orb"></span>
-                      <span class="stage-label">待机</span>
+              <div class="quick-top-row">
+                <div class="surface quick-patient-panel" id="quickPatientPicker">
+                  <div class="panel-headline">
+                    <div>
+                      <div class="panel-overline" id="quickPatientTitle">患者选择</div>
+                      <div class="panel-title" id="quickPatientSelected">--</div>
                     </div>
                   </div>
+                  <div class="quick-patient-list" id="quickPatientList"></div>
                 </div>
-                <div class="circle-readings">
-                  <div class="reading-circle" data-side="left">
-                    <div class="ring"></div>
-                    <div class="circle-core">
-                    <div class="circle-label">左眼</div>
-                    <div class="circle-value">
-                        <span id="pressureLeft">0.0</span>
-                        <small>mmHg</small>
+
+                <div class="surface summary-panel">
+                  <div class="panel-headline">
+                    <div>
+                      <div class="panel-overline">实时读数</div>
+                      <div class="panel-title">压力 / 温度</div>
                     </div>
-                    <div class="circle-temp">
-                      <span>温度</span>
-                      <strong id="tempLeft">--.-℃</strong>
-                    </div>
+                    <div class="live-chip">实时刷新</div>
+                    <div class="live-chip stage-chip stage-idle" id="modeStageChip">
+                      <span class="stage-eyebrow">当前阶段</span>
+                      <div class="stage-main">
+                        <span class="stage-orb"></span>
+                        <span class="stage-label">待机</span>
+                      </div>
                     </div>
                   </div>
-                  <div class="reading-circle" data-side="right">
-                    <div class="ring"></div>
-                    <div class="circle-core">
-                    <div class="circle-label">右眼</div>
-                    <div class="circle-value">
-                        <span id="pressureRight">0.0</span>
-                        <small>mmHg</small>
+                  <div class="circle-readings">
+                    <div class="reading-circle" data-side="left">
+                      <div class="ring"></div>
+                      <div class="circle-core">
+                      <div class="circle-label">左眼</div>
+                      <div class="circle-value">
+                          <span id="pressureLeft">0.0</span>
+                          <small>mmHg</small>
+                      </div>
+                      <div class="circle-temp">
+                        <span>温度</span>
+                        <strong id="tempLeft">--.-℃</strong>
+                      </div>
+                      </div>
                     </div>
-                    <div class="circle-temp">
-                      <span>温度</span>
-                      <strong id="tempRight">--.-℃</strong>
-                    </div>
+                    <div class="reading-circle" data-side="right">
+                      <div class="ring"></div>
+                      <div class="circle-core">
+                      <div class="circle-label">右眼</div>
+                      <div class="circle-value">
+                          <span id="pressureRight">0.0</span>
+                          <small>mmHg</small>
+                      </div>
+                      <div class="circle-temp">
+                        <span>温度</span>
+                        <strong id="tempRight">--.-℃</strong>
+                      </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -885,6 +897,17 @@
         <div class="modal-actions">
           <button id="confirmCancel" class="action subtle">取消</button>
           <button id="confirmContinue" class="action start">继续</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="exportAfterTreatmentModal" class="modal" hidden>
+      <div class="modal-body export-after-modal">
+        <div class="modal-title" id="exportAfterTreatmentTitle">治疗完成</div>
+        <p id="exportAfterTreatmentText">是否需要导出报告？</p>
+        <div class="modal-actions">
+          <button id="btnExportAfterNo" class="action subtle">暂不导出</button>
+          <button id="btnExportAfterYes" class="action start">导出报告</button>
         </div>
       </div>
     </div>
