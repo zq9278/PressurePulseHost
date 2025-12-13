@@ -52,6 +52,17 @@
             getPrinter: async () => ({ printerName: '' }),
             setPrinter: async (name) => ({ printerName: name }),
             printReport: async () => ({ success: true, failureReason: null }),
+            exportReportPdf: async () => ({ success: true, filePath: 'reports/demo.pdf' }),
+            listReports: async () => ([{ name: 'demo_P0001.pdf', url: 'about:blank', mtimeMs: Date.now(), size: 0, patientId: 'P0001' }]),
+            printReportPdf: async () => ({ success: true, failureReason: null }),
+            removePatient: async () => ({ success: true }),
+            clearPatients: async () => ({ success: true }),
+            removeReport: async () => ({ success: true }),
+            clearReports: async () => ({ success: true }),
+            login: async (username, password) => ({ ok: username === 'admin' && password === 'admin', role: 'admin', username }),
+            listAccounts: async () => ([{ username: 'admin', role: 'admin' }]),
+            addAccount: async (account) => ([{ username: 'admin', role: 'admin' }, { username: account.username, role: 'user' }]),
+            removeAccount: async () => ([{ username: 'admin', role: 'admin' }]),
             logToMain: noop,
             onSerialData: () => {},
             onConnectionChanged: () => {},
@@ -517,7 +528,11 @@
           <header class="top-bar">
             <button id="btnBackPatientList" class="icon-back" aria-label="返回主页"><span>←</span></button>
             <div class="section-title">病例列表</div>
-            <div class="top-placeholder"></div>
+            <div class="top-actions">
+              <button id="btnOpenReportArchive" class="ghost-btn" type="button">报告</button>
+              <button id="btnDeletePatient" class="ghost-btn" type="button">删除</button>
+              <button id="btnClearPatients" class="ghost-btn" type="button">清空</button>
+            </div>
           </header>
 
           <div id="patientListEmpty" class="empty-tip" hidden>暂无病例，请先创建。</div>
@@ -566,7 +581,96 @@
             </div>
 
             <div id="reportActions" class="report-actions">
+              <button id="btnExportPdf" class="action subtle">导出PDF</button>
               <button id="btnPrintReport" class="action start">打印报告</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="reportArchiveScreen" class="screen report-archive-screen">
+        <div class="form-shell report-archive-shell">
+          <header class="top-bar">
+            <button id="btnBackReportArchive" class="icon-back" aria-label="返回病例列表"><span>←</span></button>
+            <div class="section-title" id="reportArchiveTitle">报告列表</div>
+            <div class="top-placeholder"></div>
+          </header>
+
+          <div class="report-archive-layout">
+            <div class="report-archive-list" id="reportArchiveList"></div>
+            <iframe class="report-archive-viewer" id="reportArchiveViewer" title="Report PDF"></iframe>
+          </div>
+
+          <div class="settings-actions logs-actions">
+            <button id="btnRefreshReportArchive" class="ghost-btn" type="button">刷新</button>
+            <button id="btnPrintArchiveReport" class="ghost-btn" type="button">打印</button>
+            <button id="btnDeleteReport" class="ghost-btn" type="button">删除</button>
+            <button id="btnClearReports" class="ghost-btn" type="button">清空</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="engineerScreen" class="screen engineer-screen">
+        <div class="form-shell engineer-shell">
+          <header class="top-bar">
+            <button id="btnBackEngineer" class="icon-back" aria-label="返回主页"><span>←</span></button>
+            <div class="section-title" id="engineerTitle">工程模式</div>
+            <div class="top-placeholder"></div>
+          </header>
+
+          <div class="engineer-grid">
+            <div class="settings-card headered">
+              <h3 id="engineerParamsTitle">治疗参数</h3>
+              <div class="setting-row">
+                <div class="meta">
+                  <strong id="engineerPressureLabel">压力</strong>
+                </div>
+                <div class="pill"><span id="engineerCurrentLabel1">当前</span><strong id="engineerPressureValue">250 mmHg</strong></div>
+              </div>
+              <input type="range" class="mac-slider" id="engineerPressure" min="0" max="400" step="1" value="250" />
+
+              <div class="setting-row">
+                <div class="meta">
+                  <strong id="engineerDurationLabel">时间</strong>
+                </div>
+                <div class="pill"><span id="engineerCurrentLabel2">当前</span><strong id="engineerDurationValue">10 min</strong></div>
+              </div>
+              <input type="range" class="mac-slider" id="engineerDuration" min="1" max="30" step="1" value="10" />
+
+              <div class="setting-row">
+                <div class="meta">
+                  <strong id="engineerTempLabel">温度</strong>
+                </div>
+                <div class="pill"><span id="engineerCurrentLabel3">当前</span><strong id="engineerTempValue">42 ℃</strong></div>
+              </div>
+              <input type="range" class="mac-slider" id="engineerTemp" min="35" max="45" step="0.1" value="42" />
+
+              <div class="settings-actions">
+                <button id="btnEngineerApplyToDevice" class="ghost-btn" type="button">下发到设备</button>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <h3 id="engineerTestTitle">设备测试</h3>
+              <div class="setting-row">
+                <div class="meta">
+                  <strong id="engineerBrightnessLabel">屏幕亮度</strong>
+                </div>
+                <div class="pill"><span id="engineerCurrentLabel4">当前</span><strong id="engineerBrightnessValue">80%</strong></div>
+              </div>
+              <input type="range" class="mac-slider" id="engineerBrightness" min="0" max="100" step="1" value="80" />
+
+              <div class="setting-row">
+                <div class="meta">
+                  <strong id="engineerVolumeLabel">系统音量</strong>
+                </div>
+                <div class="pill"><span id="engineerCurrentLabel5">当前</span><strong id="engineerVolumeValue">60%</strong></div>
+              </div>
+              <input type="range" class="mac-slider" id="engineerVolume" min="0" max="100" step="1" value="60" />
+
+              <div class="settings-actions">
+                <button id="btnEngineerTestSound" class="ghost-btn" type="button">测试提示音</button>
+              </div>
             </div>
           </div>
         </div>
@@ -587,6 +691,7 @@
                 <button type="button" data-module="display" class="active">显示 <span class="hint">亮度 / 屏保</span></button>
                 <button type="button" data-module="sound">声音 <span class="hint">音量 / 提示</span></button>
                 <button type="button" data-module="printer">打印机 <span class="hint">选择 / 设置</span></button>
+                <button type="button" data-module="accounts">账户 <span class="hint">添加 / 管理</span></button>
                 <button type="button" data-module="language">语言 <span class="hint">中文 / English</span></button>
                 <button type="button" data-module="about">关于 <span class="hint">版本 / 更新</span></button>
                 <button type="button" data-module="logs">日志 <span class="hint">查看 / 导出</span></button>
@@ -656,6 +761,40 @@
                     <select id="printerSelect"></select>
                     <div class="settings-actions">
                       <button id="btnRefreshPrinters" class="ghost-btn">刷新列表</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="settingsModuleAccounts" class="settings-module" data-module="accounts">
+                  <div class="settings-card">
+                    <h3 id="accountsTitle">账户</h3>
+                    <div class="logs-layout accounts-layout">
+                      <div class="logs-list" id="accountsList"></div>
+                      <div class="accounts-form">
+                        <div class="setting-row">
+                          <div class="meta">
+                            <strong id="accountsAddTitle">添加账户</strong>
+                            <span id="accountsAddHint">新账户可用于登录系统</span>
+                          </div>
+                        </div>
+                        <div class="form-row">
+                          <label id="accountsUsernameLabel" for="accountUsername">账号</label>
+                          <input id="accountUsername" class="osk-input" autocomplete="off" placeholder="username" />
+                        </div>
+                        <div class="form-row">
+                          <label id="accountsPasswordLabel" for="accountPassword">密码</label>
+                          <input id="accountPassword" type="password" class="osk-input" autocomplete="off" placeholder="password" />
+                        </div>
+                        <div class="form-row">
+                          <label id="accountsPassword2Label" for="accountPassword2">确认密码</label>
+                          <input id="accountPassword2" type="password" class="osk-input" autocomplete="off" placeholder="password" />
+                        </div>
+                        <div class="settings-actions">
+                          <button id="btnAddAccount" class="ghost-btn" type="button">添加</button>
+                          <button id="btnLogout" class="ghost-btn" type="button">退出登录</button>
+                        </div>
+                        <div id="accountsMessage" class="form-msg" hidden></div>
+                      </div>
                     </div>
                   </div>
                 </div>

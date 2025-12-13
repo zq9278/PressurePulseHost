@@ -1,72 +1,22 @@
 [
   {
     "id": "P0001",
-    "name": "adsf",
+    "name": "藏起",
     "gender": "男",
-    "phone": "asdf",
-    "birth": "",
-    "notes": "afsd",
-    "createdAt": "2025-12-12T07:16:43.728Z",
-    "updatedAt": "2025-12-12T07:16:43.728Z"
+    "phone": "111",
+    "birth": "2025-12-07",
+    "notes": "111",
+    "createdAt": "2025-12-13T12:25:33.930Z",
+    "updatedAt": "2025-12-13T12:25:33.930Z"
   },
   {
     "id": "P0002",
-    "name": "szd",
+    "name": "waed",
     "gender": "男",
-    "phone": "asdf",
-    "birth": "",
-    "notes": "asdf",
-    "createdAt": "2025-12-12T07:30:44.266Z",
-    "updatedAt": "2025-12-12T07:30:44.266Z"
-  },
-  {
-    "id": "P0003",
-    "name": "asdfasdf",
-    "gender": "男",
-    "phone": "asdfasdf",
-    "birth": "",
-    "notes": "asdf",
-    "createdAt": "2025-12-12T07:30:52.014Z",
-    "updatedAt": "2025-12-12T07:30:52.014Z"
-  },
-  {
-    "id": "P0004",
-    "name": "张琦",
-    "gender": "男",
-    "phone": "161234568",
-    "birth": "2026-01-02",
-    "notes": "ghjr",
-    "createdAt": "2025-12-12T07:53:36.145Z",
-    "updatedAt": "2025-12-12T07:53:36.145Z"
-  },
-  {
-    "id": "P0005",
-    "name": "yyyyytt55",
-    "gender": "男",
-    "phone": "55",
-    "birth": "2025-12-12",
-    "notes": "",
-    "createdAt": "2025-12-12T08:37:51.034Z",
-    "updatedAt": "2025-12-12T08:37:51.034Z"
-  },
-  {
-    "id": "P0006",
-    "name": "4455",
-    "gender": "男",
-    "phone": "22",
-    "birth": "2025-12-09",
-    "notes": "3445",
-    "createdAt": "2025-12-12T08:38:23.570Z",
-    "updatedAt": "2025-12-12T08:38:23.570Z"
-  },
-  {
-    "id": "P0007",
-    "name": "222",
-    "gender": "男",
-    "phone": "",
-    "birth": "",
-    "notes": "222",
-    "createdAt": "2025-12-12T09:40:46.111Z",
-    "updatedAt": "2025-12-12T09:40:46.111Z"
+    "phone": "12e",
+    "birth": "2025-12-07",
+    "notes": "e21",
+    "createdAt": "2025-12-13T12:25:44.813Z",
+    "updatedAt": "2025-12-13T12:25:44.813Z"
   }
 ]

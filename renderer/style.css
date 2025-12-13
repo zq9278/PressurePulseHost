@@ -42,25 +42,83 @@ body {
 .app-shell[data-view="settings"] #settingsScreen,
 .app-shell[data-view="newPatient"] #newPatientScreen,
 .app-shell[data-view="report"] #reportScreen,
+.app-shell[data-view="reportArchive"] #reportArchiveScreen,
+.app-shell[data-view="engineer"] #engineerScreen,
 .app-shell[data-view="patientList"] #patientListScreen,
 body.view-home #homeScreen,
 body.view-quick #quickScreen,
 body.view-settings #settingsScreen,
 body.view-newPatient #newPatientScreen,
 body.view-report #reportScreen,
+body.view-reportArchive #reportArchiveScreen,
+body.view-engineer #engineerScreen,
 body.view-patientList #patientListScreen { display: block; }
 .app-shell[data-view="quick"] #homeScreen,
 .app-shell[data-view="settings"] #homeScreen,
+.app-shell[data-view="report"] #homeScreen,
+.app-shell[data-view="reportArchive"] #homeScreen,
+.app-shell[data-view="engineer"] #homeScreen,
 .app-shell[data-view="home"] #quickScreen,
 .app-shell[data-view="settings"] #quickScreen,
+.app-shell[data-view="report"] #quickScreen,
+.app-shell[data-view="reportArchive"] #quickScreen,
+.app-shell[data-view="engineer"] #quickScreen,
 .app-shell[data-view="home"] #settingsScreen,
 .app-shell[data-view="quick"] #settingsScreen,
+.app-shell[data-view="report"] #settingsScreen,
+.app-shell[data-view="reportArchive"] #settingsScreen,
+.app-shell[data-view="engineer"] #settingsScreen,
+.app-shell[data-view="home"] #reportScreen,
+.app-shell[data-view="quick"] #reportScreen,
+.app-shell[data-view="settings"] #reportScreen,
+.app-shell[data-view="newPatient"] #reportScreen,
+.app-shell[data-view="patientList"] #reportScreen,
+.app-shell[data-view="report"] #newPatientScreen,
+.app-shell[data-view="report"] #patientListScreen,
+ .app-shell[data-view="home"] #reportArchiveScreen,
+ .app-shell[data-view="quick"] #reportArchiveScreen,
+ .app-shell[data-view="settings"] #reportArchiveScreen,
+ .app-shell[data-view="newPatient"] #reportArchiveScreen,
+ .app-shell[data-view="patientList"] #reportArchiveScreen,
+ .app-shell[data-view="report"] #reportArchiveScreen,
+ .app-shell[data-view="reportArchive"] #newPatientScreen,
+ .app-shell[data-view="reportArchive"] #patientListScreen,
+ .app-shell[data-view="reportArchive"] #reportScreen,
+ .app-shell[data-view="home"] #engineerScreen,
+ .app-shell[data-view="quick"] #engineerScreen,
+ .app-shell[data-view="settings"] #engineerScreen,
+ .app-shell[data-view="newPatient"] #engineerScreen,
+ .app-shell[data-view="patientList"] #engineerScreen,
+ .app-shell[data-view="report"] #engineerScreen,
+ .app-shell[data-view="reportArchive"] #engineerScreen,
+ .app-shell[data-view="engineer"] #newPatientScreen,
+ .app-shell[data-view="engineer"] #patientListScreen,
+ .app-shell[data-view="engineer"] #reportScreen,
+ .app-shell[data-view="engineer"] #reportArchiveScreen,
 body.view-quick #homeScreen,
 body.view-settings #homeScreen,
 body.view-home #quickScreen,
 body.view-settings #quickScreen,
 body.view-home #settingsScreen,
 body.view-quick #settingsScreen,
+body.view-report #homeScreen,
+body.view-report #quickScreen,
+body.view-report #settingsScreen,
+body.view-report #newPatientScreen,
+body.view-report #patientListScreen,
+body.view-reportArchive #homeScreen,
+body.view-reportArchive #quickScreen,
+body.view-reportArchive #settingsScreen,
+body.view-reportArchive #newPatientScreen,
+body.view-reportArchive #patientListScreen,
+body.view-reportArchive #reportScreen,
+body.view-engineer #homeScreen,
+body.view-engineer #quickScreen,
+body.view-engineer #settingsScreen,
+body.view-engineer #newPatientScreen,
+body.view-engineer #patientListScreen,
+body.view-engineer #reportScreen,
+body.view-engineer #reportArchiveScreen,
 body.view-newPatient #homeScreen,
 body.view-newPatient #quickScreen,
 body.view-newPatient #settingsScreen,
@@ -191,7 +249,9 @@ body.view-patientList #newPatientScreen { display: none; }
 .settings-screen { background: inherit; display: flex; align-items: stretch; justify-content: center; }
 .new-patient-screen,
 .patient-list-screen,
-.report-screen {
+.report-screen,
+.report-archive-screen,
+.engineer-screen {
   background:
     radial-gradient(140% 120% at 24% 28%, rgba(91, 227, 255, 0.12), rgba(13, 58, 122, 0)),
     radial-gradient(120% 120% at 74% 32%, rgba(128, 162, 255, 0.18), rgba(13, 58, 122, 0)),
@@ -202,6 +262,7 @@ body.view-patientList #newPatientScreen { display: none; }
 .app-shell[data-view="newPatient"] #newPatientScreen,
 .app-shell[data-view="patientList"] #patientListScreen,
 .app-shell[data-view="report"] #reportScreen,
+ .app-shell[data-view="reportArchive"] #reportArchiveScreen,
 body.view-newPatient #newPatientScreen,
 body.view-patientList #patientListScreen {
   display: flex;
@@ -210,6 +271,18 @@ body.view-patientList #patientListScreen {
 }
 .app-shell[data-view="report"] #reportScreen,
 body.view-report #reportScreen {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.app-shell[data-view="reportArchive"] #reportArchiveScreen,
+body.view-reportArchive #reportArchiveScreen {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.app-shell[data-view="engineer"] #engineerScreen,
+body.view-engineer #engineerScreen {
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -233,6 +306,54 @@ body.view-report #reportScreen {
 .log-item.active { border-color: rgba(93,246,255,0.7); background: rgba(93,246,255,0.12); }
 .logs-viewer { background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; font-size: 14px; line-height: 1.5; color: #fff; max-height: 520px; overflow: auto; white-space: pre-wrap; }
 .logs-actions { justify-content: flex-end; margin-top: 12px; }
+
+.accounts-layout { grid-template-columns: 360px 1fr; }
+.accounts-form {
+  background: rgba(0,0,0,0.28);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 420px;
+}
+.accounts-form .form-row {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.accounts-form input {
+  font-size: 20px;
+}
+.account-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+}
+.account-item .meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.account-item .meta strong { font-size: 18px; }
+.account-item .meta small { font-size: 12px; color: var(--muted); }
+.account-remove {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(245,80,95,0.5);
+  background: rgba(245,80,95,0.14);
+  color: #ffd2d6;
+  cursor: pointer;
+  font-size: 16px;
+  white-space: nowrap;
+}
+.account-remove:active { transform: translateY(1px); }
 .settings-stack { display: flex; flex-direction: column; gap: 16px; }
 .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
 .settings-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05); }
@@ -416,6 +537,7 @@ body.view-report #reportScreen {
 .window-controls { position: absolute; top: 32px; right: 40px; z-index: 20; display: none; }
 .window-controls .ghost { padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.25); font-size: 16px; }
 .top-bar { display: grid; grid-template-columns: auto 1fr auto; align-items: center; padding-bottom: 6px; border-bottom: none; }
+.top-actions { display: flex; gap: 12px; justify-self: end; }
 .icon-back {
   width: 120px;
   height: 64px;
@@ -1013,12 +1135,23 @@ canvas { width: 100%; height: auto; display: block; }
   position: fixed;
   bottom: 20px;
   right: 24px;
-  background: rgba(245,80,95,0.15);
+  background: rgba(0,0,0,0.55);
   color: var(--fg);
   border-radius: 18px;
   padding: 12px 18px;
-  border: 1px solid rgba(245,80,95,0.4);
+  border: 1px solid rgba(255,255,255,0.18);
   box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  z-index: 99999;
+  max-width: min(820px, calc(100vw - 48px));
+  font-size: 22px;
+}
+.alert.success {
+  background: rgba(46, 204, 113, 0.18);
+  border-color: rgba(46, 204, 113, 0.55);
+}
+.alert.error {
+  background: rgba(245,80,95,0.2);
+  border-color: rgba(245,80,95,0.55);
 }
 
 input[type=range] {
@@ -1502,6 +1635,52 @@ body.keyboard-open .new-patient-screen {
 .patient-row:hover:not(.header) {
   background: rgba(255,255,255,0.06);
 }
+.patient-row:not(.header) { cursor: default; user-select: none; }
+.patient-row.selected:not(.header) {
+  background: rgba(93,246,255,0.14);
+  box-shadow: inset 0 0 0 1px rgba(93,246,255,0.45);
+}
+
+.report-archive-shell { gap: 18px; }
+.report-archive-screen { overflow: hidden; }
+.report-archive-shell { height: calc(100vh - 120px); }
+.report-archive-layout {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 18px;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  align-items: stretch;
+}
+.report-archive-list {
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(10,24,48,0.72);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+  padding: 12px;
+  overflow: auto;
+  height: 100%;
+}
+.report-archive-viewer {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(10,24,48,0.72);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+  height: 100%;
+  min-height: 0;
+}
+.engineer-shell { gap: 18px; }
+.engineer-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 18px;
+  flex: 1;
+  min-height: 0;
+}
+.engineer-grid .settings-card h3 { font-size: 26px; }
+.engineer-grid .pill strong { font-size: 22px; }
 .patient-cell {
   padding: 4px 6px;
   white-space: nowrap;
@@ -1548,7 +1727,7 @@ body.keyboard-open .new-patient-screen {
   text-align: center;
   padding-bottom: 8mm;
   margin-bottom: 6mm;
-  border-bottom: 1px solid #e7e7e7;
+  border-bottom: none;
 }
 .report-title {
   font-size: 28pt;
@@ -1600,33 +1779,78 @@ body.keyboard-open .new-patient-screen {
   width: 210mm;
   display: flex;
   justify-content: center;
+  gap: 18px;
 }
 .report-actions .action {
+  font-size: 32px;
+  padding: 22px 46px;
+  min-height: 86px;
+  border-radius: 999px;
+}
+.patient-list-screen .top-bar .ghost-btn {
+  font-size: 22px;
+  padding: 12px 18px;
+  border-radius: 16px;
+}
+.report-archive-screen .settings-actions .ghost-btn {
   font-size: 24px;
-  padding: 18px 36px;
-  min-height: 72px;
+  padding: 14px 22px;
+  border-radius: 16px;
+}
+.report-archive-list .log-item {
+  font-size: 18px;
+  padding: 14px 14px;
+}
+.report-archive-list .log-item small {
+  font-size: 14px;
 }
 
 @page {
   size: A4;
-  margin: 12mm;
+  margin: 0;
 }
 @media print {
-  body { background: #fff !important; }
+  html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+  html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .app-shell { position: static !important; background: #fff !important; }
+
+  /* Hide app chrome and other screens */
+  #homeScreen,
+  #quickScreen,
+  #settingsScreen,
+  #newPatientScreen,
+  #patientListScreen,
   .top-bar,
   .window-controls,
   .osk,
   .ime-candidates,
-  #reportActions {
+  #reportActions,
+  #alertBanner,
+  .modal {
     display: none !important;
   }
-  .report-page {
-    width: auto;
-    min-height: auto;
-    padding: 0;
-    margin: 0;
-    border-radius: 0;
-    box-shadow: none;
+
+  /* Print only the A4 report page */
+  #reportScreen {
+    display: block !important;
+    position: static !important;
+    background: #fff !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  #reportScreen::-webkit-scrollbar { width: 0 !important; height: 0 !important; }
+  .report-shell { padding: 0 !important; min-height: auto !important; }
+  .report-container { gap: 0 !important; }
+  #reportPage {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    padding: 16mm 14mm !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    border: none !important;
+    outline: none !important;
   }
 }
 .patient-card {

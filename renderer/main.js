@@ -115,6 +115,8 @@
       navSoundHint: '音量 / 提示',
       navPrinter: '打印机',
       navPrinterHint: '选择 / 设置',
+      navAccounts: '账户',
+      navAccountsHint: '添加 / 管理',
       navLanguage: '语言',
       navLanguageHint: '中文 / English',
       navAbout: '关于',
@@ -131,6 +133,21 @@
       printerSaveFailed: '保存失败，请重试',
       printerNotSet: '未设置打印机',
       default: '默认',
+      loginFailed: '账号或密码错误，请重试。',
+      accountsTitle: '账户',
+      accountsAddTitle: '添加账户',
+      accountsAddHint: '新账户可用于登录系统',
+      accountsUsernameLabel: '账号',
+      accountsPasswordLabel: '密码',
+      accountsPassword2Label: '确认密码',
+      accountsAddBtn: '添加',
+      accountsRemoveBtn: '删除',
+      accountsLogoutBtn: '退出登录',
+      accountsEmpty: '暂无账户',
+      accountsAddSuccess: '添加成功',
+      accountsAddFailed: '添加失败',
+      accountsPasswordMismatch: '两次密码不一致',
+      accountsRemoveFailed: '删除失败',
       reportScreenTitle: '打印报告',
       reportSuffix: '报告',
       reportPatientInfoTitle: '患者信息',
@@ -147,10 +164,43 @@
       reportSidesLabel: '治疗眼别',
       reportStartTimeLabel: '治疗开始时间',
       printReport: '打印报告',
+      exportPdf: '导出PDF',
+      exportingPdf: '正在导出PDF...',
+      exportPdfSuccess: 'PDF已导出',
+      exportPdfFailed: 'PDF导出失败',
+      reportArchiveTitle: '报告列表',
+      reportArchiveOpen: '报告',
+      reportArchiveRefresh: '刷新',
+      reportArchiveEmpty: '暂无报告，请先导出。',
+      reportArchivePrint: '打印',
+      deleteOne: '删除',
+      clearAll: '清空',
+      patientDeleteNeedSelect: '请先选择要删除的病例',
+      patientDeleted: '已删除',
+      patientDeleteFailed: '删除失败',
+      patientsCleared: '已清空病例',
+      patientsClearFailed: '清空失败',
+      reportDeleteNeedSelect: '请先选择要删除的报告',
+      reportDeleted: '已删除报告',
+      reportDeleteFailed: '删除报告失败',
+      reportsCleared: '已清空报告',
+      reportsClearFailed: '清空报告失败',
       printingReport: '正在打印...',
       printSuccess: '打印成功',
       printFailed: '打印失败',
       printNoPrinter: '请先在设置中选择打印机',
+      engineerTitle: '工程模式',
+      engineerParamsTitle: '治疗参数',
+      engineerTestTitle: '设备测试',
+      engineerPressureLabel: '压力',
+      engineerDurationLabel: '时间',
+      engineerTempLabel: '温度',
+      engineerBrightnessLabel: '屏幕亮度',
+      engineerVolumeLabel: '系统音量',
+      engineerApplyToDevice: '下发到设备',
+      engineerTestSound: '测试提示音',
+      engineerNeedConnect: '请先连接设备',
+      engineerApplied: '参数已下发',
       displayCardTitle: '显示',
       displayCardDesc: '模仿 macOS 样式的柔和背光与模糊效果。',
       brightnessLabel: '屏幕亮度',
@@ -285,6 +335,8 @@
       navSoundHint: 'Volume / Chime',
       navPrinter: 'Printer',
       navPrinterHint: 'Select / Setup',
+      navAccounts: 'Accounts',
+      navAccountsHint: 'Add / Manage',
       navLanguage: 'Language',
       navLanguageHint: 'Chinese / English',
       navAbout: 'About',
@@ -301,6 +353,21 @@
       printerSaveFailed: 'Save failed. Please retry.',
       printerNotSet: 'Printer not set',
       default: 'Default',
+      loginFailed: 'Invalid username or password.',
+      accountsTitle: 'Accounts',
+      accountsAddTitle: 'Add Account',
+      accountsAddHint: 'New accounts can log into the system',
+      accountsUsernameLabel: 'Username',
+      accountsPasswordLabel: 'Password',
+      accountsPassword2Label: 'Confirm Password',
+      accountsAddBtn: 'Add',
+      accountsRemoveBtn: 'Remove',
+      accountsLogoutBtn: 'Log out',
+      accountsEmpty: 'No accounts',
+      accountsAddSuccess: 'Added',
+      accountsAddFailed: 'Add failed',
+      accountsPasswordMismatch: 'Passwords do not match',
+      accountsRemoveFailed: 'Remove failed',
       reportScreenTitle: 'Print Report',
       reportSuffix: 'Report',
       reportPatientInfoTitle: 'Patient Information',
@@ -317,10 +384,43 @@
       reportSidesLabel: 'Eyes',
       reportStartTimeLabel: 'Treatment Started At',
       printReport: 'Print Report',
+      exportPdf: 'Export PDF',
+      exportingPdf: 'Exporting PDF...',
+      exportPdfSuccess: 'PDF exported',
+      exportPdfFailed: 'PDF export failed',
+      reportArchiveTitle: 'Report Files',
+      reportArchiveOpen: 'Reports',
+      reportArchiveRefresh: 'Refresh',
+      reportArchiveEmpty: 'No reports yet. Export one first.',
+      reportArchivePrint: 'Print',
+      deleteOne: 'Delete',
+      clearAll: 'Clear',
+      patientDeleteNeedSelect: 'Select a patient to delete',
+      patientDeleted: 'Deleted',
+      patientDeleteFailed: 'Delete failed',
+      patientsCleared: 'Cleared all patients',
+      patientsClearFailed: 'Clear failed',
+      reportDeleteNeedSelect: 'Select a report to delete',
+      reportDeleted: 'Deleted report',
+      reportDeleteFailed: 'Delete report failed',
+      reportsCleared: 'Cleared all reports',
+      reportsClearFailed: 'Clear reports failed',
       printingReport: 'Printing...',
       printSuccess: 'Printed successfully',
       printFailed: 'Print failed',
       printNoPrinter: 'Select a printer in Settings first',
+      engineerTitle: 'Engineer Mode',
+      engineerParamsTitle: 'Treatment Params',
+      engineerTestTitle: 'Diagnostics',
+      engineerPressureLabel: 'Pressure',
+      engineerDurationLabel: 'Duration',
+      engineerTempLabel: 'Temperature',
+      engineerBrightnessLabel: 'Brightness',
+      engineerVolumeLabel: 'Volume',
+      engineerApplyToDevice: 'Send to Device',
+      engineerTestSound: 'Test Sound',
+      engineerNeedConnect: 'Connect device first',
+      engineerApplied: 'Parameters sent',
       displayCardTitle: 'Display',
       displayCardDesc: 'macOS-inspired soft lighting and glassy blur.',
       brightnessLabel: 'Brightness',
@@ -377,7 +477,7 @@
 let currentLang = 'zh';
 const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
 
-const VIEWS = ['home', 'quick', 'settings', 'newPatient', 'patientList', 'report'];
+const VIEWS = ['home', 'quick', 'settings', 'newPatient', 'patientList', 'report', 'reportArchive', 'engineer'];
 const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
 
   const MODE = { target: 20, t1: 25, t2: 35, t3: 50 };
@@ -447,6 +547,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
 
   const state = {
     loggedIn: false,
+    user: { username: '', role: 'user' },
     connected: false,
     connecting: false,
     autoConnectTimer: null,
@@ -468,6 +569,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     patientsLoaded: false,
     activePatient: null,
     lastTreatment: null,
+    selectedPatientId: null,
     systemState: null,
     alarmState: null,
     shields: { left: false, right: false },
@@ -492,6 +594,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     targets: {
       pressure: null,
       temp: TEMP_FIXED_C,
+      durationMin: null,
     },
   };
 
@@ -543,6 +646,10 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       renderPatientList();
     } else if (next === 'report') {
       renderReport();
+    } else if (next === 'reportArchive') {
+      loadReportArchive();
+    } else if (next === 'engineer') {
+      renderEngineer();
     }
     console.info('[PPHC] view ->', next);
   }
@@ -771,6 +878,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     patients.forEach((p) => {
       const row = document.createElement('div');
       row.className = 'patient-row';
+      row.classList.toggle('selected', String(p.id || '') === String(state.selectedPatientId || ''));
       const created = p.createdAt ? (p.createdAt.split?.('T')?.[0] || p.createdAt) : '--';
       const values = {
         id: p.id || '--',
@@ -787,7 +895,10 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
         cell.textContent = values[col];
         row.appendChild(cell);
       });
-      row.addEventListener('click', () => openReportForPatient(p));
+      row.addEventListener('click', () => {
+        state.selectedPatientId = String(p.id || '');
+        renderPatientList();
+      });
       table.appendChild(row);
     });
 
@@ -881,9 +992,14 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
         Number(document.getElementById('pressMmHg')?.value ?? 0);
       const durationMin =
         state.lastTreatment?.durationMin ??
-        Number(document.getElementById('treatDuration')?.value ?? 0);
+        (state.user?.role === 'engineer' && Number.isFinite(Number(state.targets.durationMin))
+          ? Number(state.targets.durationMin)
+          : Number(document.getElementById('treatDuration')?.value ?? 0));
       const modeVal = state.lastTreatment?.mode ?? state.mode ?? 1;
       const sides = state.lastTreatment?.sides || state.activeSides || [];
+      const tempC =
+        state.lastTreatment?.tempC ??
+        (Number.isFinite(Number(state.targets.temp)) ? Number(state.targets.temp) : TEMP_FIXED_C);
       const sidesText = sides.length
         ? sides
             .map((s) => (s === 'left' ? t('leftEye') : t('rightEye')))
@@ -899,7 +1015,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
         t('reportDurationLabel'),
         durationMin ? `${durationMin} min` : '--'
       );
-      appendReportField(treatGrid, t('reportTempLabel'), `${TEMP_FIXED_C} ℃`);
+      appendReportField(treatGrid, t('reportTempLabel'), `${tempC} ℃`);
       appendReportField(treatGrid, t('reportModeLabel'), String(modeVal));
       appendReportField(treatGrid, t('reportSidesLabel'), sidesText);
       const startedAt = state.lastTreatment?.startedAt
@@ -936,8 +1052,316 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (signNode) signNode.textContent = t('reportDoctorSign');
     const dateNode = document.getElementById('reportDoctorDate');
     if (dateNode) dateNode.textContent = t('reportDoctorDate');
+    const exportBtn = document.getElementById('btnExportPdf');
+    if (exportBtn) exportBtn.textContent = t('exportPdf');
     const printBtn = document.getElementById('btnPrintReport');
     if (printBtn) printBtn.textContent = t('printReport');
+  }
+
+  async function handleExportReportPdf() {
+    showAlert(t('exportingPdf'), 2000, 'info');
+    try {
+      const res = api?.exportReportPdf
+        ? await api.exportReportPdf({
+            patientId: state.activePatient?.id || '',
+          })
+        : null;
+      if (res?.success) {
+        const filePath = String(res.filePath || '');
+        const base = filePath.split(/[\\/]/).filter(Boolean).pop() || '';
+        const hint = base ? `reports/${base}` : 'reports/';
+        showAlert(`${t('exportPdfSuccess')}: ${hint}`, 6000, 'success');
+      } else {
+        const reason = res?.failureReason ? `: ${res.failureReason}` : '';
+        showAlert(`${t('exportPdfFailed')}${reason}`, 4500, 'error');
+      }
+    } catch (err) {
+      console.warn('[PPHC] export pdf failed', err);
+      showAlert(t('exportPdfFailed'), 4500, 'error');
+    }
+  }
+
+  let reportArchiveCache = [];
+  let activeReportUrl = null;
+
+  function renderReportArchiveList() {
+    const listNode = document.getElementById('reportArchiveList');
+    if (!listNode) return;
+    listNode.innerHTML = '';
+    if (!reportArchiveCache.length) {
+      listNode.innerHTML = `<div class="empty-tip">${t('reportArchiveEmpty')}</div>`;
+      return;
+    }
+    reportArchiveCache.forEach((item) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'log-item';
+      const title = document.createElement('span');
+      title.textContent = item.name;
+      const meta = document.createElement('small');
+      const when = item.mtimeMs ? new Date(item.mtimeMs).toLocaleString() : '';
+      const size = typeof item.size === 'number' ? `${Math.round(item.size / 1024)} KB` : '';
+      meta.textContent = [when, size, item.patientId].filter(Boolean).join(' · ');
+      btn.append(title, meta);
+      btn.classList.toggle('active', item.url === activeReportUrl);
+      btn.addEventListener('click', () => selectReportArchive(item.url));
+      listNode.appendChild(btn);
+    });
+  }
+
+  function selectReportArchive(url) {
+    activeReportUrl = url || null;
+    renderReportArchiveList();
+    const viewer = document.getElementById('reportArchiveViewer');
+    if (viewer) viewer.src = activeReportUrl || 'about:blank';
+  }
+
+  function getActiveReportName() {
+    const found = reportArchiveCache.find((r) => r.url === activeReportUrl);
+    return found?.name || reportArchiveCache[0]?.name || null;
+  }
+
+  async function handlePrintArchiveReport() {
+    const printerName = state.settings.printerName || '';
+    if (!printerName) {
+      showAlert(t('printNoPrinter'), 4500, 'error');
+      return;
+    }
+    const name = getActiveReportName();
+    if (!name) return;
+    showAlert(t('printingReport'), 2500, 'info');
+    try {
+      const res = api?.printReportPdf ? await api.printReportPdf({ name, printerName }) : null;
+      if (res?.success) {
+        showAlert(t('printSuccess'), 5000, 'success');
+      } else {
+        const reason = res?.failureReason ? `: ${res.failureReason}` : '';
+        showAlert(`${t('printFailed')}${reason}`, 5000, 'error');
+      }
+    } catch (err) {
+      console.warn('[PPHC] print report pdf failed', err);
+      showAlert(t('printFailed'), 5000, 'error');
+    }
+  }
+
+  async function handleDeleteSelectedPatient() {
+    const id = String(state.selectedPatientId || '').trim();
+    if (!id) {
+      showAlert(t('patientDeleteNeedSelect'), 3500, 'error');
+      return;
+    }
+    try {
+      const res = api?.removePatient ? await api.removePatient(id) : null;
+      if (res?.success) {
+        state.selectedPatientId = null;
+        await ensurePatientsLoaded();
+        state.patients = state.patients.filter((p) => String(p?.id || '').trim() !== id);
+        renderPatientList();
+        showAlert(t('patientDeleted'), 3500, 'success');
+      } else {
+        showAlert(t('patientDeleteFailed'), 3500, 'error');
+      }
+    } catch (err) {
+      console.warn('[PPHC] delete patient failed', err);
+      showAlert(t('patientDeleteFailed'), 3500, 'error');
+    }
+  }
+
+  async function handleClearPatients() {
+    try {
+      const res = api?.clearPatients ? await api.clearPatients() : null;
+      if (res?.success) {
+        state.selectedPatientId = null;
+        state.patients = [];
+        state.patientsLoaded = true;
+        renderPatientList();
+        showAlert(t('patientsCleared'), 3500, 'success');
+      } else {
+        showAlert(t('patientsClearFailed'), 3500, 'error');
+      }
+    } catch (err) {
+      console.warn('[PPHC] clear patients failed', err);
+      showAlert(t('patientsClearFailed'), 3500, 'error');
+    }
+  }
+
+  async function handleDeleteSelectedReport() {
+    const name = getActiveReportName();
+    if (!name) {
+      showAlert(t('reportDeleteNeedSelect'), 3500, 'error');
+      return;
+    }
+    try {
+      const res = api?.removeReport ? await api.removeReport(name) : null;
+      if (res?.success) {
+        await loadReportArchive();
+        showAlert(t('reportDeleted'), 3500, 'success');
+      } else {
+        showAlert(t('reportDeleteFailed'), 3500, 'error');
+      }
+    } catch (err) {
+      console.warn('[PPHC] delete report failed', err);
+      showAlert(t('reportDeleteFailed'), 3500, 'error');
+    }
+  }
+
+  async function handleClearReports() {
+    try {
+      const res = api?.clearReports ? await api.clearReports() : null;
+      if (res?.success) {
+        await loadReportArchive();
+        showAlert(t('reportsCleared'), 3500, 'success');
+      } else {
+        showAlert(t('reportsClearFailed'), 3500, 'error');
+      }
+    } catch (err) {
+      console.warn('[PPHC] clear reports failed', err);
+      showAlert(t('reportsClearFailed'), 3500, 'error');
+    }
+  }
+
+  async function loadReportArchive(filter = {}) {
+    const viewer = document.getElementById('reportArchiveViewer');
+    if (viewer) viewer.src = 'about:blank';
+    try {
+      const list = api?.listReports ? await api.listReports(filter) : [];
+      reportArchiveCache = Array.isArray(list) ? list : [];
+      activeReportUrl = reportArchiveCache[0]?.url || null;
+      renderReportArchiveList();
+      if (activeReportUrl) selectReportArchive(activeReportUrl);
+    } catch (err) {
+      console.warn('[PPHC] load report archive failed', err);
+      reportArchiveCache = [];
+      activeReportUrl = null;
+      renderReportArchiveList();
+    }
+  }
+
+  function renderEngineer() {
+    const title = document.getElementById('engineerTitle');
+    if (title) title.textContent = t('engineerTitle');
+    const paramsTitle = document.getElementById('engineerParamsTitle');
+    if (paramsTitle) paramsTitle.textContent = t('engineerParamsTitle');
+    const testTitle = document.getElementById('engineerTestTitle');
+    if (testTitle) testTitle.textContent = t('engineerTestTitle');
+    const labels = {
+      engineerPressureLabel: 'engineerPressureLabel',
+      engineerDurationLabel: 'engineerDurationLabel',
+      engineerTempLabel: 'engineerTempLabel',
+      engineerBrightnessLabel: 'engineerBrightnessLabel',
+      engineerVolumeLabel: 'engineerVolumeLabel',
+    };
+    Object.entries(labels).forEach(([id, key]) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = t(key);
+    });
+    const applyBtn = document.getElementById('btnEngineerApplyToDevice');
+    if (applyBtn) applyBtn.textContent = t('engineerApplyToDevice');
+    const soundBtn = document.getElementById('btnEngineerTestSound');
+    if (soundBtn) soundBtn.textContent = t('engineerTestSound');
+
+    const mmHg = Number(document.getElementById('pressMmHg')?.value ?? state.targets.pressure ?? 250);
+    const min =
+      Number.isFinite(Number(state.targets.durationMin))
+        ? Number(state.targets.durationMin)
+        : Number(document.getElementById('treatDuration')?.value ?? 10);
+    const temp = Number.isFinite(Number(state.targets.temp)) ? Number(state.targets.temp) : TEMP_FIXED_C;
+
+    const p = document.getElementById('engineerPressure');
+    if (p) p.value = String(Math.max(0, Math.min(400, Math.round(mmHg))));
+    const pv = document.getElementById('engineerPressureValue');
+    if (pv) pv.textContent = `${Math.round(mmHg)} mmHg`;
+
+    const d = document.getElementById('engineerDuration');
+    if (d) d.value = String(Math.max(1, Math.min(30, Math.round(min))));
+    const dv = document.getElementById('engineerDurationValue');
+    if (dv) dv.textContent = `${Math.round(min)} min`;
+
+    const tSlider = document.getElementById('engineerTemp');
+    if (tSlider) tSlider.value = String(Math.max(35, Math.min(45, temp)));
+    const tv = document.getElementById('engineerTempValue');
+    if (tv) tv.textContent = `${temp.toFixed(1)} ℃`;
+
+    const b = document.getElementById('engineerBrightness');
+    if (b) b.value = String(clampBrightness(state.settings.brightness));
+    const bv = document.getElementById('engineerBrightnessValue');
+    if (bv) bv.textContent = `${clampBrightness(state.settings.brightness)}%`;
+
+    const v = document.getElementById('engineerVolume');
+    if (v) v.value = String(clampVolume(state.settings.volume));
+    const vv = document.getElementById('engineerVolumeValue');
+    if (vv) vv.textContent = `${clampVolume(state.settings.volume)}%`;
+  }
+
+  function bindEngineerControls() {
+    const p = document.getElementById('engineerPressure');
+    if (p) {
+      p.addEventListener('input', () => {
+        const mmHg = Math.max(0, Math.min(400, Math.round(Number(p.value || 0))));
+        const pv = document.getElementById('engineerPressureValue');
+        if (pv) pv.textContent = `${mmHg} mmHg`;
+        const quickP = document.getElementById('pressMmHg');
+        if (quickP) quickP.value = String(mmHg);
+        const chip = document.getElementById('pressMmHgValue');
+        if (chip) chip.textContent = `${mmHg} mmHg`;
+        state.targets.pressure = mmHg;
+      });
+    }
+    const d = document.getElementById('engineerDuration');
+    if (d) {
+      d.addEventListener('input', () => {
+        const min = Math.max(1, Math.min(30, Math.round(Number(d.value || 10))));
+        const dv = document.getElementById('engineerDurationValue');
+        if (dv) dv.textContent = `${min} min`;
+        state.targets.durationMin = min;
+        const quickD = document.getElementById('treatDuration');
+        if (quickD) quickD.value = String(Math.max(1, Math.min(15, min)));
+        const durationNode = document.getElementById('durationValue');
+        if (durationNode) durationNode.textContent = `${Math.max(1, Math.min(15, min))} min`;
+      });
+    }
+    const tSlider = document.getElementById('engineerTemp');
+    if (tSlider) {
+      tSlider.addEventListener('input', () => {
+        const temp = Math.max(35, Math.min(45, Number(tSlider.value || TEMP_FIXED_C)));
+        state.targets.temp = Number(temp.toFixed(1));
+        const tv = document.getElementById('engineerTempValue');
+        if (tv) tv.textContent = `${state.targets.temp.toFixed(1)} ℃`;
+      });
+    }
+    const b = document.getElementById('engineerBrightness');
+    if (b) {
+      b.addEventListener('input', () => {
+        requestBrightnessApply(b.value);
+        const bv = document.getElementById('engineerBrightnessValue');
+        if (bv) bv.textContent = `${clampBrightness(b.value)}%`;
+      });
+    }
+    const v = document.getElementById('engineerVolume');
+    if (v) {
+      v.addEventListener('input', () => {
+        requestVolumeApply(v.value);
+        const vv = document.getElementById('engineerVolumeValue');
+        if (vv) vv.textContent = `${clampVolume(v.value)}%`;
+      });
+    }
+    document.getElementById('btnEngineerTestSound')?.addEventListener('click', () => {
+      playSound('start');
+    });
+    document.getElementById('btnEngineerApplyToDevice')?.addEventListener('click', () => {
+      if (!state.connected) {
+        showAlert(t('engineerNeedConnect'));
+        return;
+      }
+      const mmHg = Math.max(0, Math.min(400, Math.round(Number(p?.value || 0))));
+      const min = Math.max(1, Math.min(30, Math.round(Number(d?.value || 10))));
+      state.targets.durationMin = min;
+      const temp = Number.isFinite(Number(state.targets.temp)) ? Number(state.targets.temp) : TEMP_FIXED_C;
+      api?.sendF32?.(0x1001, mmHg);
+      api?.sendF32?.(0x1002, temp);
+      api?.sendU16?.(0x1006, min);
+      showAlert(t('engineerApplied'));
+    });
   }
 
   async function handlePrintReport() {
@@ -946,18 +1370,22 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       showAlert(t('printNoPrinter'));
       return;
     }
-    showAlert(t('printingReport'), 2000);
+    if (/pdf/i.test(printerName)) {
+      await handleExportReportPdf();
+      return;
+    }
+    showAlert(t('printingReport'), 2500, 'info');
     try {
       const res = api?.printReport ? await api.printReport({ printerName }) : null;
       if (res?.success) {
-        showAlert(t('printSuccess'), 3000);
+        showAlert(t('printSuccess'), 5000, 'success');
       } else {
         const reason = res?.failureReason ? `: ${res.failureReason}` : '';
-        showAlert(`${t('printFailed')}${reason}`, 3500);
+        showAlert(`${t('printFailed')}${reason}`, 5000, 'error');
       }
     } catch (err) {
       console.warn('[PPHC] print failed', err);
-      showAlert(t('printFailed'), 3500);
+      showAlert(t('printFailed'), 5000, 'error');
     }
   }
 
@@ -1587,16 +2015,23 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     node.hidden = false;
   }
 
-  function attemptLogin() {
+  async function attemptLogin() {
     const userRaw = document.getElementById('loginUser')?.value ?? '';
     const pass = document.getElementById('loginPass')?.value ?? '';
-    const user = userRaw.trim().toLowerCase();
-    if (user === LOGIN_CREDENTIALS.username && pass === LOGIN_CREDENTIALS.password) {
-      setLoginError(null);
-      completeLogin();
-      return true;
+    const user = userRaw.trim();
+    try {
+      const res = api?.login
+        ? await api.login(user, pass)
+        : { ok: user === LOGIN_CREDENTIALS.username && pass === LOGIN_CREDENTIALS.password, role: 'admin', username: user };
+      if (res && res.ok) {
+        setLoginError(null);
+        completeLogin({ username: res.username || user, role: res.role || 'user' });
+        return true;
+      }
+    } catch (err) {
+      console.warn('[PPHC] login failed', err);
     }
-    setLoginError('账号或密码错误，请重试。');
+    setLoginError(t('loginFailed'));
     return false;
   }
 
@@ -1611,21 +2046,22 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     }
   }
 
-  function completeLogin() {
+  function completeLogin(info = {}) {
     if (state.loggedIn) return;
     state.loggedIn = true;
+    state.user = {
+      username: String(info.username || ''),
+      role: String(info.role || 'user') || 'user',
+    };
     document.body.classList.remove('login-locked');
     document.body.classList.remove('view-login');
     const overlay = document.getElementById('loginOverlay');
     if (overlay) {
       overlay.classList.remove('active');
       overlay.classList.add('hidden');
-      setTimeout(() => {
-        overlay?.remove();
-      }, 600);
     }
     keyboardState.target = null;
-    showView('home');
+    showView(state.user.role === 'engineer' ? 'engineer' : 'home');
     scheduleAutoConnect(0);
     ensureTelemetryLoop();
     startHeroClock();
@@ -1673,6 +2109,33 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       e.preventDefault();
       attemptLogin();
     });
+  }
+
+  function showLoginOverlay() {
+    const overlay = document.getElementById('loginOverlay');
+    if (!overlay) return;
+    state.loggedIn = false;
+    state.user = { username: '', role: 'user' };
+    document.body.classList.add('login-locked');
+    document.body.classList.add('view-login');
+    overlay.classList.remove('hidden');
+    overlay.classList.add('active');
+    const userInput = document.getElementById('loginUser');
+    const passInput = document.getElementById('loginPass');
+    if (userInput) userInput.value = LOGIN_CREDENTIALS.username;
+    if (passInput) passInput.value = '';
+    setLoginError(null);
+    hideKeyboard();
+    showView('home');
+  }
+
+  function hideLoginOverlay() {
+    const overlay = document.getElementById('loginOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('active');
+    overlay.classList.add('hidden');
+    document.body.classList.remove('login-locked');
+    document.body.classList.remove('view-login');
   }
 
   function bindOskInputs() {
@@ -1813,6 +2276,33 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     set('#settingsScreen .section-title', 'settingsTitle');
     set('#newPatientScreen .section-title', 'newPatientTitle');
     set('#patientListScreen .section-title', 'patientListTitle');
+    set('#reportArchiveTitle', 'reportArchiveTitle');
+    const openReportsBtn = document.getElementById('btnOpenReportArchive');
+    if (openReportsBtn) openReportsBtn.textContent = t('reportArchiveOpen');
+    const refreshReportsBtn = document.getElementById('btnRefreshReportArchive');
+    if (refreshReportsBtn) refreshReportsBtn.textContent = t('reportArchiveRefresh');
+    const printReportsBtn = document.getElementById('btnPrintArchiveReport');
+    if (printReportsBtn) printReportsBtn.textContent = t('reportArchivePrint');
+    const delPatientBtn = document.getElementById('btnDeletePatient');
+    if (delPatientBtn) delPatientBtn.textContent = t('deleteOne');
+    const clearPatientsBtn = document.getElementById('btnClearPatients');
+    if (clearPatientsBtn) clearPatientsBtn.textContent = t('clearAll');
+    const delReportBtn = document.getElementById('btnDeleteReport');
+    if (delReportBtn) delReportBtn.textContent = t('deleteOne');
+    const clearReportsBtn = document.getElementById('btnClearReports');
+    if (clearReportsBtn) clearReportsBtn.textContent = t('clearAll');
+    set('#engineerTitle', 'engineerTitle');
+    set('#engineerParamsTitle', 'engineerParamsTitle');
+    set('#engineerTestTitle', 'engineerTestTitle');
+    set('#engineerPressureLabel', 'engineerPressureLabel');
+    set('#engineerDurationLabel', 'engineerDurationLabel');
+    set('#engineerTempLabel', 'engineerTempLabel');
+    set('#engineerBrightnessLabel', 'engineerBrightnessLabel');
+    set('#engineerVolumeLabel', 'engineerVolumeLabel');
+    const engApply = document.getElementById('btnEngineerApplyToDevice');
+    if (engApply) engApply.textContent = t('engineerApplyToDevice');
+    const engSound = document.getElementById('btnEngineerTestSound');
+    if (engSound) engSound.textContent = t('engineerTestSound');
     const emptyTip = document.getElementById('patientListEmpty');
     if (emptyTip && TRANSLATIONS[next]?.patientListEmpty) {
       emptyTip.textContent = TRANSLATIONS[next].patientListEmpty;
@@ -1833,6 +2323,8 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (dpModal && !dpModal.hidden) renderDatePicker();
     if (state.currentView === 'patientList') renderPatientList();
     if (state.currentView === 'report') renderReport();
+    if (state.currentView === 'reportArchive') loadReportArchive();
+    if (state.currentView === 'engineer') renderEngineer();
     set('.summary-panel .panel-overline', 'summaryOverline');
     set('.summary-panel .panel-title', 'summaryTitle');
     set('.curve-panel .panel-overline', 'curveOverline');
@@ -1888,6 +2380,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       display: ['navDisplay', 'navDisplayHint'],
       sound: ['navSound', 'navSoundHint'],
       printer: ['navPrinter', 'navPrinterHint'],
+      accounts: ['navAccounts', 'navAccountsHint'],
       language: ['navLanguage', 'navLanguageHint'],
       about: ['navAbout', 'navAboutHint'],
       logs: ['navLogs', 'navLogsHint'],
@@ -1939,6 +2432,25 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       if (pillSpans[0]) pillSpans[0].textContent = t('printerCurrentLabel');
       const refreshBtn = document.getElementById('btnRefreshPrinters');
       if (refreshBtn) refreshBtn.textContent = t('printersRefresh');
+    }
+    const accountsCard = document.querySelector('#settingsModuleAccounts .settings-card');
+    if (accountsCard) {
+      const h3 = accountsCard.querySelector('h3');
+      if (h3) h3.textContent = t('accountsTitle');
+      const addTitle = document.getElementById('accountsAddTitle');
+      if (addTitle) addTitle.textContent = t('accountsAddTitle');
+      const addHint = document.getElementById('accountsAddHint');
+      if (addHint) addHint.textContent = t('accountsAddHint');
+      const uLabel = document.getElementById('accountsUsernameLabel');
+      if (uLabel) uLabel.textContent = t('accountsUsernameLabel');
+      const pLabel = document.getElementById('accountsPasswordLabel');
+      if (pLabel) pLabel.textContent = t('accountsPasswordLabel');
+      const p2Label = document.getElementById('accountsPassword2Label');
+      if (p2Label) p2Label.textContent = t('accountsPassword2Label');
+      const addBtn = document.getElementById('btnAddAccount');
+      if (addBtn) addBtn.textContent = t('accountsAddBtn');
+      const logoutBtn = document.getElementById('btnLogout');
+      if (logoutBtn) logoutBtn.textContent = t('accountsLogoutBtn');
     }
     const languageCard = document.querySelector('#settingsModuleLanguage .settings-card');
     if (languageCard) {
@@ -2051,6 +2563,8 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       loadLogsList();
     } else if (next === 'printer') {
       loadPrintersList();
+    } else if (next === 'accounts') {
+      loadAccounts();
     }
   }
 
@@ -2173,6 +2687,103 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       }
     } catch (err) {
       console.warn('[PPHC] get printer failed', err);
+    }
+  }
+
+  let accountsCache = [];
+
+  function setAccountsMessage(msg, isError = false) {
+    const node = document.getElementById('accountsMessage');
+    if (!node) return;
+    if (!msg) {
+      node.hidden = true;
+      node.textContent = '';
+      node.classList.remove('error');
+      return;
+    }
+    node.hidden = false;
+    node.textContent = msg;
+    node.classList.toggle('error', !!isError);
+  }
+
+  function renderAccountsList() {
+    const listNode = document.getElementById('accountsList');
+    if (!listNode) return;
+    listNode.innerHTML = '';
+    if (!accountsCache.length) {
+      listNode.innerHTML = `<div class="empty-tip">${t('accountsEmpty')}</div>`;
+      return;
+    }
+    accountsCache.forEach((acc) => {
+      const row = document.createElement('div');
+      row.className = 'account-item';
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const title = document.createElement('strong');
+      title.textContent = acc.username || '--';
+      const sub = document.createElement('small');
+      sub.textContent = acc.role ? String(acc.role) : '';
+      meta.append(title, sub);
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'account-remove';
+      removeBtn.textContent = t('accountsRemoveBtn');
+      removeBtn.disabled = String(acc.username || '').toLowerCase() === 'admin';
+      removeBtn.addEventListener('click', async () => {
+        if (removeBtn.disabled) return;
+        try {
+          await api?.removeAccount?.(acc.username);
+          await loadAccounts();
+        } catch (err) {
+          console.warn('[PPHC] remove account failed', err);
+          setAccountsMessage(t('accountsRemoveFailed'), true);
+        }
+      });
+      row.append(meta, removeBtn);
+      listNode.appendChild(row);
+    });
+  }
+
+  async function loadAccounts() {
+    setAccountsMessage(null);
+    try {
+      const list = api?.listAccounts ? await api.listAccounts() : [];
+      accountsCache = Array.isArray(list) ? list : [];
+      renderAccountsList();
+    } catch (err) {
+      console.warn('[PPHC] list accounts failed', err);
+      accountsCache = [];
+      renderAccountsList();
+      setAccountsMessage(t('accountsAddFailed'), true);
+    }
+  }
+
+  async function handleAddAccount() {
+    setAccountsMessage(null);
+    const u = document.getElementById('accountUsername');
+    const p = document.getElementById('accountPassword');
+    const p2 = document.getElementById('accountPassword2');
+    const username = u?.value?.trim() || '';
+    const password = p?.value || '';
+    const password2 = p2?.value || '';
+    if (!username || !password) {
+      setAccountsMessage(t('accountsAddFailed'), true);
+      return;
+    }
+    if (password !== password2) {
+      setAccountsMessage(t('accountsPasswordMismatch'), true);
+      return;
+    }
+    try {
+      await api?.addAccount?.({ username, password, role: 'user' });
+      if (u) u.value = '';
+      if (p) p.value = '';
+      if (p2) p2.value = '';
+      setAccountsMessage(t('accountsAddSuccess'), false);
+      await loadAccounts();
+    } catch (err) {
+      console.warn('[PPHC] add account failed', err);
+      setAccountsMessage(t('accountsAddFailed'), true);
     }
   }
 
@@ -2507,9 +3118,11 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     }
   }
 
-  function showAlert(msg, duration = 2500) {
+  function showAlert(msg, duration = 2500, kind = 'info') {
     const banner = $('#alertBanner');
     if (!banner) return;
+    banner.classList.remove('success', 'error', 'info');
+    banner.classList.add(kind || 'info');
     banner.textContent = msg;
     banner.hidden = false;
     if (banner._timer) clearTimeout(banner._timer);
@@ -2615,22 +3228,27 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     state.shieldDropShown = false;
     api.sendU8(0x1004, enableLeft ? 1 : 0);
     api.sendU8(0x1005, enableRight ? 1 : 0);
-    api.sendF32(0x1002, TEMP_FIXED_C);
+    const tempC = Number.isFinite(Number(state.targets.temp)) ? Number(state.targets.temp) : TEMP_FIXED_C;
+    api.sendF32(0x1002, tempC);
     const mmHg = Number(document.getElementById('pressMmHg')?.value ?? 0);
     state.targets.pressure = mmHg;
-    state.targets.temp = TEMP_FIXED_C;
     api.sendF32(0x1001, mmHg); // 发送原始 mmHg
     api.sendU8(0x10c0, state.mode || 1);
-    const min = Math.max(
+    const sliderMin = Math.max(
       1,
       Math.min(15, Number(document.getElementById('treatDuration')?.value || 10))
     );
+    const min =
+      state.user?.role === 'engineer' && Number.isFinite(Number(state.targets.durationMin))
+        ? Math.max(1, Math.min(30, Math.round(Number(state.targets.durationMin))))
+        : sliderMin;
     state.lastTreatment = {
       startedAt: new Date().toISOString(),
       pressureMmHg: mmHg,
       durationMin: min,
       mode: state.mode || 1,
       sides: sides.slice(),
+      tempC,
     };
     api.sendU16(0x1006, min);
     api.sendU8(0x10c1, 1);
@@ -2756,6 +3374,9 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       });
     }
 
+    document.getElementById('btnAddAccount')?.addEventListener('click', handleAddAccount);
+    document.getElementById('btnLogout')?.addEventListener('click', showLoginOverlay);
+
     $$('.settings-nav button').forEach((btn) => {
       btn.addEventListener('click', () => setSettingsModule(btn.dataset.module));
     });
@@ -2783,6 +3404,11 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       'btnBackNewPatient',
       'btnBackPatientList',
       'btnBackReport',
+      'btnBackReportArchive',
+      'btnOpenReportArchive',
+      'btnRefreshReportArchive',
+      'btnBackEngineer',
+      'btnExportPdf',
       'btnPrintReport',
       'btnGoPatientList',
       'patientForm',
@@ -2816,9 +3442,27 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     document.getElementById('btnBackPatientList')?.addEventListener('click', () =>
       showView('home')
     );
+    document.getElementById('btnOpenReportArchive')?.addEventListener('click', () =>
+      showView('reportArchive')
+    );
+    document.getElementById('btnDeletePatient')?.addEventListener('click', handleDeleteSelectedPatient);
+    document.getElementById('btnClearPatients')?.addEventListener('click', handleClearPatients);
     document.getElementById('btnBackReport')?.addEventListener('click', () =>
       showView('patientList')
     );
+    document.getElementById('btnBackReportArchive')?.addEventListener('click', () =>
+      showView('patientList')
+    );
+    document.getElementById('btnBackEngineer')?.addEventListener('click', () =>
+      showLoginOverlay()
+    );
+    document.getElementById('btnRefreshReportArchive')?.addEventListener('click', () =>
+      loadReportArchive()
+    );
+    document.getElementById('btnPrintArchiveReport')?.addEventListener('click', handlePrintArchiveReport);
+    document.getElementById('btnDeleteReport')?.addEventListener('click', handleDeleteSelectedReport);
+    document.getElementById('btnClearReports')?.addEventListener('click', handleClearReports);
+    document.getElementById('btnExportPdf')?.addEventListener('click', handleExportReportPdf);
     document.getElementById('btnPrintReport')?.addEventListener('click', handlePrintReport);
     document.getElementById('btnGoPatientList')?.addEventListener('click', () => {
       ensurePatientsLoaded();
@@ -3049,6 +3693,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     bindEvents();
     bindOskInputs();
     bindSettingsControls();
+    bindEngineerControls();
     wireIpc();
     updateModeMeta();
     updateSettingsUI();

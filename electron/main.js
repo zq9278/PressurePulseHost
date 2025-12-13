@@ -26,6 +26,7 @@ app.commandLine.appendSwitch('enable-gpu-rasterization');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { pathToFileURL } = require('url');
 const { spawn } = require('child_process');
 const { SerialManager } = require('./serial');
 const proto = require('./protocol');
@@ -69,6 +70,10 @@ const LOGS_DIR = (() => {
   const base = app.isPackaged ? path.dirname(app.getPath('exe')) : path.join(__dirname, '..');
   return path.join(base, 'logs');
 })();
+const REPORTS_DIR = (() => {
+  const base = app.isPackaged ? path.dirname(app.getPath('exe')) : path.join(__dirname, '..');
+  return path.join(base, 'reports');
+})();
 const UPDATES_FILE = (() => {
   const base = app.isPackaged ? path.dirname(app.getPath('exe')) : path.join(__dirname, '..');
   return path.join(base, 'updates', 'latest.json');
@@ -79,7 +84,13 @@ const STARTUP_SPEECH = {
   zh: '设备已启动，请连接治疗仪。',
   en: 'System is ready. Please connect the device.',
 };
-const DEFAULT_SETTINGS = { brightness: 80, volume: 100, playChime: true, printerName: '' };
+const DEFAULT_SETTINGS = {
+  brightness: 80,
+  volume: 100,
+  playChime: true,
+  printerName: '',
+  accounts: [{ username: 'admin', password: 'admin', role: 'admin' }],
+};
 let currentSettings = { ...DEFAULT_SETTINGS };
 let settingsFresh = true;
 
@@ -164,6 +175,17 @@ function loadSettings() {
   } catch {
     currentSettings = { ...DEFAULT_SETTINGS };
     settingsFresh = true;
+  }
+  if (!Array.isArray(currentSettings.accounts)) currentSettings.accounts = [];
+  currentSettings.accounts = currentSettings.accounts
+    .map((a) => ({
+      username: String(a?.username || '').trim(),
+      password: String(a?.password || ''),
+      role: String(a?.role || 'user') || 'user',
+    }))
+    .filter((a) => a.username);
+  if (!currentSettings.accounts.some((a) => a.username.toLowerCase() === 'admin')) {
+    currentSettings.accounts.unshift({ username: 'admin', password: 'admin', role: 'admin' });
   }
 }
 
@@ -275,6 +297,22 @@ async function savePatients(list) {
     console.warn('[PPHC] save patients failed', err?.message || err);
     return false;
   }
+}
+
+async function removePatientById(id) {
+  const target = String(id || '').trim();
+  if (!target) return { success: false, failureReason: 'missing id' };
+  const list = loadPatients();
+  const next = list.filter((p) => String(p?.id || '').trim() !== target);
+  const changed = next.length !== list.length;
+  if (!changed) return { success: false, failureReason: 'not found' };
+  const saved = await savePatients(next);
+  return saved ? { success: true } : { success: false, failureReason: 'save failed' };
+}
+
+async function clearAllPatients() {
+  const saved = await savePatients([]);
+  return saved ? { success: true } : { success: false, failureReason: 'save failed' };
 }
 
 function nextPatientId(existing = []) {
@@ -492,6 +530,50 @@ async function setSelectedPrinterName(name) {
   return { printerName: currentSettings.printerName };
 }
 
+function listAccountsPublic() {
+  const accounts = Array.isArray(currentSettings.accounts) ? currentSettings.accounts : [];
+  return accounts.map((a) => ({ username: a.username, role: a.role || 'user' }));
+}
+
+function validateLogin(username, password) {
+  const user = String(username || '').trim();
+  const pass = String(password || '');
+  if (user === 'slk' && pass === 'slk') {
+    return { ok: true, role: 'engineer', username: 'slk' };
+  }
+  const accounts = Array.isArray(currentSettings.accounts) ? currentSettings.accounts : [];
+  const found = accounts.find((a) => String(a.username || '').trim() === user);
+  if (found && String(found.password || '') === pass) {
+    return { ok: true, role: found.role || 'user', username: found.username };
+  }
+  return { ok: false };
+}
+
+async function addAccount(account) {
+  const username = String(account?.username || '').trim();
+  const password = String(account?.password || '');
+  const role = String(account?.role || 'user') || 'user';
+  if (!username || !password) throw new Error('missing username/password');
+  if (username.toLowerCase() === 'slk') throw new Error('reserved username');
+  const accounts = Array.isArray(currentSettings.accounts) ? currentSettings.accounts : [];
+  if (accounts.some((a) => String(a.username || '').trim() === username)) {
+    throw new Error('username exists');
+  }
+  currentSettings.accounts = [...accounts, { username, password, role }];
+  await saveSettings();
+  return listAccountsPublic();
+}
+
+async function removeAccount(username) {
+  const user = String(username || '').trim();
+  if (!user) throw new Error('missing username');
+  if (user.toLowerCase() === 'admin') throw new Error('cannot remove admin');
+  const accounts = Array.isArray(currentSettings.accounts) ? currentSettings.accounts : [];
+  currentSettings.accounts = accounts.filter((a) => String(a.username || '').trim() !== user);
+  await saveSettings();
+  return listAccountsPublic();
+}
+
 async function printCurrentView(opts = {}) {
   if (!mainWindow) throw new Error('window not ready');
   const printerName = String(opts.printerName || getSelectedPrinterName() || '');
@@ -506,6 +588,157 @@ async function printCurrentView(opts = {}) {
       resolve({ success, failureReason: failureReason || null });
     });
   });
+}
+
+async function printReportPdf(opts = {}) {
+  const printerName = String(opts?.printerName || getSelectedPrinterName() || '');
+  const name = String(opts?.name || '').trim();
+  if (!name) return { success: false, failureReason: 'missing report name' };
+  if (!/\.pdf$/i.test(name)) return { success: false, failureReason: 'invalid file' };
+  if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+    return { success: false, failureReason: 'invalid path' };
+  }
+  const fullPath = path.join(REPORTS_DIR, name);
+  try {
+    await fs.promises.access(fullPath, fs.constants.R_OK);
+  } catch {
+    return { success: false, failureReason: 'file not found' };
+  }
+
+  const win = new BrowserWindow({
+    show: false,
+    width: 800,
+    height: 1000,
+    backgroundColor: '#ffffff',
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  try {
+    await win.loadURL(pathToFileURL(fullPath).toString());
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const options = {
+      silent: !!printerName,
+      deviceName: printerName || undefined,
+      printBackground: true,
+      pageSize: 'A4',
+    };
+    const result = await new Promise((resolve) => {
+      win.webContents.print(options, (success, failureReason) => {
+        resolve({ success, failureReason: failureReason || null });
+      });
+    });
+    return result;
+  } catch (err) {
+    console.warn('[PPHC] print report pdf failed', err?.message || err);
+    return { success: false, failureReason: err?.message || String(err) };
+  } finally {
+    try {
+      win.destroy();
+    } catch {}
+  }
+}
+
+function safeFilePart(input) {
+  const raw = String(input || '').trim();
+  if (!raw) return '';
+  return raw
+    .replace(/[\\/:*?"<>|]+/g, '_')
+    .replace(/\s+/g, '_')
+    .slice(0, 64);
+}
+
+async function exportReportPdf(opts = {}) {
+  if (!mainWindow) throw new Error('window not ready');
+  try {
+    const now = new Date();
+    const ts = now.toISOString().replace(/[:.]/g, '-');
+    const patientId = safeFilePart(opts.patientId);
+    const fileBase = [ts, patientId].filter(Boolean).join('_') || ts;
+    const fileName = `${fileBase}.pdf`;
+    const outPath = path.join(REPORTS_DIR, fileName);
+    await fs.promises.mkdir(REPORTS_DIR, { recursive: true });
+    const pdfData = await mainWindow.webContents.printToPDF({
+      pageSize: 'A4',
+      printBackground: true,
+      marginsType: 1, // none
+    });
+    await fs.promises.writeFile(outPath, pdfData);
+    return { success: true, filePath: outPath };
+  } catch (err) {
+    console.warn('[PPHC] export pdf failed', err?.message || err);
+    return { success: false, failureReason: err?.message || String(err) };
+  }
+}
+
+async function listReportPdfs(filter = {}) {
+  try {
+    await fs.promises.mkdir(REPORTS_DIR, { recursive: true });
+    const entries = await fs.promises.readdir(REPORTS_DIR, { withFileTypes: true });
+    const patientId = String(filter.patientId || '').trim();
+    const items = [];
+    for (const ent of entries) {
+      if (!ent.isFile()) continue;
+      const name = ent.name;
+      if (!/\.pdf$/i.test(name)) continue;
+      if (name.includes('..') || name.includes('/') || name.includes('\\\\')) continue;
+      const match = name.match(/_(P\d{4})\.pdf$/i);
+      const parsedPatientId = match ? match[1] : null;
+      if (patientId && parsedPatientId && parsedPatientId !== patientId) continue;
+      const full = path.join(REPORTS_DIR, name);
+      const stat = await fs.promises.stat(full);
+      items.push({
+        name,
+        filePath: full,
+        url: pathToFileURL(full).toString(),
+        mtimeMs: stat.mtimeMs,
+        size: stat.size,
+        patientId: parsedPatientId,
+      });
+    }
+    items.sort((a, b) => (b.mtimeMs || 0) - (a.mtimeMs || 0));
+    return items;
+  } catch (err) {
+    console.warn('[PPHC] list reports failed', err?.message || err);
+    return [];
+  }
+}
+
+async function removeReportPdf(name) {
+  const file = String(name || '').trim();
+  if (!file) return { success: false, failureReason: 'missing name' };
+  if (!/\.pdf$/i.test(file)) return { success: false, failureReason: 'invalid file' };
+  if (file.includes('..') || file.includes('/') || file.includes('\\')) {
+    return { success: false, failureReason: 'invalid path' };
+  }
+  const full = path.join(REPORTS_DIR, file);
+  try {
+    await fs.promises.unlink(full);
+    return { success: true };
+  } catch (err) {
+    return { success: false, failureReason: err?.message || String(err) };
+  }
+}
+
+async function clearAllReports() {
+  try {
+    await fs.promises.mkdir(REPORTS_DIR, { recursive: true });
+    const entries = await fs.promises.readdir(REPORTS_DIR, { withFileTypes: true });
+    const tasks = [];
+    for (const ent of entries) {
+      if (!ent.isFile()) continue;
+      const name = ent.name;
+      if (!/\.pdf$/i.test(name)) continue;
+      if (name.includes('..') || name.includes('/') || name.includes('\\')) continue;
+      tasks.push(fs.promises.unlink(path.join(REPORTS_DIR, name)).catch(() => {}));
+    }
+    await Promise.all(tasks);
+    return { success: true };
+  } catch (err) {
+    return { success: false, failureReason: err?.message || String(err) };
+  }
 }
 
 
@@ -691,6 +924,8 @@ ipcMain.handle('patients:add', async (e, patient) => {
   if (!saved) throw new Error('保存病例信息失败');
   return entry;
 });
+ipcMain.handle('patients:remove', async (_e, id) => removePatientById(id));
+ipcMain.handle('patients:clear', async () => clearAllPatients());
 ipcMain.handle('logs:list', async () => listLogFiles());
 ipcMain.handle('logs:read', async (_e, name) => readLogFile(name));
 ipcMain.handle('updates:check', async () => checkForUpdates());
@@ -698,6 +933,15 @@ ipcMain.handle('printers:list', async () => listPrinters());
 ipcMain.handle('printers:get', async () => ({ printerName: getSelectedPrinterName() }));
 ipcMain.handle('printers:set', async (_e, name) => setSelectedPrinterName(name));
 ipcMain.handle('print:report', async (_e, opts) => printCurrentView(opts));
+ipcMain.handle('report:export-pdf', async (_e, opts) => exportReportPdf(opts));
+ipcMain.handle('reports:list', async (_e, filter) => listReportPdfs(filter));
+ipcMain.handle('reports:remove', async (_e, name) => removeReportPdf(name));
+ipcMain.handle('reports:clear', async () => clearAllReports());
+ipcMain.handle('auth:login', async (_e, { username, password }) => validateLogin(username, password));
+ipcMain.handle('accounts:list', async () => listAccountsPublic());
+ipcMain.handle('accounts:add', async (_e, account) => addAccount(account));
+ipcMain.handle('accounts:remove', async (_e, username) => removeAccount(username));
+ipcMain.handle('print:report-pdf', async (_e, opts) => printReportPdf(opts));
 ipcMain.on('logs:renderer', (_e, payload) => {
   const level = payload?.level || 'info';
   const message = payload?.message || '';
