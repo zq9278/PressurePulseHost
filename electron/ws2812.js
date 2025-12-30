@@ -5,7 +5,17 @@ if (isLinux) {
   try {
     spi = require('spi-device');
   } catch (err) {
-    console.warn('[WS2812] spi-device unavailable; LED control disabled', err?.message || err);
+    const msg = err?.message || String(err);
+    console.warn('[WS2812] spi-device unavailable; LED control disabled', msg);
+    if (
+      msg.includes('bindings file') ||
+      msg.includes('NODE_MODULE_VERSION') ||
+      msg.includes('was compiled against a different Node.js version')
+    ) {
+      console.warn(
+        '[WS2812] hint: rebuild native deps for Electron (e.g. `npm run rebuild:electron`, or `electron-builder install-app-deps`).',
+      );
+    }
   }
 } else {
   console.info('[WS2812] WS2812 control disabled on non-Linux platform:', process.platform);

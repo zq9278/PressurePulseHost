@@ -37,6 +37,8 @@ contextBridge.exposeInMainWorld('api', {
   addAccount: (account) => ipcRenderer.invoke('accounts:add', account),
   removeAccount: (username) => ipcRenderer.invoke('accounts:remove', username),
   logToMain: (payload) => ipcRenderer.send('logs:renderer', payload),
+  playPromptSound: (key) => ipcRenderer.invoke('sound:play', { key }),
+  testLed: () => ipcRenderer.invoke('led:test'),
   onSerialData: (cb) => ipcRenderer.on('serial-data', (_, payload) => cb(payload)),
   onConnectionChanged: (cb) => ipcRenderer.on('connection-changed', (_, connected) => cb(connected)),
   onPorts: (cb) => ipcRenderer.on('ports', (_, ports) => cb(ports)),

@@ -206,6 +206,7 @@
       engineerVolumeLabel: '系统音量',
       engineerApplyToDevice: '下发到设备',
       engineerTestSound: '测试提示音',
+      engineerTestLed: '测试灯带',
       engineerNeedConnect: '请先连接设备',
       engineerApplied: '参数已下发',
       displayCardTitle: '显示',
@@ -433,6 +434,7 @@
       engineerVolumeLabel: 'Volume',
       engineerApplyToDevice: 'Send to Device',
       engineerTestSound: 'Test Sound',
+      engineerTestLed: 'Test LEDs',
       engineerNeedConnect: 'Connect device first',
       engineerApplied: 'Parameters sent',
       displayCardTitle: 'Display',
@@ -506,11 +508,20 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
   };
   const playSound = (key) => {
     if (!state.settings.playChime) return;
+    const mainPlay = api?.playPromptSound;
+    if (typeof mainPlay === 'function') {
+      try {
+        mainPlay(key).catch?.(() => {});
+        return;
+      } catch {}
+    }
     const a = audioMap[key];
     if (!a || typeof a.play !== 'function') return;
     try {
       a.currentTime = 0;
-      a.play().catch(() => {});
+      a.play().catch((err) => {
+        if (WEB_DEBUG) console.warn('[PPHC] audio play failed', key, err?.message || err);
+      });
     } catch {}
   };
   if (WEB_DEBUG) {
@@ -1368,6 +1379,8 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (applyBtn) applyBtn.textContent = t('engineerApplyToDevice');
     const soundBtn = document.getElementById('btnEngineerTestSound');
     if (soundBtn) soundBtn.textContent = t('engineerTestSound');
+    const ledBtn = document.getElementById('btnEngineerTestLed');
+    if (ledBtn) ledBtn.textContent = t('engineerTestLed');
 
     const mmHg = Number(document.getElementById('pressMmHg')?.value ?? state.targets.pressure ?? 250);
     const min =
@@ -1455,7 +1468,10 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       });
     }
     document.getElementById('btnEngineerTestSound')?.addEventListener('click', () => {
-      playSound('start');
+      api?.playPromptSound?.('start').catch?.(() => {});
+    });
+    document.getElementById('btnEngineerTestLed')?.addEventListener('click', () => {
+      api?.testLed?.().catch?.(() => {});
     });
     document.getElementById('btnEngineerApplyToDevice')?.addEventListener('click', () => {
       if (!state.connected) {

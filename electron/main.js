@@ -21,6 +21,8 @@ if (useWayland) {
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
   app.commandLine.appendSwitch('enable-zero-copy');
+// Kiosk UX: allow playing prompt sounds without requiring a prior user gesture.
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 // =======================================================
 const fs = require('fs');
@@ -33,6 +35,14 @@ const proto = require('./protocol');
 const { Ws2812Driver, DEFAULT_COLORS } = require('./ws2812');
 
 const IS_LINUX = process.platform === 'linux';
+const ALSA_CARD = String(process.env.PPHC_ALSA_CARD || process.env.ALSA_CARD || '0');
+const ALSA_CARD_ARGS = ALSA_CARD ? ['-c', ALSA_CARD] : [];
+const ALSA_DEVICE = String(process.env.PPHC_ALSA_DEVICE || '').trim();
+
+const LED_COUNT = Number.parseInt(process.env.PPHC_LED_COUNT, 10);
+const SPI_BUS = Number.parseInt(process.env.PPHC_SPI_BUS, 10);
+const SPI_DEVICE = Number.parseInt(process.env.PPHC_SPI_DEVICE, 10);
+const SPI_SPEED_HZ = Number.parseInt(process.env.PPHC_SPI_SPEED_HZ, 10);
 
 // Preemptively turn off backlight before Electron window creation to avoid white flash (Linux only)
 if (IS_LINUX) {
@@ -51,33 +61,50 @@ const expandPath = (p) => {
 
 let mainWindow;
 const serial = new SerialManager();
-const leds = IS_LINUX ? new Ws2812Driver({ ledCount: 51, defaultColor: DEFAULT_COLORS.idle }) : null;
+const leds = IS_LINUX
+  ? new Ws2812Driver({
+      ledCount: Number.isFinite(LED_COUNT) ? LED_COUNT : 51,
+      busNumber: Number.isFinite(SPI_BUS) ? SPI_BUS : 0,
+      deviceNumber: Number.isFinite(SPI_DEVICE) ? SPI_DEVICE : 0,
+      speedHz: Number.isFinite(SPI_SPEED_HZ) ? SPI_SPEED_HZ : 2_400_000,
+      defaultColor: DEFAULT_COLORS.idle,
+    })
+  : null;
 
 const BRIGHTNESS_PATH = IS_LINUX ? '/sys/class/backlight/backlight2/brightness' : null;
 const MAX_BRIGHTNESS_PATH = IS_LINUX ? '/sys/class/backlight/backlight2/max_brightness' : null;
 const DEFAULT_MAX_BRIGHTNESS = 255;
-const SETTINGS_PATH = (() => {
-  // 开发时写到项目根目录，打包后写到可执行文件同目录
-  const base = app.isPackaged ? path.dirname(app.getPath('exe')) : path.join(__dirname, '..');
-  return path.join(base, 'settings.json');
-})();
-const PATIENTS_DIR = (() => {
-  const base = app.isPackaged ? path.dirname(app.getPath('exe')) : path.join(__dirname, '..');
-  return path.join(base, 'patients');
-})();
-const PATIENTS_FILE = path.join(PATIENTS_DIR, 'patients.json');
-const LOGS_DIR = (() => {
-  const base = app.isPackaged ? path.dirname(app.getPath('exe')) : path.join(__dirname, '..');
-  return path.join(base, 'logs');
-})();
-const REPORTS_DIR = (() => {
-  const base = app.isPackaged ? path.dirname(app.getPath('exe')) : path.join(__dirname, '..');
-  return path.join(base, 'reports');
-})();
-const UPDATES_FILE = (() => {
-  const base = app.isPackaged ? path.dirname(app.getPath('exe')) : path.join(__dirname, '..');
-  return path.join(base, 'updates', 'latest.json');
-})();
+let DATA_BASE_DIR;
+let LEGACY_BASE_DIR;
+let SETTINGS_PATH;
+let LEGACY_SETTINGS_PATH;
+let PATIENTS_DIR;
+let PATIENTS_FILE;
+let LEGACY_PATIENTS_FILE;
+let LOGS_DIR;
+let REPORTS_DIR;
+let UPDATES_FILE;
+
+function initStoragePaths() {
+  const dataBase = expandPath(process.env.PPHC_DATA_DIR) || app.getPath('userData');
+  const legacyBase = app.isPackaged ? path.dirname(app.getPath('exe')) : path.join(__dirname, '..');
+
+  DATA_BASE_DIR = dataBase;
+  LEGACY_BASE_DIR = legacyBase;
+
+  SETTINGS_PATH = path.join(dataBase, 'settings.json');
+  LEGACY_SETTINGS_PATH = path.join(legacyBase, 'settings.json');
+
+  PATIENTS_DIR = path.join(dataBase, 'patients');
+  PATIENTS_FILE = path.join(PATIENTS_DIR, 'patients.json');
+  LEGACY_PATIENTS_FILE = path.join(legacyBase, 'patients', 'patients.json');
+
+  LOGS_DIR = path.join(dataBase, 'logs');
+  REPORTS_DIR = path.join(dataBase, 'reports');
+
+  // Updates manifest is a read-only bundle artifact, keep it next to the app in legacy base
+  UPDATES_FILE = path.join(legacyBase, 'updates', 'latest.json');
+}
 let currentLogFile = null;
 let logStream = null;
 const STARTUP_SPEECH = {
@@ -153,26 +180,51 @@ async function setBrightnessPercent(percent, opts = {}) {
 
 function ledShowIdle() {
   if (!leds) return;
-  leds.showIdle();
+  leds
+    .showIdle()
+    .then((ok) => {
+      if (!ok) console.warn('[PPHC] ws2812 showIdle failed');
+    })
+    .catch((err) => console.warn('[PPHC] ws2812 showIdle error', err?.message || err));
 }
 
 function ledShowRunning() {
   if (!leds) return;
-  leds.showRunning();
+  leds
+    .showRunning()
+    .then((ok) => {
+      if (!ok) console.warn('[PPHC] ws2812 showRunning failed');
+    })
+    .catch((err) => console.warn('[PPHC] ws2812 showRunning error', err?.message || err));
 }
 
 function ledShowStopAlert() {
   if (!leds) return;
-  leds.showStopAlert();
+  leds
+    .showStopAlert()
+    .then((ok) => {
+      if (!ok) console.warn('[PPHC] ws2812 showStopAlert failed');
+    })
+    .catch((err) => console.warn('[PPHC] ws2812 showStopAlert error', err?.message || err));
 }
 
 function loadSettings() {
-  try {
-    const raw = fs.readFileSync(SETTINGS_PATH, 'utf8');
-    const parsed = JSON.parse(raw);
-    currentSettings = { ...DEFAULT_SETTINGS, ...parsed };
-    settingsFresh = false;
-  } catch {
+  const candidates = [SETTINGS_PATH, LEGACY_SETTINGS_PATH].filter(
+    (p, idx, arr) => p && arr.indexOf(p) === idx,
+  );
+  let loadedFrom = null;
+  for (const filePath of candidates) {
+    if (!fs.existsSync(filePath)) continue;
+    try {
+      const raw = fs.readFileSync(filePath, 'utf8');
+      const parsed = JSON.parse(raw);
+      currentSettings = { ...DEFAULT_SETTINGS, ...parsed };
+      settingsFresh = false;
+      loadedFrom = filePath;
+      break;
+    } catch {}
+  }
+  if (!loadedFrom) {
     currentSettings = { ...DEFAULT_SETTINGS };
     settingsFresh = true;
   }
@@ -187,10 +239,14 @@ function loadSettings() {
   if (!currentSettings.accounts.some((a) => a.username.toLowerCase() === 'admin')) {
     currentSettings.accounts.unshift({ username: 'admin', password: 'admin', role: 'admin' });
   }
+  if (loadedFrom === LEGACY_SETTINGS_PATH && SETTINGS_PATH && SETTINGS_PATH !== LEGACY_SETTINGS_PATH) {
+    saveSettings().catch(() => {});
+  }
 }
 
 async function saveSettings() {
   try {
+    if (!SETTINGS_PATH) return;
     await fs.promises.mkdir(path.dirname(SETTINGS_PATH), { recursive: true });
     await fs.promises.writeFile(SETTINGS_PATH, JSON.stringify(currentSettings, null, 2), 'utf8');
   } catch (err) {
@@ -210,9 +266,10 @@ async function setVolumePercent(percent) {
   const pctClamped = Math.max(0, Math.min(100, pctRaw));
   let target = 0;
   if (pctClamped > 0) {
+    await ensureAudioOutputsOn().catch(() => {});
     target = 80 + (pctClamped / 100) * 20; // map 1-100 -> 80-100
   }
-  const args = ['-c', '0', 'set', 'PCM', `${Math.round(target)}%`];
+  const args = [...ALSA_CARD_ARGS, 'set', 'PCM', `${Math.round(target)}%`];
   if (pctClamped === 0) args.push('mute');
   else args.push('unmute');
   try {
@@ -248,9 +305,9 @@ function runAmixer(args) {
 async function ensureAudioOutputsOn() {
   if (!IS_LINUX) return;
   const tasks = [
-    ['-c', '0', 'set', 'Speaker', 'on'],
-    ['-c', '0', 'set', 'Headphone', 'on'],
-    ['-c', '0', 'set', 'PCM', '100%'],
+    [...ALSA_CARD_ARGS, 'set', 'Speaker', 'on'],
+    [...ALSA_CARD_ARGS, 'set', 'Headphone', 'on'],
+    [...ALSA_CARD_ARGS, 'set', 'PCM', '100%'],
   ];
   for (const args of tasks) {
     try {
@@ -264,9 +321,9 @@ async function ensureAudioOutputsOn() {
 async function ensureAudioOutputsOff() {
   if (!IS_LINUX) return;
   const tasks = [
-    ['-c', '0', 'set', 'Speaker', 'off'],
-    ['-c', '0', 'set', 'Headphone', 'off'],
-    ['-c', '0', 'set', 'PCM', '0%', 'mute'],
+    [...ALSA_CARD_ARGS, 'set', 'Speaker', 'off'],
+    [...ALSA_CARD_ARGS, 'set', 'Headphone', 'off'],
+    [...ALSA_CARD_ARGS, 'set', 'PCM', '0%', 'mute'],
   ];
   for (const args of tasks) {
     try {
@@ -278,18 +335,27 @@ async function ensureAudioOutputsOff() {
 }
 
 function loadPatients() {
-  try {
-    const raw = fs.readFileSync(PATIENTS_FILE, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed;
-    return [];
-  } catch {
-    return [];
+  const candidates = [PATIENTS_FILE, LEGACY_PATIENTS_FILE].filter(
+    (p, idx, arr) => p && arr.indexOf(p) === idx,
+  );
+  for (const filePath of candidates) {
+    if (!fs.existsSync(filePath)) continue;
+    try {
+      const raw = fs.readFileSync(filePath, 'utf8');
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) continue;
+      if (filePath === LEGACY_PATIENTS_FILE && PATIENTS_FILE && PATIENTS_FILE !== LEGACY_PATIENTS_FILE) {
+        savePatients(parsed).catch(() => {});
+      }
+      return parsed;
+    } catch {}
   }
+  return [];
 }
 
 async function savePatients(list) {
   try {
+    if (!PATIENTS_DIR || !PATIENTS_FILE) return false;
     await fs.promises.mkdir(PATIENTS_DIR, { recursive: true });
     await fs.promises.writeFile(PATIENTS_FILE, JSON.stringify(list, null, 2), 'utf8');
     return true;
@@ -329,14 +395,8 @@ function nextPatientId(existing = []) {
 
 async function applyChimeSetting() {
   if (!IS_LINUX) return;
-  if (settingsFresh && currentSettings.playChime) {
-    await ensureAudioOutputsOn().catch(() => {});
-    return;
-  }
   if (currentSettings.playChime) {
     await ensureAudioOutputsOn().catch(() => {});
-  } else {
-    await ensureAudioOutputsOff().catch(() => {});
   }
 }
 
@@ -386,6 +446,40 @@ function playWav(filePath, player, sox, aplayArgs) {
   } else {
     doPlay();
   }
+}
+
+function resolveResourcePath(relPath) {
+  const safeRel = String(relPath || '').replace(/^[/\\]+/, '');
+  if (!safeRel) return null;
+  if (app.isPackaged) {
+    const unpacked = path.join(process.resourcesPath, 'app.asar.unpacked', safeRel);
+    if (fs.existsSync(unpacked)) return unpacked;
+  }
+  const devPath = path.join(__dirname, '..', safeRel);
+  if (fs.existsSync(devPath)) return devPath;
+  return null;
+}
+
+async function playPromptSound(key) {
+  const map = {
+    shield: 'resoure/shield-is-invalid.wav',
+    start: 'resoure/Treatment-start.wav',
+    stop: 'resoure/Treatment-stop.wav',
+    tempHigh: 'resoure/Temperature-high.wav',
+  };
+  const rel = map[String(key || '').trim()] || null;
+  const full = rel ? resolveResourcePath(rel) : null;
+  if (!full) return { ok: false, error: 'missing audio file' };
+
+  return new Promise((resolve) => {
+    const args = ['-q'];
+    if (ALSA_DEVICE) args.push('-D', ALSA_DEVICE);
+    args.push(full);
+    const child = spawn('aplay', args, { stdio: ['ignore', 'ignore', 'pipe'] });
+    child.stderr?.on('data', (d) => console.warn('[PPHC] aplay stderr', d.toString().trim()));
+    child.on('error', (err) => resolve({ ok: false, error: err?.message || String(err) }));
+    child.on('close', (code) => resolve({ ok: code === 0, code }));
+  });
 }
 
 function safeToString(val) {
@@ -828,9 +922,21 @@ async function broadcastPorts() {
 // 6) app.whenReady()
 // =============================================
 app.whenReady().then(() => {
+  initStoragePaths();
   loadSettings();
   initLogging();
   console.log('[PPHC] logging started', currentLogFile);
+  console.log('[PPHC] audio config', {
+    alsaCard: ALSA_CARD,
+    alsaDevice: ALSA_DEVICE || null,
+    xdgRuntimeDir: process.env.XDG_RUNTIME_DIR || null,
+  });
+  console.log('[PPHC] led config', {
+    ledCount: Number.isFinite(LED_COUNT) ? LED_COUNT : 51,
+    spiBus: Number.isFinite(SPI_BUS) ? SPI_BUS : 0,
+    spiDevice: Number.isFinite(SPI_DEVICE) ? SPI_DEVICE : 0,
+    spiSpeedHz: Number.isFinite(SPI_SPEED_HZ) ? SPI_SPEED_HZ : 2_400_000,
+  });
   // 启动即关背光，1 秒后再恢复为目标亮度
   if (IS_LINUX) {
     setBrightnessPercent(0, { skipSave: true }).catch(() => {});
@@ -903,6 +1009,16 @@ ipcMain.handle('set-play-chime', async (e, { on }) => {
   saveSettings().catch(() => {});
   applyChimeSetting().catch(() => {});
   return { on: currentSettings.playChime };
+});
+ipcMain.handle('sound:play', async (_e, { key }) => playPromptSound(key));
+ipcMain.handle('led:test', async () => {
+  if (!leds) return { ok: false, error: 'unsupported platform' };
+  try {
+    const ok = await leds.flashColor([64, 64, 64], 1200, 200, DEFAULT_COLORS.idle);
+    return { ok: !!ok };
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err) };
+  }
 });
 ipcMain.handle('patients:list', async () => loadPatients());
 ipcMain.handle('patients:add', async (e, patient) => {
