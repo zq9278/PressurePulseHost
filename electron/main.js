@@ -115,11 +115,23 @@ const DEFAULT_SETTINGS = {
   brightness: 80,
   volume: 100,
   playChime: true,
+  pressureAlertSound: true,
   printerName: '',
+  language: 'zh',
+  theme: 'dark',
+  fontScale: 1,
+  autoConnect: true,
+  lastCalibrationAt: null,
   accounts: [{ username: 'admin', password: 'admin', role: 'admin' }],
 };
 let currentSettings = { ...DEFAULT_SETTINGS };
 let settingsFresh = true;
+
+function clampFontScale(value) {
+  const raw = Number(value);
+  if (!Number.isFinite(raw)) return 1;
+  return Math.max(0.8, Math.min(1.3, raw));
+}
 
 async function readNumber(filePath) {
   if (!IS_LINUX || !filePath) throw new Error('unsupported platform');
@@ -236,10 +248,38 @@ function loadSettings() {
       role: String(a?.role || 'user') || 'user',
     }))
     .filter((a) => a.username);
-  if (!currentSettings.accounts.some((a) => a.username.toLowerCase() === 'admin')) {
+  let adminUpdated = false;
+  const adminIndex = currentSettings.accounts.findIndex((a) => a.username.toLowerCase() === 'admin');
+  if (adminIndex === -1) {
     currentSettings.accounts.unshift({ username: 'admin', password: 'admin', role: 'admin' });
+    adminUpdated = true;
+  } else {
+    const admin = currentSettings.accounts[adminIndex];
+    const nextAdmin = {
+      username: 'admin',
+      password: admin.password || 'admin',
+      role: 'admin',
+    };
+    if (
+      admin.username !== nextAdmin.username ||
+      admin.role !== nextAdmin.role ||
+      admin.password !== nextAdmin.password
+    ) {
+      currentSettings.accounts[adminIndex] = nextAdmin;
+      adminUpdated = true;
+    }
   }
-  if (loadedFrom === LEGACY_SETTINGS_PATH && SETTINGS_PATH && SETTINGS_PATH !== LEGACY_SETTINGS_PATH) {
+  currentSettings.language = currentSettings.language === 'en' ? 'en' : 'zh';
+  currentSettings.theme = currentSettings.theme === 'light' ? 'light' : 'dark';
+  currentSettings.fontScale = clampFontScale(currentSettings.fontScale);
+  currentSettings.autoConnect = currentSettings.autoConnect !== false;
+  currentSettings.lastCalibrationAt =
+    typeof currentSettings.lastCalibrationAt === 'string' && currentSettings.lastCalibrationAt
+      ? currentSettings.lastCalibrationAt
+      : null;
+  if (adminUpdated) {
+    saveSettings().catch(() => {});
+  } else if (loadedFrom === LEGACY_SETTINGS_PATH && SETTINGS_PATH && SETTINGS_PATH !== LEGACY_SETTINGS_PATH) {
     saveSettings().catch(() => {});
   }
 }
@@ -252,6 +292,39 @@ async function saveSettings() {
   } catch (err) {
     console.warn('[PPHC] save settings failed', err?.message || err);
   }
+}
+
+function getAppSettings() {
+  return {
+    language: currentSettings.language === 'en' ? 'en' : 'zh',
+    theme: currentSettings.theme === 'light' ? 'light' : 'dark',
+    fontScale: clampFontScale(currentSettings.fontScale),
+    autoConnect: currentSettings.autoConnect !== false,
+    lastCalibrationAt: currentSettings.lastCalibrationAt || null,
+  };
+}
+
+async function updateAppSettings(patch = {}) {
+  if (!patch || typeof patch !== 'object') return getAppSettings();
+  if (typeof patch.language === 'string') {
+    currentSettings.language = patch.language === 'en' ? 'en' : 'zh';
+  }
+  if (typeof patch.theme === 'string') {
+    currentSettings.theme = patch.theme === 'light' ? 'light' : 'dark';
+  }
+  if (patch.fontScale != null) {
+    currentSettings.fontScale = clampFontScale(patch.fontScale);
+  }
+  if (typeof patch.autoConnect === 'boolean') {
+    currentSettings.autoConnect = patch.autoConnect;
+  }
+  if (patch.lastCalibrationAt === null) {
+    currentSettings.lastCalibrationAt = null;
+  } else if (typeof patch.lastCalibrationAt === 'string') {
+    currentSettings.lastCalibrationAt = patch.lastCalibrationAt.trim() || null;
+  }
+  await saveSettings();
+  return getAppSettings();
 }
 
 async function setVolumePercent(percent) {
@@ -376,6 +449,60 @@ async function removePatientById(id) {
   return saved ? { success: true } : { success: false, failureReason: 'save failed' };
 }
 
+async function updatePatientById(id, patch = {}) {
+  const target = String(id || '').trim();
+  if (!target) throw new Error('missing id');
+  const list = loadPatients();
+  let updated = null;
+  const now = new Date().toISOString();
+  const next = list.map((p) => {
+    if (String(p?.id || '').trim() !== target) return p;
+    updated = { ...p, ...patch, id: p.id, updatedAt: now };
+    return updated;
+  });
+  if (!updated) throw new Error('not found');
+  const saved = await savePatients(next);
+  if (!saved) throw new Error('save failed');
+  return updated;
+}
+
+async function restorePatients(entries = []) {
+  const list = loadPatients();
+  const existing = new Set(list.map((p) => String(p?.id || '').trim()).filter(Boolean));
+  const now = new Date().toISOString();
+  const restored = [];
+  const input = Array.isArray(entries) ? entries : [entries];
+  for (const item of input) {
+    const id = String(item?.id || '').trim();
+    if (!id || existing.has(id)) continue;
+    const createdAt = String(item?.createdAt || now);
+    const updatedAt = String(item?.updatedAt || createdAt || now);
+    restored.push({
+      id,
+      name: String(item?.name || '').trim(),
+      gender: item?.gender === '濂?' || item?.gender === 'female' ? '濂?' : '鐢?',
+      phone: String(item?.phone || '').trim(),
+      birth: String(item?.birth || '').trim(),
+      notes: String(item?.notes || '').trim(),
+      therapist: String(item?.therapist || '').trim(),
+      deviceModel: String(item?.deviceModel || '').trim(),
+      status: String(item?.status || 'active') || 'active',
+      photoData: item?.photoData || null,
+      lastTreatment: item?.lastTreatment || null,
+      lastParams: item?.lastParams || null,
+      curveSnapshot: item?.curveSnapshot || null,
+      createdAt,
+      updatedAt,
+    });
+    existing.add(id);
+  }
+  if (!restored.length) return { success: false, failureReason: 'no valid entries' };
+  const saved = await savePatients([...list, ...restored]);
+  return saved
+    ? { success: true, restored: restored.map((p) => p.id) }
+    : { success: false, failureReason: 'save failed' };
+}
+
 async function clearAllPatients() {
   const saved = await savePatients([]);
   return saved ? { success: true } : { success: false, failureReason: 'save failed' };
@@ -391,6 +518,14 @@ function nextPatientId(existing = []) {
     .filter((n) => Number.isFinite(n));
   const next = nums.length ? Math.max(...nums) + 1 : 1;
   return `P${String(next).padStart(4, '0')}`;
+}
+
+function normalizePatientIdInput(raw) {
+  const text = String(raw || '').trim();
+  if (!text) return '';
+  const compact = text.replace(/\s+/g, '');
+  if (/^\d+$/.test(compact)) return `P${compact.padStart(4, '0')}`;
+  return compact.toUpperCase();
 }
 
 async function applyChimeSetting() {
@@ -466,6 +601,7 @@ async function playPromptSound(key) {
     start: 'resoure/Treatment-start.wav',
     stop: 'resoure/Treatment-stop.wav',
     tempHigh: 'resoure/Temperature-high.wav',
+    pressureHigh: 'resoure/Temperature-high.wav',
   };
   const rel = map[String(key || '').trim()] || null;
   const full = rel ? resolveResourcePath(rel) : null;
@@ -629,41 +765,143 @@ function listAccountsPublic() {
   return accounts.map((a) => ({ username: a.username, role: a.role || 'user' }));
 }
 
+const LOGIN_LOCK_MAX_FAILS = 3;
+const LOGIN_LOCK_MS = 60 * 1000;
+const loginAttempts = new Map();
+
+function normalizeUsername(name) {
+  return String(name || '').trim();
+}
+
+function getLoginAttempt(username) {
+  const key = normalizeUsername(username);
+  if (!key) return null;
+  return loginAttempts.get(key) || { fails: 0, lockedUntil: 0 };
+}
+
+function setLoginAttempt(username, info) {
+  const key = normalizeUsername(username);
+  if (!key) return;
+  loginAttempts.set(key, info);
+}
+
+function clearLoginAttempt(username) {
+  const key = normalizeUsername(username);
+  if (!key) return;
+  loginAttempts.delete(key);
+}
+
+function isUsernameLocked(username) {
+  const info = getLoginAttempt(username);
+  if (!info) return { locked: false, remainingMs: 0 };
+  const now = Date.now();
+  if (info.lockedUntil && info.lockedUntil > now) {
+    return { locked: true, remainingMs: info.lockedUntil - now };
+  }
+  return { locked: false, remainingMs: 0 };
+}
+
+function registerLoginFailure(username) {
+  const now = Date.now();
+  const info = getLoginAttempt(username) || { fails: 0, lockedUntil: 0 };
+  info.fails += 1;
+  if (info.fails >= LOGIN_LOCK_MAX_FAILS) {
+    info.fails = 0;
+    info.lockedUntil = now + LOGIN_LOCK_MS;
+  }
+  setLoginAttempt(username, info);
+  return info;
+}
+
+function isValidUsernameFormat(username) {
+  return /^[A-Za-z0-9_]{6,20}$/.test(String(username || ''));
+}
+
 function validateLogin(username, password) {
-  const user = String(username || '').trim();
+  const user = normalizeUsername(username);
   const pass = String(password || '');
+  const lock = isUsernameLocked(user);
+  if (lock.locked) {
+    return { ok: false, locked: true, remainingMs: lock.remainingMs };
+  }
   if (user === 'slk' && pass === 'slk') {
     return { ok: true, role: 'engineer', username: 'slk' };
   }
   const accounts = Array.isArray(currentSettings.accounts) ? currentSettings.accounts : [];
-  const found = accounts.find((a) => String(a.username || '').trim() === user);
+  let found = accounts.find((a) => String(a.username || '').trim() === user);
+  if (!found && user.toLowerCase() === 'admin') {
+    found = accounts.find((a) => String(a.username || '').trim().toLowerCase() === 'admin');
+  }
   if (found && String(found.password || '') === pass) {
+    clearLoginAttempt(user);
     return { ok: true, role: found.role || 'user', username: found.username };
   }
-  return { ok: false };
+  const info = registerLoginFailure(user);
+  const lockedNow = info.lockedUntil && info.lockedUntil > Date.now();
+  return {
+    ok: false,
+    locked: lockedNow,
+    remainingMs: lockedNow ? info.lockedUntil - Date.now() : 0,
+    triesLeft: LOGIN_LOCK_MAX_FAILS - (info.fails || 0),
+  };
+}
+
+function isAdminCredential(username, password) {
+  const user = normalizeUsername(username);
+  if (!user) return false;
+  const accounts = Array.isArray(currentSettings.accounts) ? currentSettings.accounts : [];
+  const admin = accounts.find(
+    (a) => String(a.username || '').trim().toLowerCase() === user.toLowerCase(),
+  );
+  return !!admin && admin.role === 'admin' && String(admin.password || '') === String(password || '');
 }
 
 async function addAccount(account) {
-  const username = String(account?.username || '').trim();
+  const username = normalizeUsername(account?.username);
   const password = String(account?.password || '');
   const role = String(account?.role || 'user') || 'user';
+  const actor = normalizeUsername(account?.actor);
+  const actorPassword = String(account?.actorPassword || '');
   if (!username || !password) throw new Error('missing username/password');
+  if (!isValidUsernameFormat(username)) throw new Error('invalid username');
   if (username.toLowerCase() === 'slk') throw new Error('reserved username');
+  if (actor && !isAdminCredential(actor, actorPassword)) throw new Error('unauthorized');
+  const safeRole = ['admin', 'operator', 'user', 'engineer'].includes(role) ? role : 'user';
   const accounts = Array.isArray(currentSettings.accounts) ? currentSettings.accounts : [];
   if (accounts.some((a) => String(a.username || '').trim() === username)) {
     throw new Error('username exists');
   }
-  currentSettings.accounts = [...accounts, { username, password, role }];
+  currentSettings.accounts = [...accounts, { username, password, role: safeRole }];
   await saveSettings();
   return listAccountsPublic();
 }
 
-async function removeAccount(username) {
-  const user = String(username || '').trim();
+async function removeAccount(payload) {
+  const user = normalizeUsername(payload?.username || payload);
+  const actor = normalizeUsername(payload?.actor);
+  const actorPassword = String(payload?.actorPassword || '');
   if (!user) throw new Error('missing username');
   if (user.toLowerCase() === 'admin') throw new Error('cannot remove admin');
+  if (actor && !isAdminCredential(actor, actorPassword)) throw new Error('unauthorized');
   const accounts = Array.isArray(currentSettings.accounts) ? currentSettings.accounts : [];
   currentSettings.accounts = accounts.filter((a) => String(a.username || '').trim() !== user);
+  await saveSettings();
+  return listAccountsPublic();
+}
+
+async function resetAccountPassword(payload = {}) {
+  const actor = normalizeUsername(payload.actor);
+  const actorPassword = String(payload.actorPassword || '');
+  const username = normalizeUsername(payload.username);
+  const newPassword = String(payload.newPassword || '');
+  if (!username || !newPassword) throw new Error('missing username/password');
+  if (actor && !isAdminCredential(actor, actorPassword)) throw new Error('unauthorized');
+  const accounts = Array.isArray(currentSettings.accounts) ? currentSettings.accounts : [];
+  const next = accounts.map((acc) => {
+    if (String(acc.username || '').trim() !== username) return acc;
+    return { ...acc, password: newPassword };
+  });
+  currentSettings.accounts = next;
   await saveSettings();
   return listAccountsPublic();
 }
@@ -767,6 +1005,92 @@ async function exportReportPdf(opts = {}) {
   }
 }
 
+function escapeHtml(input) {
+  return String(input || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function buildReportHtml(data = {}) {
+  const title = escapeHtml(data?.title || 'Report');
+  const generatedAt = escapeHtml(data?.generatedAt || '');
+  const sections = [];
+  const renderTable = (items = []) =>
+    items
+      .map(
+        (row) =>
+          `<tr><td>${escapeHtml(row.label)}</td><td>${escapeHtml(row.value)}</td></tr>`
+      )
+      .join('');
+  if (Array.isArray(data.patientInfo) && data.patientInfo.length) {
+    sections.push(
+      `<h2>${escapeHtml(data.patientTitle || 'Patient')}</h2>` +
+        `<table>${renderTable(data.patientInfo)}</table>`
+    );
+  }
+  if (Array.isArray(data.treatmentInfo) && data.treatmentInfo.length) {
+    sections.push(
+      `<h2>${escapeHtml(data.treatmentTitle || 'Treatment')}</h2>` +
+        `<table>${renderTable(data.treatmentInfo)}</table>`
+    );
+  }
+  if (Array.isArray(data.tips) && data.tips.length) {
+    sections.push(
+      `<h2>${escapeHtml(data.tipsTitle || 'Tips')}</h2>` +
+        `<ul>${data.tips.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`
+    );
+  }
+  if (data.disclaimer) {
+    sections.push(
+      `<h2>${escapeHtml(data.disclaimerTitle || 'Disclaimer')}</h2>` +
+        `<p>${escapeHtml(data.disclaimer).replace(/\n/g, '<br />')}</p>`
+    );
+  }
+  return `<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>${title}</title>
+  <style>
+    body { font-family: Arial, "Microsoft YaHei", sans-serif; padding: 24px; color: #111; }
+    h1 { text-align: center; margin: 0 0 8px; }
+    h2 { margin: 20px 0 8px; font-size: 18px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    td { border: 1px solid #ddd; padding: 8px 10px; }
+    ul { margin: 0; padding-left: 18px; }
+  </style>
+</head>
+<body>
+  <h1>${title}</h1>
+  <div>${generatedAt}</div>
+  ${sections.join('')}
+</body>
+</html>`;
+}
+
+async function exportReportData(opts = {}) {
+  try {
+    const format = String(opts.format || 'word').toLowerCase();
+    const now = new Date();
+    const ts = now.toISOString().replace(/[:.]/g, '-');
+    const patientId = safeFilePart(opts.patientId);
+    const fileBase = [ts, patientId].filter(Boolean).join('_') || ts;
+    const ext = format === 'excel' ? 'xls' : 'doc';
+    const fileName = `${fileBase}.${ext}`;
+    const outPath = path.join(REPORTS_DIR, fileName);
+    await fs.promises.mkdir(REPORTS_DIR, { recursive: true });
+    const html = buildReportHtml(opts.data || {});
+    await fs.promises.writeFile(outPath, html, 'utf8');
+    return { success: true, filePath: outPath };
+  } catch (err) {
+    console.warn('[PPHC] export report data failed', err?.message || err);
+    return { success: false, failureReason: err?.message || String(err) };
+  }
+}
+
 async function listReportPdfs(filter = {}) {
   try {
     await fs.promises.mkdir(REPORTS_DIR, { recursive: true });
@@ -798,6 +1122,26 @@ async function listReportPdfs(filter = {}) {
     console.warn('[PPHC] list reports failed', err?.message || err);
     return [];
   }
+}
+
+async function shareReport(opts = {}) {
+  const name = String(opts?.name || '').trim();
+  if (!name) return { success: false, failureReason: 'missing name' };
+  if (!/\.pdf$/i.test(name)) return { success: false, failureReason: 'invalid file' };
+  if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+    return { success: false, failureReason: 'invalid path' };
+  }
+  const src = path.join(REPORTS_DIR, name);
+  try {
+    await fs.promises.access(src, fs.constants.R_OK);
+  } catch {
+    return { success: false, failureReason: 'file not found' };
+  }
+  const shareDir = path.join(REPORTS_DIR, 'share');
+  await fs.promises.mkdir(shareDir, { recursive: true });
+  const dest = path.join(shareDir, name);
+  await fs.promises.copyFile(src, dest);
+  return { success: true, filePath: dest };
 }
 
 async function removeReportPdf(name) {
@@ -1010,6 +1354,14 @@ ipcMain.handle('set-play-chime', async (e, { on }) => {
   applyChimeSetting().catch(() => {});
   return { on: currentSettings.playChime };
 });
+ipcMain.handle('get-pressure-alert-sound', async () => ({ on: !!currentSettings.pressureAlertSound }));
+ipcMain.handle('set-pressure-alert-sound', async (_e, { on }) => {
+  currentSettings.pressureAlertSound = !!on;
+  saveSettings().catch(() => {});
+  return { on: currentSettings.pressureAlertSound };
+});
+ipcMain.handle('settings:get', async () => getAppSettings());
+ipcMain.handle('settings:update', async (_e, patch) => updateAppSettings(patch));
 ipcMain.handle('sound:play', async (_e, { key }) => playPromptSound(key));
 ipcMain.handle('led:test', async () => {
   if (!leds) return { ok: false, error: 'unsupported platform' };
@@ -1023,7 +1375,11 @@ ipcMain.handle('led:test', async () => {
 ipcMain.handle('patients:list', async () => loadPatients());
 ipcMain.handle('patients:add', async (e, patient) => {
   const list = loadPatients();
-  const id = nextPatientId(list);
+  const requestedId = normalizePatientIdInput(patient?.id);
+  if (requestedId && list.some((p) => normalizePatientIdInput(p?.id) === requestedId)) {
+    throw new Error('patient id exists');
+  }
+  const id = requestedId || nextPatientId(list);
   const now = new Date().toISOString();
   const entry = {
     id,
@@ -1032,6 +1388,12 @@ ipcMain.handle('patients:add', async (e, patient) => {
     phone: String(patient?.phone || '').trim(),
     birth: String(patient?.birth || '').trim(),
     notes: String(patient?.notes || '').trim(),
+    therapist: String(patient?.therapist || '').trim(),
+    deviceModel: String(patient?.deviceModel || '').trim(),
+    status: String(patient?.status || 'active') || 'active',
+    photoData: patient?.photoData || null,
+    lastTreatment: patient?.lastTreatment || null,
+    lastParams: patient?.lastParams || null,
     createdAt: now,
     updatedAt: now,
   };
@@ -1040,7 +1402,11 @@ ipcMain.handle('patients:add', async (e, patient) => {
   if (!saved) throw new Error('保存病例信息失败');
   return entry;
 });
+ipcMain.handle('patients:update', async (_e, payload) =>
+  updatePatientById(payload?.id, payload?.patch || {})
+);
 ipcMain.handle('patients:remove', async (_e, id) => removePatientById(id));
+ipcMain.handle('patients:restore', async (_e, payload) => restorePatients(payload));
 ipcMain.handle('patients:clear', async () => clearAllPatients());
 ipcMain.handle('logs:list', async () => listLogFiles());
 ipcMain.handle('logs:read', async (_e, name) => readLogFile(name));
@@ -1050,13 +1416,16 @@ ipcMain.handle('printers:get', async () => ({ printerName: getSelectedPrinterNam
 ipcMain.handle('printers:set', async (_e, name) => setSelectedPrinterName(name));
 ipcMain.handle('print:report', async (_e, opts) => printCurrentView(opts));
 ipcMain.handle('report:export-pdf', async (_e, opts) => exportReportPdf(opts));
+ipcMain.handle('report:export-data', async (_e, opts) => exportReportData(opts));
 ipcMain.handle('reports:list', async (_e, filter) => listReportPdfs(filter));
+ipcMain.handle('report:share', async (_e, opts) => shareReport(opts));
 ipcMain.handle('reports:remove', async (_e, name) => removeReportPdf(name));
 ipcMain.handle('reports:clear', async () => clearAllReports());
 ipcMain.handle('auth:login', async (_e, { username, password }) => validateLogin(username, password));
 ipcMain.handle('accounts:list', async () => listAccountsPublic());
 ipcMain.handle('accounts:add', async (_e, account) => addAccount(account));
-ipcMain.handle('accounts:remove', async (_e, username) => removeAccount(username));
+ipcMain.handle('accounts:remove', async (_e, payload) => removeAccount(payload));
+ipcMain.handle('accounts:reset', async (_e, payload) => resetAccountPassword(payload));
 ipcMain.handle('print:report-pdf', async (_e, opts) => printReportPdf(opts));
 ipcMain.on('logs:renderer', (_e, payload) => {
   const level = payload?.level || 'info';

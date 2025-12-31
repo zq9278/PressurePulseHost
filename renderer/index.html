@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=2560, initial-scale=1.0" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="light dark" />
     <title>睑板腺热脉冲控制中心</title>
     <link rel="stylesheet" href="style.css" />
   </head>
@@ -38,13 +38,35 @@
             exitApp: noop,
             getBrightness: async () => ({ percent: 80, raw: 0, max: 255 }),
             setBrightness: async () => ({ percent: 80, raw: 0, max: 255 }),
+            getVolume: async () => ({ percent: 60 }),
+            setVolume: async () => ({ percent: 60 }),
+            getPlayChime: async () => ({ on: true }),
+            setPlayChime: async () => ({ on: true }),
+            getPressureAlertSound: async () => ({ on: true }),
+            setPressureAlertSound: async () => ({ on: true }),
+            getSettings: async () => ({
+              language: 'zh',
+              theme: 'dark',
+              fontScale: 1,
+              autoConnect: true,
+              lastCalibrationAt: null,
+            }),
+            updateSettings: async (patch) => ({
+              language: patch?.language || 'zh',
+              theme: patch?.theme || 'dark',
+              fontScale: patch?.fontScale || 1,
+              autoConnect: patch?.autoConnect ?? true,
+              lastCalibrationAt: patch?.lastCalibrationAt ?? null,
+            }),
             getPatients: async () => [],
             addPatient: async (patient) => ({
-              id: `P${String(Date.now()).slice(-4)}`,
+              id: patient?.id || `P${String(Date.now()).slice(-4)}`,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
               ...patient,
             }),
+            updatePatient: async (payload) => ({ id: payload?.id || 'P0001', ...(payload?.patch || {}) }),
+            restorePatients: async () => ({ success: true, restored: [] }),
             listLogs: async () => [],
             readLog: async () => '',
             checkUpdates: async () => ({ currentVersion: '0.0.0', latestVersion: null, updateAvailable: false }),
@@ -53,16 +75,19 @@
             setPrinter: async (name) => ({ printerName: name }),
             printReport: async () => ({ success: true, failureReason: null }),
             exportReportPdf: async () => ({ success: true, filePath: 'reports/demo.pdf' }),
+            exportReportData: async () => ({ success: true, filePath: 'reports/demo.doc' }),
             listReports: async () => ([{ name: 'demo_P0001.pdf', url: 'about:blank', mtimeMs: Date.now(), size: 0, patientId: 'P0001' }]),
             printReportPdf: async () => ({ success: true, failureReason: null }),
+            shareReport: async () => ({ success: true, filePath: 'reports/share/demo.pdf' }),
             removePatient: async () => ({ success: true }),
             clearPatients: async () => ({ success: true }),
             removeReport: async () => ({ success: true }),
             clearReports: async () => ({ success: true }),
             login: async (username, password) => ({ ok: username === 'admin' && password === 'admin', role: 'admin', username }),
             listAccounts: async () => ([{ username: 'admin', role: 'admin' }]),
-            addAccount: async (account) => ([{ username: 'admin', role: 'admin' }, { username: account.username, role: 'user' }]),
+            addAccount: async (account) => ([{ username: 'admin', role: 'admin' }, { username: account.username, role: account.role || 'operator' }]),
             removeAccount: async () => ([{ username: 'admin', role: 'admin' }]),
+            resetAccountPassword: async () => ([{ username: 'admin', role: 'admin' }]),
             logToMain: noop,
             onSerialData: () => {},
             onConnectionChanged: () => {},
@@ -118,30 +143,45 @@
               data-osk-target="pass"
             />
           </label>
-          <div class="login-error" id="loginError" hidden>账号或密码错误，请重试。</div>
+          <div class="login-error" id="loginError" hidden>
+            <span class="login-error-icon">⚠</span>
+            <span id="loginErrorText">账号或密码错误，请重试。</span>
+          </div>
           <div class="login-actions">
             <button type="button" id="loginSubmit" class="action primary-toggle">登录</button>
           </div>
+          <div class="login-extra">
+            <button type="button" id="loginAddUser" class="ghost-btn">+ 新增用户</button>
+            <button type="button" id="loginResetLink" class="ghost-btn link">忘记密码？重置</button>
+          </div>
         </form>
       </div>
-      <div class="osk osk-hidden" id="osk" data-lang="zh">
-        <div id="imeCandidates" class="ime-candidates osk-hidden"></div>
-        <div class="osk-header">
-          <div>
-            <div class="osk-overline">屏幕键盘</div>
-            <div class="osk-title">Screen Keyboard</div>
-          </div>
-          <div class="osk-lang">
-            <button type="button" class="osk-lang-btn active" data-lang="zh">中文</button>
-            <button type="button" class="osk-lang-btn" data-lang="en">English</button>
-          </div>
+      <div id="loginToast" class="login-toast" hidden></div>
+    </div>
+    <div class="osk osk-hidden" id="osk" data-lang="zh">
+      <div id="imeCandidates" class="ime-candidates osk-hidden"></div>
+      <div class="osk-header">
+        <div>
+          <div class="osk-overline">屏幕键盘</div>
+          <div class="osk-title">Screen Keyboard</div>
         </div>
-        <div class="osk-keys" id="oskKeys"></div>
+        <div class="osk-lang">
+          <button type="button" class="osk-lang-btn active" data-lang="zh">中文</button>
+          <button type="button" class="osk-lang-btn" data-lang="en">English</button>
+        </div>
       </div>
+      <div class="osk-keys" id="oskKeys"></div>
     </div>
     <div class="bg-board"></div>
     <div class="app-shell" data-view="home">
       <div class="window-controls">
+        <div id="userBadge" class="user-badge" hidden>
+          <div class="avatar" id="userAvatar">--</div>
+          <div class="meta">
+            <div id="userName">--</div>
+            <div id="userRole">--</div>
+          </div>
+        </div>
         <button id="btnExit" class="ghost exit-button">退出程序</button>
       </div>
       <section id="homeScreen" class="screen home-screen">
@@ -215,6 +255,7 @@
                       <div class="panel-title" id="quickPatientSelected">--</div>
                     </div>
                   </div>
+                  <div class="quick-patient-history" id="quickPatientHistory">--</div>
                   <div class="quick-patient-list" id="quickPatientList"></div>
                 </div>
 
@@ -272,11 +313,17 @@
                     <div class="panel-overline">实时曲线</div>
                     <div class="panel-title">波形监控</div>
                   </div>
-                  <div class="curve-legend">
-                    <span class="legend pressure-left">左眼压力</span>
-                    <span class="legend pressure-right">右眼压力</span>
-                    <span class="legend temp-left">左眼温度</span>
-                    <span class="legend temp-right">右眼温度</span>
+                  <div class="curve-tools">
+                    <div class="curve-legend">
+                      <span class="legend pressure-left">左眼压力</span>
+                      <span class="legend pressure-right">右眼压力</span>
+                      <span class="legend temp-left">左眼温度</span>
+                      <span class="legend temp-right">右眼温度</span>
+                    </div>
+                    <div class="curve-actions">
+                      <button id="btnCurveHistory" class="ghost-btn" type="button">历史治疗曲线</button>
+                      <button id="btnCurveZoom" class="ghost-btn" type="button">缩放 1x</button>
+                    </div>
                   </div>
                 </div>
                 <div class="curve-grid">
@@ -381,7 +428,12 @@
                   </div>
                 </div>
                 <div class="action-cluster">
+                  <button id="btnManualSave" class="action subtle" type="button">保存进度</button>
                   <button id="btnStartStop" class="action primary-toggle" disabled>开始</button>
+                </div>
+                <div class="recommend-block">
+                  <div class="recommend-title" id="recommendPlanTitle">推荐方案</div>
+                  <div class="recommend-value" id="recommendPlanValue">--</div>
                 </div>
               </div>
 
@@ -426,12 +478,13 @@
                 type="text"
                 id="patientId"
                 name="patientId"
-                readonly
                 class="osk-input"
                 data-osk-target="patient-id"
                 data-osk-zone="patient"
+                placeholder="P0001"
               />
             </div>
+            <div id="patientIdHint" class="form-msg info" hidden></div>
             <div class="form-row">
               <label for="patientName" id="lblPatientName">姓名</label>
               <input
@@ -465,6 +518,38 @@
               />
             </div>
             <div class="form-row">
+              <label for="patientTherapist" id="lblPatientTherapist">治疗师</label>
+              <input
+                type="text"
+                id="patientTherapist"
+                name="patientTherapist"
+                placeholder="填写治疗师"
+                class="osk-input"
+                data-osk-target="patient-therapist"
+                data-osk-zone="patient"
+              />
+            </div>
+            <div class="form-row">
+              <label for="patientDeviceModel" id="lblPatientDevice">设备型号</label>
+              <input
+                type="text"
+                id="patientDeviceModel"
+                name="patientDeviceModel"
+                placeholder="设备型号"
+                class="osk-input"
+                data-osk-target="patient-device"
+                data-osk-zone="patient"
+              />
+            </div>
+            <div class="form-row">
+              <label for="patientStatus" id="lblPatientStatus">病例状态</label>
+              <select id="patientStatus">
+                <option value="active">进行中</option>
+                <option value="completed">已完成</option>
+                <option value="archived">已归档</option>
+              </select>
+            </div>
+            <div class="form-row">
               <label for="patientBirth" id="lblPatientBirth">出生日期</label>
               <input
                 type="text"
@@ -488,6 +573,13 @@
                 data-osk-target="patient-notes"
                 data-osk-zone="patient"
               ></textarea>
+            </div>
+            <div class="form-row">
+              <label id="lblPatientPhoto">面部照片</label>
+              <div class="photo-field">
+                <img id="patientPhotoPreview" alt="患者照片预览" hidden />
+                <button type="button" id="btnCapturePhoto" class="ghost-btn">拍照</button>
+              </div>
             </div>
             <div class="form-actions">
               <button type="button" id="btnGoPatientList" class="action subtle">查看列表</button>
@@ -542,10 +634,47 @@
             <div class="section-title">病例列表</div>
             <div class="top-actions">
               <button id="btnOpenReportArchive" class="ghost-btn" type="button">报告</button>
+              <button id="btnBatchExport" class="ghost-btn" type="button">批量导出</button>
               <button id="btnDeletePatient" class="ghost-btn" type="button">删除</button>
+              <button id="btnUndoPatientDelete" class="ghost-btn" type="button" disabled>撤销删除</button>
               <button id="btnClearPatients" class="ghost-btn" type="button">清空</button>
             </div>
           </header>
+
+          <div class="patient-filters">
+            <div class="filter-field">
+              <label id="filterDateLabel">治疗日期</label>
+              <input id="filterStartDate" class="osk-input date-input" type="text" placeholder="起始日期" readonly />
+              <span class="filter-sep">至</span>
+              <input id="filterEndDate" class="osk-input date-input" type="text" placeholder="结束日期" readonly />
+            </div>
+            <div class="filter-field">
+              <label id="filterIdLabel">患者编号</label>
+              <input id="filterPatientId" class="osk-input" type="text" placeholder="患者编号" />
+            </div>
+            <div class="filter-field">
+              <label id="filterNameLabel">姓名</label>
+              <input id="filterPatientName" class="osk-input" type="text" placeholder="姓名" />
+            </div>
+            <div class="filter-field">
+              <label id="filterTherapistLabel">治疗师</label>
+              <input id="filterTherapist" class="osk-input" type="text" placeholder="治疗师" />
+            </div>
+            <div class="filter-field">
+              <label id="filterDeviceLabel">设备型号</label>
+              <input id="filterDeviceModel" class="osk-input" type="text" placeholder="设备型号" />
+            </div>
+            <div class="filter-field">
+              <label id="filterStatusLabel">病例状态</label>
+              <select id="filterStatus">
+                <option value="">全部</option>
+                <option value="active">进行中</option>
+                <option value="completed">已完成</option>
+                <option value="archived">已归档</option>
+              </select>
+            </div>
+            <button id="btnClearFilters" class="ghost-btn" type="button">重置筛选</button>
+          </div>
 
           <div id="patientListEmpty" class="empty-tip" hidden>暂无病例，请先创建。</div>
           <div id="patientList" class="patient-list"></div>
@@ -577,12 +706,12 @@
                 <div class="report-grid" id="reportTreatmentInfoGrid"></div>
               </section>
 
-              <section class="report-section">
+              <section class="report-section" id="reportSectionTips">
                 <h3 id="reportTipsTitle">干眼注意事项</h3>
                 <ul id="reportTipsList" class="report-list"></ul>
               </section>
 
-              <section class="report-section">
+              <section class="report-section" id="reportSectionDisclaimer">
                 <h3 id="reportDisclaimerTitle">医疗报告说明</h3>
                 <div id="reportDisclaimerText" class="report-text"></div>
                 <div class="report-sign">
@@ -593,8 +722,33 @@
             </div>
 
             <div id="reportActions" class="report-actions">
-              <button id="btnExportPdf" class="action subtle">导出PDF</button>
-              <button id="btnPrintReport" class="action start">打印报告</button>
+              <div class="report-export-options">
+                <div class="export-checks">
+                  <label><input type="checkbox" id="exportIncludePatient" checked /><span id="exportIncludePatientLabel">患者信息</span></label>
+                  <label><input type="checkbox" id="exportIncludeTreatment" checked /><span id="exportIncludeTreatmentLabel">治疗信息</span></label>
+                  <label><input type="checkbox" id="exportIncludeTips" checked /><span id="exportIncludeTipsLabel">注意事项</span></label>
+                  <label><input type="checkbox" id="exportIncludeDisclaimer" checked /><span id="exportIncludeDisclaimerLabel">报告说明</span></label>
+                </div>
+                <div class="export-format">
+                  <label for="reportExportFormat" id="reportExportFormatLabel">导出格式</label>
+                  <select id="reportExportFormat">
+                    <option value="pdf">PDF</option>
+                    <option value="word">Word</option>
+                    <option value="excel">Excel</option>
+                  </select>
+                </div>
+                <div class="export-format">
+                  <label for="reportTemplateSelect" id="reportTemplateLabel">报告模板</label>
+                  <select id="reportTemplateSelect">
+                    <option value="standard">标准</option>
+                    <option value="compact">简洁</option>
+                  </select>
+                </div>
+              </div>
+              <div class="report-export-actions">
+                <button id="btnExportPdf" class="action subtle">导出</button>
+                <button id="btnPrintReport" class="action start">打印报告</button>
+              </div>
             </div>
           </div>
         </div>
@@ -616,6 +770,7 @@
           <div class="settings-actions logs-actions">
             <button id="btnRefreshReportArchive" class="ghost-btn" type="button">刷新</button>
             <button id="btnPrintArchiveReport" class="ghost-btn" type="button">打印</button>
+            <button id="btnShareReport" class="ghost-btn" type="button">分享</button>
             <button id="btnDeleteReport" class="ghost-btn" type="button">删除</button>
             <button id="btnClearReports" class="ghost-btn" type="button">清空</button>
           </div>
@@ -703,10 +858,12 @@
               <div class="settings-nav">
                 <button type="button" data-module="display" class="active">显示 <span class="hint">亮度 / 屏保</span></button>
                 <button type="button" data-module="sound">声音 <span class="hint">音量 / 提示</span></button>
+                <button type="button" data-module="device">设备 <span class="hint">连接 / 校准</span></button>
                 <button type="button" data-module="printer">打印机 <span class="hint">选择 / 设置</span></button>
                 <button type="button" data-module="accounts">账户 <span class="hint">添加 / 管理</span></button>
                 <button type="button" data-module="language">语言 <span class="hint">中文 / English</span></button>
                 <button type="button" data-module="about">关于 <span class="hint">版本 / 更新</span></button>
+                <button type="button" data-module="history">操作记录 <span class="hint">撤销 / 恢复</span></button>
                 <button type="button" data-module="logs">日志 <span class="hint">查看 / 导出</span></button>
               </div>
             </aside>
@@ -735,6 +892,28 @@
                       <option value="30">30 分钟</option>
                       <option value="60">60 分钟</option>
                     </select>
+                    <div class="setting-row">
+                      <div class="meta">
+                        <strong id="themeLabel">界面主题</strong>
+                        <span id="themeHint">浅色 / 深色</span>
+                      </div>
+                      <select id="themeSelect">
+                        <option value="dark">深色</option>
+                        <option value="light">浅色</option>
+                      </select>
+                    </div>
+                    <div class="setting-row">
+                      <div class="meta">
+                        <strong id="fontScaleLabel">字体大小</strong>
+                        <span id="fontScaleHint">调整显示字号</span>
+                      </div>
+                      <select id="fontScaleSelect">
+                        <option value="0.9">小</option>
+                        <option value="1">标准</option>
+                        <option value="1.1">大</option>
+                        <option value="1.2">特大</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
@@ -757,6 +936,50 @@
                         <input type="checkbox" id="chimeToggle" />
                         <span class="toggle-track"></span>
                       </label>
+                    </div>
+                    <div class="setting-row">
+                      <div class="meta">
+                        <strong id="pressureAlertSoundLabel">压力警示音</strong>
+                        <span id="pressureAlertSoundHint">压力超过 250mmHg 时提示</span>
+                      </div>
+                      <label class="toggle">
+                        <input type="checkbox" id="pressureAlertToggle" />
+                        <span class="toggle-track"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="settingsModuleDevice" class="settings-module" data-module="device">
+                  <div class="settings-card">
+                    <h3 id="deviceTitle">设备连接</h3>
+                    <div class="setting-row">
+                      <div class="meta">
+                        <strong id="deviceStatusLabel">设备状态</strong>
+                        <span id="deviceStatusHint">实时监测连接</span>
+                      </div>
+                      <div class="pill"><span id="deviceStatusText">未连接</span></div>
+                    </div>
+                    <div class="setting-row">
+                      <div class="meta">
+                        <strong id="deviceAutoReconnectLabel">自动重连</strong>
+                        <span id="deviceAutoReconnectHint">断开后自动尝试连接</span>
+                      </div>
+                      <label class="toggle">
+                        <input type="checkbox" id="deviceAutoReconnect" />
+                        <span class="toggle-track"></span>
+                      </label>
+                    </div>
+                    <div class="setting-row">
+                      <div class="meta">
+                        <strong id="deviceCalibrationLabel">校准提醒</strong>
+                        <span id="deviceCalibrationHint">定期校准确保压力准确</span>
+                      </div>
+                      <div class="pill"><span id="deviceCalibrationValue">--</span></div>
+                    </div>
+                    <div class="settings-actions">
+                      <button id="btnDeviceReconnect" class="ghost-btn" type="button">立即重连</button>
+                      <button id="btnDeviceCalibrated" class="ghost-btn" type="button">已校准</button>
                     </div>
                   </div>
                 </div>
@@ -801,6 +1024,13 @@
                         <div class="form-row">
                           <label id="accountsPassword2Label" for="accountPassword2">确认密码</label>
                           <input id="accountPassword2" type="password" class="osk-input" autocomplete="off" placeholder="password" />
+                        </div>
+                        <div class="form-row">
+                          <label id="accountsRoleLabel" for="accountRole">权限等级</label>
+                          <select id="accountRole">
+                            <option value="operator">普通用户</option>
+                            <option value="admin">管理员</option>
+                          </select>
                         </div>
                         <div class="settings-actions">
                           <button id="btnAddAccount" class="ghost-btn" type="button">添加</button>
@@ -865,6 +1095,13 @@
                     </div>
                   </div>
                 </div>
+
+                <div id="settingsModuleHistory" class="settings-module" data-module="history">
+                  <div class="settings-card">
+                    <h3 id="historyTitle">操作记录</h3>
+                    <div id="historyList" class="history-list"></div>
+                  </div>
+                </div>
               </div>
           </div>
         </div>
@@ -873,7 +1110,38 @@
 
     </div>
 
+    <nav class="bottom-nav" id="bottomNav">
+      <button type="button" data-view="quick" class="nav-item">
+        <span class="nav-icon nav-icon-treatment"></span>
+        <span class="label">治疗</span>
+      </button>
+      <button type="button" data-view="patientList" class="nav-item">
+        <span class="nav-icon nav-icon-patient"></span>
+        <span class="label">病例</span>
+      </button>
+      <button type="button" data-view="reportArchive" class="nav-item">
+        <span class="nav-icon nav-icon-report"></span>
+        <span class="label">报告</span>
+      </button>
+      <button type="button" data-view="settings" class="nav-item">
+        <span class="nav-icon nav-icon-settings"></span>
+        <span class="label">设置</span>
+      </button>
+    </nav>
+
     <div id="alertBanner" class="alert" hidden></div>
+
+    <div id="autosaveRestoreModal" class="modal" hidden>
+      <div class="modal-body modal-form">
+        <div class="modal-title" id="autosaveRestoreTitle">恢复治疗进度</div>
+        <div class="modal-body-text" id="autosaveRestoreText">检测到未完成的治疗进度，是否恢复？</div>
+        <div class="modal-body-text" id="autosaveRestoreMeta">--</div>
+        <div class="modal-actions">
+          <button id="btnAutosaveDiscard" class="action subtle" type="button">忽略</button>
+          <button id="btnAutosaveRestore" class="action start" type="button">恢复</button>
+        </div>
+      </div>
+    </div>
 
     <div id="shieldModal" class="modal" hidden>
       <div class="modal-body">
@@ -885,9 +1153,9 @@
 
     <div id="shieldLostModal" class="modal" hidden>
       <div class="modal-body">
-        <div class="modal-title">??????????</div>
-        <p>???????????????????????????????????</p>
-        <button id="shieldLostBack" class="action start">????</button>
+        <div class="modal-title">眼盾断开</div>
+        <p>检测到眼盾离线，治疗已停止，请检查佩戴情况并重试。</p>
+        <button id="shieldLostBack" class="action start">返回</button>
       </div>
     </div>
 
@@ -909,6 +1177,106 @@
         <div class="modal-actions">
           <button id="btnExportAfterNo" class="action subtle">暂不导出</button>
           <button id="btnExportAfterYes" class="action start">导出报告</button>
+        </div>
+      </div>
+
+      <div id="photoCaptureModal" class="modal" hidden>
+        <div class="modal-body photo-modal">
+          <div class="modal-title" id="photoModalTitle">拍照</div>
+          <video id="photoVideo" autoplay playsinline></video>
+          <canvas id="photoCanvas" hidden></canvas>
+          <div class="modal-actions">
+            <button id="photoCaptureCancel" class="action subtle">取消</button>
+            <button id="photoCaptureTake" class="action start">拍照</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="patientDeleteModal" class="modal" hidden>
+        <div class="modal-body modal-form">
+          <div class="modal-title" id="patientDeleteTitle">确认删除病例</div>
+          <div class="modal-body-text" id="patientDeleteText">确认删除所选病例？此操作不可恢复。</div>
+          <div class="form-row">
+            <label id="patientDeletePasswordLabel" for="patientDeletePassword">确认密码</label>
+            <input id="patientDeletePassword" type="password" class="login-input osk-input" autocomplete="off" />
+          </div>
+          <div id="patientDeleteMessage" class="form-msg" hidden></div>
+          <div class="modal-actions">
+            <button id="patientDeleteCancel" class="action subtle">取消</button>
+            <button id="patientDeleteConfirm" class="action start">确认删除</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="loginAddUserModal" class="modal" hidden>
+      <div class="modal-body modal-form">
+        <div class="modal-title" id="loginAddUserTitle">新增用户</div>
+        <div class="modal-body-text" id="loginAddUserHint">仅管理员可新增用户。</div>
+        <div class="form-row">
+          <label for="loginAddUsername">用户名</label>
+          <input id="loginAddUsername" type="text" class="login-input osk-input" autocomplete="off" />
+        </div>
+        <div class="form-row">
+          <label for="loginAddPassword">密码</label>
+          <input id="loginAddPassword" type="password" class="login-input osk-input" autocomplete="off" />
+        </div>
+        <div class="form-row">
+          <label for="loginAddPassword2">确认密码</label>
+          <input id="loginAddPassword2" type="password" class="login-input osk-input" autocomplete="off" />
+        </div>
+        <div class="form-row">
+          <label for="loginAddRole">权限等级</label>
+          <select id="loginAddRole">
+            <option value="operator">普通用户</option>
+            <option value="admin">管理员</option>
+          </select>
+        </div>
+        <div id="loginAddUserMessage" class="form-msg" hidden></div>
+        <div class="modal-actions">
+          <button id="loginAddUserCancel" class="action subtle">取消</button>
+          <button id="loginAddUserSubmit" class="action start">提交</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="loginResetModal" class="modal" hidden>
+      <div class="modal-body modal-form">
+        <div class="modal-title" id="loginResetTitle">重置密码</div>
+        <div class="modal-body-text" id="loginResetHint">需管理员确认后重置。</div>
+        <div class="form-row">
+          <label for="resetUsername">用户名</label>
+          <input id="resetUsername" type="text" class="login-input osk-input" autocomplete="off" />
+        </div>
+        <div class="form-row">
+          <label for="resetPassword">新密码</label>
+          <input id="resetPassword" type="password" class="login-input osk-input" autocomplete="off" />
+        </div>
+        <div class="form-row">
+          <label for="resetPassword2">确认密码</label>
+          <input id="resetPassword2" type="password" class="login-input osk-input" autocomplete="off" />
+        </div>
+        <div id="loginResetMessage" class="form-msg" hidden></div>
+        <div class="modal-actions">
+          <button id="loginResetCancel" class="action subtle">取消</button>
+          <button id="loginResetSubmit" class="action start">确认</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="accountRemoveModal" class="modal" hidden>
+      <div class="modal-body modal-form">
+        <div class="modal-title" id="accountRemoveTitle">确认删除用户</div>
+        <div class="modal-body-text" id="accountRemoveText">删除用户后将无法登录系统。</div>
+        <div class="modal-body-text" id="accountRemoveImpact">删除用户仅移除登录权限，不影响病例数据。</div>
+        <div class="form-row">
+          <label for="accountRemovePassword" id="accountRemovePasswordLabel">确认密码</label>
+          <input id="accountRemovePassword" type="password" class="login-input osk-input" autocomplete="off" />
+        </div>
+        <div id="accountRemoveMessage" class="form-msg" hidden></div>
+        <div class="modal-actions">
+          <button id="accountRemoveCancel" class="action subtle">取消</button>
+          <button id="accountRemoveConfirm" class="action start">确认删除</button>
         </div>
       </div>
     </div>

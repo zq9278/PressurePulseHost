@@ -50,16 +50,29 @@
       patientListTitle: '病例列表',
       patientListEmpty: '暂无病例，请先创建。',
       patientSaved: '保存成功',
+      patientUpdated: '更新成功',
       patientSaveFailed: '保存失败，请重试。',
+      patientIdRequired: '请输入患者编号',
+      patientIdDuplicate: '患者编号已存在，请更换编号',
       patientNameRequired: '请输入姓名',
+      patientNameInvalid: '请输入有效中文姓名',
+      patientIdLoaded: '已载入历史档案',
+      patientIdAvailable: '编号可用，可创建新档案',
+      patientHistorySummary: '历史治疗记录：{summary}',
+      patientHistoryNone: '暂无历史治疗记录',
       patientLoadFailed: '病例读取失败',
       patientId: '患者编号',
       patientName: '姓名',
       patientGender: '性别',
       patientPhone: '联系电话',
+      patientTherapist: '治疗师',
+      patientDevice: '设备型号',
+      patientStatus: '病例状态',
       patientBirth: '出生日期',
       patientNotes: '备注信息',
+      patientPhoto: '面部照片',
       patientCreatedAt: '建档日期',
+      patientDetail: '详情',
       datePickerToday: '今天',
       datePickerCancel: '取消',
       datePickerBack: '返回',
@@ -76,6 +89,8 @@
       quickPatientTitle: '患者选择',
       quickPatientSelectedNone: '未选择',
       quickPatientEmpty: '暂无患者，请先创建档案。',
+      quickPatientHistoryEmpty: '暂无历史治疗记录',
+      quickPatientHistory: '上次治疗',
       summaryOverline: '实时数据',
       summaryTitle: '压力 / 温度',
       curveOverline: '实时曲线',
@@ -98,6 +113,8 @@
       fuseBlown: '熔断',
       controlOverline: '控制参数',
       controlTitle: '',
+      recommendPlanTitle: '推荐方案',
+      recommendPlanDefault: '使用默认参数',
       pressureEyebrow: '目标压力',
       pressureStrong: '',
       durationEyebrow: '治疗时间',
@@ -120,6 +137,8 @@
       navDisplayHint: '亮度 / 屏保',
       navSound: '声音',
       navSoundHint: '音量 / 提示',
+      navDevice: '设备',
+      navDeviceHint: '连接 / 校准',
       navPrinter: '打印机',
       navPrinterHint: '选择 / 设置',
       navAccounts: '账户',
@@ -128,8 +147,14 @@
       navLanguageHint: '中文 / English',
       navAbout: '关于',
       navAboutHint: '版本 / 更新',
+      navHistory: '操作记录',
+      navHistoryHint: '撤销 / 恢复',
       navLogs: '日志',
       navLogsHint: '查看 / 导出',
+      bottomNavQuick: '治疗',
+      bottomNavPatients: '病例',
+      bottomNavReports: '报告',
+      bottomNavSettings: '设置',
       printerTitle: '打印机',
       printerSelectLabel: '选择打印机',
       printerSelectHint: '用于打印病例报告',
@@ -141,6 +166,32 @@
       printerNotSet: '未设置打印机',
       default: '默认',
       loginFailed: '账号或密码错误，请重试。',
+      loginLocked: '账号已锁定，请 {seconds} 秒后重试。',
+      loginSuccess: '登录成功，欢迎 {user}',
+      loginResetLink: '忘记密码？重置',
+      loginAddUserBtn: '+ 新增用户',
+      loginAddUserTitle: '新增用户',
+      loginAddUserHint: '仅管理员可新增用户。',
+      loginResetTitle: '重置密码',
+      loginResetHint: '设置新密码后确认。',
+      usernameFormatHint: '用户名需为 6-20 位字母、数字或下划线',
+      passwordRequired: '请输入密码',
+      roleAdmin: '管理员',
+      roleOperator: '普通用户',
+      roleUser: '普通用户',
+      accountsRoleLabel: '权限等级',
+      accountsAddRoleLabel: '权限等级',
+      accountsDeleteImpact: '删除用户仅移除登录权限，不影响病例数据。',
+      confirmPassword: '确认密码',
+      confirmPasswordPlaceholder: '请输入管理员密码',
+      loginAddSuccess: '用户已创建',
+      loginAddFailed: '新增用户失败',
+      loginResetSuccess: '密码已重置',
+      loginResetFailed: '密码重置失败',
+      actionCancel: '取消',
+      actionSubmit: '提交',
+      actionConfirm: '确认',
+      adminOnly: '仅管理员可执行此操作',
       accountsTitle: '账户',
       accountsAddTitle: '添加账户',
       accountsAddHint: '新账户可用于登录系统',
@@ -155,6 +206,8 @@
       accountsAddFailed: '添加失败',
       accountsPasswordMismatch: '两次密码不一致',
       accountsRemoveFailed: '删除失败',
+      accountsRemoveConfirmTitle: '确认删除用户',
+      accountsRemoveConfirmText: '删除用户后将无法登录系统。',
       reportScreenTitle: '打印报告',
       reportSuffix: '报告',
       reportPatientInfoTitle: '患者信息',
@@ -172,14 +225,30 @@
       reportStartTimeLabel: '治疗开始时间',
       printReport: '打印报告',
       exportPdf: '导出PDF',
+      exportReport: '导出',
+      exportFormatLabel: '导出格式',
+      reportTemplateLabel: '报告模板',
+      reportTemplateStandard: '标准',
+      reportTemplateCompact: '简洁',
+      exportIncludePatient: '患者信息',
+      exportIncludeTreatment: '治疗信息',
+      exportIncludeTips: '注意事项',
+      exportIncludeDisclaimer: '报告说明',
       exportingPdf: '正在导出PDF...',
+      exportingReport: '正在导出...',
       exportPdfSuccess: 'PDF已导出',
       exportPdfFailed: 'PDF导出失败',
+      exportReportFailed: '导出失败',
+      exportReportSuccess: '导出完成',
       reportArchiveTitle: '报告列表',
       reportArchiveOpen: '报告',
       reportArchiveRefresh: '刷新',
       reportArchiveEmpty: '暂无报告，请先导出。',
       reportArchivePrint: '打印',
+      reportShare: '分享',
+      reportShareNeedSelect: '请先选择要分享的报告',
+      reportShareSuccess: '已分享至 {path}',
+      reportShareFailed: '分享失败',
       deleteOne: '删除',
       clearAll: '清空',
       patientDeleteNeedSelect: '请先选择要删除的病例',
@@ -187,6 +256,24 @@
       patientDeleteFailed: '删除失败',
       patientsCleared: '已清空病例',
       patientsClearFailed: '清空失败',
+      patientDeleteTitle: '确认删除病例',
+      patientDeleteText: '确认删除所选病例？此操作不可恢复。',
+      batchExport: '批量导出',
+      batchExportNeedSelect: '请先选择要导出的病例',
+      batchExportStart: '正在批量导出...',
+      batchExportDone: '批量导出完成',
+      batchExportFailed: '批量导出失败',
+      filterDate: '治疗日期',
+      filterId: '患者编号',
+      filterName: '姓名',
+      filterTherapist: '治疗师',
+      filterDevice: '设备型号',
+      filterStatus: '病例状态',
+      filterReset: '重置筛选',
+      filterAll: '全部',
+      statusActive: '进行中',
+      statusCompleted: '已完成',
+      statusArchived: '已归档',
       reportDeleteNeedSelect: '请先选择要删除的报告',
       reportDeleted: '已删除报告',
       reportDeleteFailed: '删除报告失败',
@@ -216,17 +303,67 @@
       brightnessApplyFailed: '设置亮度失败，请检查权限或背光设备',
       screensaverLabel: '屏保等待',
       screensaverHint: '自动进入屏保的倒计时',
+      themeLabel: '界面主题',
+      themeHint: '浅色 / 深色',
+      themeLight: '浅色',
+      themeDark: '深色',
+      fontScaleLabel: '字体大小',
+      fontScaleHint: '调整显示字号',
+      fontScaleSmall: '小',
+      fontScaleNormal: '标准',
+      fontScaleLarge: '大',
+      fontScaleXL: '特大',
       soundTitle: '声音',
       volumeLabel: '系统音量',
       volumeHint: '播放提示与反馈',
       chimeLabel: '提示音',
       chimeHint: '重要操作播放提示',
+      pressureAlertSoundLabel: '压力警示音',
+      pressureAlertSoundHint: '压力超过 250mmHg 时提示',
+      deviceTitle: '设备连接',
+      deviceStatusLabel: '设备状态',
+      deviceStatusHint: '实时监测连接',
+      deviceStatusConnected: '已连接',
+      deviceStatusDisconnected: '未连接',
+      deviceStatusConnecting: '连接中',
+      deviceAutoReconnectLabel: '自动重连',
+      deviceAutoReconnectHint: '断开后自动尝试连接',
+      deviceReconnectNow: '立即重连',
+      deviceCalibrationLabel: '校准提醒',
+      deviceCalibrationHint: '定期校准确保压力准确',
+      deviceCalibrationNever: '未记录',
+      deviceCalibrationAt: '上次 {date}',
+      deviceCalibrationDue: '距下次 {days} 天',
+      deviceCalibrationOverdue: '已超过 {days} 天',
+      deviceCalibrationAction: '已校准',
+      deviceCalibrationSet: '校准记录已更新',
       languageTitle: '语言',
       languageDesc: '中英文切换，实时调整界面文案。',
       languageLabel: '界面语言',
       languageHint: '偏好选择',
       langZh: '中文',
       langEn: 'English',
+      historyTitle: '操作记录',
+      historyEmpty: '暂无操作记录',
+      historyDeletePatient: '删除病例',
+      historyRestorePatient: '恢复病例',
+      historyAutoSave: '自动保存进度',
+      historyManualSave: '手动保存进度',
+      historyCalibration: '记录设备校准',
+      autoSaveTitle: '恢复治疗进度',
+      autoSaveText: '检测到未完成的治疗进度，是否恢复？',
+      autoSaveRestore: '恢复',
+      autoSaveDiscard: '忽略',
+      autoSaveSaved: '进度已保存',
+      autoSaveRestored: '已恢复上次进度',
+      autoSaveDiscarded: '已忽略上次进度',
+      autoSaveMeta: '保存时间 {time}',
+      manualSave: '保存进度',
+      undoDelete: '撤销删除',
+      undoReady: '可撤销最近删除',
+      undoDone: '已撤销删除',
+      undoFailed: '撤销失败',
+      undoUnavailable: '暂无可撤销操作',
       aboutTitle: '关于 / 更新',
       aboutVersion: '程序版本',
       aboutFirmware: '固件版本',
@@ -259,6 +396,14 @@
       shieldMissing: '未检测到眼盾，无法启动，请佩戴后再试',
       checkingUpdates: '检查更新中...',
       logsHint: '日志目录打开功能待接入',
+      curveHistory: '历史曲线',
+      curveHistoryOn: '历史曲线: 开',
+      curveHistoryOff: '历史曲线: 关',
+      curveZoomLabel: '缩放 {zoom}x',
+      photoModalTitle: '拍照',
+      photoCapture: '拍照',
+      photoCaptureFailed: '拍照失败',
+      photoCaptureNoCamera: '未检测到摄像头',
     },
     en: {
       appTitle: 'Thermal Pulsation Control',
@@ -278,16 +423,29 @@
       patientListTitle: 'Case List',
       patientListEmpty: 'No records yet. Create one first.',
       patientSaved: 'Saved',
+      patientUpdated: 'Updated',
       patientSaveFailed: 'Save failed, try again.',
+      patientIdRequired: 'Patient ID is required',
+      patientIdDuplicate: 'Patient ID already exists. Choose another.',
       patientNameRequired: 'Name is required',
+      patientNameInvalid: 'Enter a valid Chinese name',
+      patientIdLoaded: 'Loaded existing record',
+      patientIdAvailable: 'ID available. New record will be created.',
+      patientHistorySummary: 'History: {summary}',
+      patientHistoryNone: 'No previous treatment record',
       patientLoadFailed: 'Unable to read records',
       patientId: 'Patient ID',
       patientName: 'Name',
       patientGender: 'Gender',
       patientPhone: 'Phone',
+      patientTherapist: 'Therapist',
+      patientDevice: 'Device Model',
+      patientStatus: 'Case Status',
       patientBirth: 'Birth Date',
       patientNotes: 'Notes',
+      patientPhoto: 'Photo',
       patientCreatedAt: 'Created',
+      patientDetail: 'Details',
       datePickerToday: 'Today',
       datePickerCancel: 'Cancel',
       datePickerBack: 'Back',
@@ -304,6 +462,8 @@
       quickPatientTitle: 'Patient',
       quickPatientSelectedNone: 'Not selected',
       quickPatientEmpty: 'No patients yet. Create a profile first.',
+      quickPatientHistoryEmpty: 'No treatment history',
+      quickPatientHistory: 'Last session',
       summaryOverline: 'Live Data',
       summaryTitle: 'Pressure / Temp',
       curveOverline: 'Live Curves',
@@ -326,6 +486,8 @@
       fuseBlown: 'Blown',
       controlOverline: 'Controls',
       controlTitle: '',
+      recommendPlanTitle: 'Recommended Plan',
+      recommendPlanDefault: 'Use default parameters',
       pressureEyebrow: 'Target Pressure',
       pressureStrong: '',
       durationEyebrow: 'Duration',
@@ -348,6 +510,8 @@
       navDisplayHint: 'Brightness / Saver',
       navSound: 'Sound',
       navSoundHint: 'Volume / Chime',
+      navDevice: 'Device',
+      navDeviceHint: 'Status / Calibration',
       navPrinter: 'Printer',
       navPrinterHint: 'Select / Setup',
       navAccounts: 'Accounts',
@@ -356,8 +520,14 @@
       navLanguageHint: 'Chinese / English',
       navAbout: 'About',
       navAboutHint: 'Version / Updates',
+      navHistory: 'History',
+      navHistoryHint: 'Undo / Restore',
       navLogs: 'Logs',
       navLogsHint: 'View / Export',
+      bottomNavQuick: 'Treatment',
+      bottomNavPatients: 'Patients',
+      bottomNavReports: 'Reports',
+      bottomNavSettings: 'Settings',
       printerTitle: 'Printer',
       printerSelectLabel: 'Select Printer',
       printerSelectHint: 'Used for case report printing',
@@ -369,6 +539,32 @@
       printerNotSet: 'Printer not set',
       default: 'Default',
       loginFailed: 'Invalid username or password.',
+      loginLocked: 'Account locked. Retry in {seconds} seconds.',
+      loginSuccess: 'Login success. Welcome {user}',
+      loginResetLink: 'Forgot password? Reset',
+      loginAddUserBtn: '+ Add User',
+      loginAddUserTitle: 'Add User',
+      loginAddUserHint: 'Admin only.',
+      loginResetTitle: 'Reset Password',
+      loginResetHint: 'Set a new password to reset.',
+      usernameFormatHint: 'Username must be 6-20 letters, numbers, or underscore',
+      passwordRequired: 'Password required',
+      roleAdmin: 'Admin',
+      roleOperator: 'User',
+      roleUser: 'User',
+      accountsRoleLabel: 'Role',
+      accountsAddRoleLabel: 'Role',
+      accountsDeleteImpact: 'Removing a user only revokes login access.',
+      confirmPassword: 'Confirm password',
+      confirmPasswordPlaceholder: 'Enter admin password',
+      loginAddSuccess: 'User created',
+      loginAddFailed: 'Add user failed',
+      loginResetSuccess: 'Password reset',
+      loginResetFailed: 'Password reset failed',
+      actionCancel: 'Cancel',
+      actionSubmit: 'Submit',
+      actionConfirm: 'Confirm',
+      adminOnly: 'Admin only',
       accountsTitle: 'Accounts',
       accountsAddTitle: 'Add Account',
       accountsAddHint: 'New accounts can log into the system',
@@ -383,6 +579,8 @@
       accountsAddFailed: 'Add failed',
       accountsPasswordMismatch: 'Passwords do not match',
       accountsRemoveFailed: 'Remove failed',
+      accountsRemoveConfirmTitle: 'Confirm User Removal',
+      accountsRemoveConfirmText: 'The user will no longer be able to log in.',
       reportScreenTitle: 'Print Report',
       reportSuffix: 'Report',
       reportPatientInfoTitle: 'Patient Information',
@@ -400,14 +598,30 @@
       reportStartTimeLabel: 'Treatment Started At',
       printReport: 'Print Report',
       exportPdf: 'Export PDF',
+      exportReport: 'Export',
+      exportFormatLabel: 'Format',
+      reportTemplateLabel: 'Report Template',
+      reportTemplateStandard: 'Standard',
+      reportTemplateCompact: 'Compact',
+      exportIncludePatient: 'Patient Info',
+      exportIncludeTreatment: 'Treatment Info',
+      exportIncludeTips: 'Care Tips',
+      exportIncludeDisclaimer: 'Disclaimer',
       exportingPdf: 'Exporting PDF...',
+      exportingReport: 'Exporting...',
       exportPdfSuccess: 'PDF exported',
       exportPdfFailed: 'PDF export failed',
+      exportReportFailed: 'Export failed',
+      exportReportSuccess: 'Export complete',
       reportArchiveTitle: 'Report Files',
       reportArchiveOpen: 'Reports',
       reportArchiveRefresh: 'Refresh',
       reportArchiveEmpty: 'No reports yet. Export one first.',
       reportArchivePrint: 'Print',
+      reportShare: 'Share',
+      reportShareNeedSelect: 'Select a report to share',
+      reportShareSuccess: 'Shared to {path}',
+      reportShareFailed: 'Share failed',
       deleteOne: 'Delete',
       clearAll: 'Clear',
       patientDeleteNeedSelect: 'Select a patient to delete',
@@ -415,6 +629,24 @@
       patientDeleteFailed: 'Delete failed',
       patientsCleared: 'Cleared all patients',
       patientsClearFailed: 'Clear failed',
+      patientDeleteTitle: 'Confirm Case Deletion',
+      patientDeleteText: 'Delete selected cases? This cannot be undone.',
+      batchExport: 'Batch Export',
+      batchExportNeedSelect: 'Select cases to export',
+      batchExportStart: 'Batch export in progress...',
+      batchExportDone: 'Batch export complete',
+      batchExportFailed: 'Batch export failed',
+      filterDate: 'Treatment Date',
+      filterId: 'Patient ID',
+      filterName: 'Name',
+      filterTherapist: 'Therapist',
+      filterDevice: 'Device Model',
+      filterStatus: 'Case Status',
+      filterReset: 'Reset Filters',
+      filterAll: 'All',
+      statusActive: 'Active',
+      statusCompleted: 'Completed',
+      statusArchived: 'Archived',
       reportDeleteNeedSelect: 'Select a report to delete',
       reportDeleted: 'Deleted report',
       reportDeleteFailed: 'Delete report failed',
@@ -444,17 +676,67 @@
       brightnessApplyFailed: 'Failed to set brightness. Check permission or backlight device.',
       screensaverLabel: 'Screen Saver',
       screensaverHint: 'Idle timeout before saver',
+      themeLabel: 'Theme',
+      themeHint: 'Light / Dark',
+      themeLight: 'Light',
+      themeDark: 'Dark',
+      fontScaleLabel: 'Font Size',
+      fontScaleHint: 'Scale UI typography',
+      fontScaleSmall: 'Small',
+      fontScaleNormal: 'Normal',
+      fontScaleLarge: 'Large',
+      fontScaleXL: 'Extra Large',
       soundTitle: 'Sound',
       volumeLabel: 'System Volume',
       volumeHint: 'Prompts and feedback',
       chimeLabel: 'Chime',
       chimeHint: 'Play prompts on key actions',
+      pressureAlertSoundLabel: 'Pressure Alert Sound',
+      pressureAlertSoundHint: 'Alert when pressure exceeds 250 mmHg',
+      deviceTitle: 'Device',
+      deviceStatusLabel: 'Status',
+      deviceStatusHint: 'Real-time connection',
+      deviceStatusConnected: 'Connected',
+      deviceStatusDisconnected: 'Disconnected',
+      deviceStatusConnecting: 'Connecting',
+      deviceAutoReconnectLabel: 'Auto Reconnect',
+      deviceAutoReconnectHint: 'Retry when disconnected',
+      deviceReconnectNow: 'Reconnect Now',
+      deviceCalibrationLabel: 'Calibration Reminder',
+      deviceCalibrationHint: 'Keep pressure accuracy',
+      deviceCalibrationNever: 'Not recorded',
+      deviceCalibrationAt: 'Last {date}',
+      deviceCalibrationDue: '{days} days until due',
+      deviceCalibrationOverdue: '{days} days overdue',
+      deviceCalibrationAction: 'Mark Calibrated',
+      deviceCalibrationSet: 'Calibration updated',
       languageTitle: 'Language',
       languageDesc: 'Switch between Chinese and English instantly.',
       languageLabel: 'Interface Language',
       languageHint: 'Preference',
       langZh: '中文',
       langEn: 'English',
+      historyTitle: 'Operation History',
+      historyEmpty: 'No history yet',
+      historyDeletePatient: 'Delete patient',
+      historyRestorePatient: 'Restore patient',
+      historyAutoSave: 'Auto-save progress',
+      historyManualSave: 'Manual save',
+      historyCalibration: 'Calibration recorded',
+      autoSaveTitle: 'Restore Progress',
+      autoSaveText: 'Detected unfinished progress. Restore now?',
+      autoSaveRestore: 'Restore',
+      autoSaveDiscard: 'Dismiss',
+      autoSaveSaved: 'Progress saved',
+      autoSaveRestored: 'Progress restored',
+      autoSaveDiscarded: 'Progress discarded',
+      autoSaveMeta: 'Saved at {time}',
+      manualSave: 'Save Progress',
+      undoDelete: 'Undo Delete',
+      undoReady: 'Undo available',
+      undoDone: 'Undo complete',
+      undoFailed: 'Undo failed',
+      undoUnavailable: 'Nothing to undo',
       aboutTitle: 'About / Updates',
       aboutVersion: 'App Version',
       aboutFirmware: 'Firmware Version',
@@ -487,6 +769,14 @@
       shieldMissing: 'No shields detected. Please wear shields before starting.',
       checkingUpdates: 'Checking updates...',
       logsHint: 'Log opening is not wired yet',
+      curveHistory: 'History Curves',
+      curveHistoryOn: 'History: On',
+      curveHistoryOff: 'History: Off',
+      curveZoomLabel: 'Zoom {zoom}x',
+      photoModalTitle: 'Camera',
+      photoCapture: 'Capture',
+      photoCaptureFailed: 'Capture failed',
+      photoCaptureNoCamera: 'No camera detected',
     },
   };
 
@@ -495,9 +785,12 @@ const t = (key) => (TRANSLATIONS?.[currentLang] || TRANSLATIONS.zh)[key] || key;
 
 const VIEWS = ['home', 'quick', 'settings', 'newPatient', 'patientList', 'report', 'reportArchive', 'engineer'];
 const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
+const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
 
   const MODE = { target: 20, t1: 25, t2: 35, t3: 50 };
   const TEMP_FIXED_C = 42.0;
+  const PRESSURE_ALERT_THRESHOLD = 250;
+  const PRESSURE_ALERT_SOUND_COOLDOWN = 5000;
   const AUTO_PORT = '/dev/ttyS1';
   const AUTO_BAUD = 115200;
   const audioMap = {
@@ -505,9 +798,14 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     start: new Audio('../resoure/Treatment-start.wav'),
     stop: new Audio('../resoure/Treatment-stop.wav'),
     tempHigh: new Audio('../resoure/Temperature-high.wav'),
+    pressureHigh: new Audio('../resoure/Temperature-high.wav'),
   };
   const playSound = (key) => {
-    if (!state.settings.playChime) return;
+    if (key === 'pressureHigh') {
+      if (!state.settings.pressureAlertSound) return;
+    } else if (!state.settings.playChime) {
+      return;
+    }
     const mainPlay = api?.playPromptSound;
     if (typeof mainPlay === 'function') {
       try {
@@ -532,18 +830,26 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     username: 'admin',
     password: 'admin',
   };
+  const USERNAME_RE = /^[A-Za-z0-9_]{6,20}$/;
+  const CHINESE_NAME_RE = /^[\u4e00-\u9fa5·]{2,20}$/;
+  const LOGIN_TOAST_DURATION = 3000;
+  const AUTO_SAVE_INTERVAL = 5 * 60 * 1000;
+  const AUTO_SAVE_KEY = 'pphc.autosave';
+  const OP_HISTORY_KEY = 'pphc.history';
+  const MAX_HISTORY = 80;
+  const CALIBRATION_INTERVAL_DAYS = 180;
 
   const KEYBOARD_LAYOUTS = {
     en: [
       ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
       ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-      ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'Space', '←', 'Clear'],
+      ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'Space', '←', 'Clear', 'Enter'],
       ['z', 'x', 'c', 'v', 'b', 'n', 'm', '@', '.'],
     ],
     zh: [
       ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
       ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-      ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'Space', '←', 'Clear'],
+      ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'Space', '←', 'Clear', '确认'],
       ['z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.'],
     ],
   };
@@ -573,6 +879,9 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
   const state = {
     loggedIn: false,
     user: { username: '', role: 'user' },
+    loginLockedUntil: 0,
+    loginLockTimer: null,
+    loginPendingTimer: null,
     connected: false,
     connecting: false,
     autoConnectTimer: null,
@@ -581,6 +890,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     running: false,
     countdownTimer: null,
     telemetryTimer: null,
+    autoSaveTimer: null,
     countdownEnd: 0,
     heartbeatTimer: null,
     heartbeatSeed: 0x55,
@@ -590,10 +900,33 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     max: 360,
     currentView: 'home',
     settingsActiveModule: 'display',
+    reportTemplate: 'standard',
+    curveZoomLevels: [1, 2, 4],
+    curveZoom: 1,
+    historyEnabled: false,
+    historyBufs: { 0: [], 1: [], 2: [], 3: [] },
     patients: [],
     patientsLoaded: false,
     activePatient: null,
     lastTreatment: null,
+    newPatientPhoto: null,
+    editingPatientId: null,
+    lastAppliedPatientId: null,
+    selectedPatientIds: [],
+    pendingPatientDeleteIds: [],
+    undoSnapshot: null,
+    pendingAutosave: null,
+    operationHistory: [],
+    patientIdCheckTimer: null,
+    patientFilters: {
+      startDate: '',
+      endDate: '',
+      patientId: '',
+      name: '',
+      therapist: '',
+      deviceModel: '',
+      status: '',
+    },
     selectedPatientId: null,
     treatmentPatientId: null,
     systemState: null,
@@ -606,15 +939,21 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     shieldDropShown: false,
     modeStage: '--',
     tempHighAlerted: false,
+    pressureAlerted: { left: false, right: false },
+    pressureAlertLastSound: 0,
     settings: {
       brightness: 80,
       screensaver: 10,
       volume: 60,
       language: 'zh',
       autoConnect: true,
+      theme: 'dark',
+      fontScale: 1,
+      lastCalibrationAt: null,
       appVersion: '0.1.0',
       firmwareVersion: '1.2.3',
       playChime: true,
+      pressureAlertSound: true,
       printerName: '',
     },
     targets: {
@@ -651,10 +990,21 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
   let volumeApplyTimer = null;
   const clampBrightness = (val) => Math.max(0, Math.min(100, Math.round(Number(val) || 0)));
   const clampVolume = (val) => Math.max(0, Math.min(100, Math.round(Number(val) || 0)));
+  const clampFontScale = (val) => Math.max(0.8, Math.min(1.3, Number(val) || 1));
+
+  function canAccessView(view) {
+    const role = state.user?.role || 'user';
+    if (role === 'operator') {
+      return ['home', 'quick', 'report', 'reportArchive'].includes(view);
+    }
+    return true;
+  }
 
   function showView(view) {
     const prev = state.currentView;
-    const next = VIEWS.includes(view) ? view : 'home';
+    const candidate = VIEWS.includes(view) ? view : 'home';
+    const fallback = state.user?.role === 'operator' ? 'quick' : 'home';
+    const next = canAccessView(candidate) ? candidate : fallback;
     state.currentView = next;
     const shell = document.querySelector('.app-shell');
     if (shell) shell.setAttribute('data-view', next);
@@ -682,7 +1032,111 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     } else if (next === 'engineer') {
       renderEngineer();
     }
+    updateBottomNav();
+    const titleMap = {
+      home: t('homeTitle'),
+      quick: t('quickTitle'),
+      patientList: t('patientListTitle'),
+      reportArchive: t('reportArchiveTitle'),
+      report: t('reportScreenTitle'),
+      settings: t('settingsTitle'),
+      newPatient: t('newPatientTitle'),
+      engineer: t('engineerTitle'),
+    };
+    if (titleMap[next]) document.title = titleMap[next];
     console.info('[PPHC] view ->', next);
+  }
+
+  function getActiveNavView(view = state.currentView) {
+    if (view === 'report' || view === 'reportArchive') return 'reportArchive';
+    if (view === 'newPatient' || view === 'patientList') return 'patientList';
+    if (view === 'engineer') return 'settings';
+    return NAV_SEQUENCE.includes(view) ? view : null;
+  }
+
+  function getNavSequence() {
+    return NAV_SEQUENCE.filter((item) => canAccessView(item));
+  }
+
+  function updateBottomNav() {
+    const nav = document.getElementById('bottomNav');
+    if (!nav) return;
+    const activeView = getActiveNavView();
+    nav.hidden = !state.loggedIn;
+    nav.querySelectorAll('.nav-item').forEach((btn) => {
+      const view = btn.dataset.view;
+      btn.hidden = !view || !canAccessView(view);
+      btn.classList.toggle('active', !!view && view === activeView);
+    });
+  }
+
+  function bindBottomNav() {
+    const nav = document.getElementById('bottomNav');
+    if (!nav || nav._bound) return;
+    nav._bound = true;
+    nav.querySelectorAll('.nav-item').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const view = btn.dataset.view;
+        if (!view) return;
+        showView(view);
+      });
+    });
+  }
+
+  function isModalOpen() {
+    return !!document.querySelector('.modal:not([hidden])');
+  }
+
+  function shouldHandleSwipe(target) {
+    if (!state.loggedIn) return false;
+    if (!NAV_SEQUENCE.includes(state.currentView)) return false;
+    if (document.body.classList.contains('login-locked')) return false;
+    if (document.body.classList.contains('keyboard-open')) return false;
+    if (isModalOpen()) return false;
+    if (target && target.closest('input, textarea, select, button, .osk, .date-picker-modal, .modal')) {
+      return false;
+    }
+    return true;
+  }
+
+  function bindSwipeNav() {
+    if (document.body._swipeNavBound) return;
+    document.body._swipeNavBound = true;
+    let startX = 0;
+    let startY = 0;
+    let startTime = 0;
+    let tracking = false;
+    document.addEventListener(
+      'touchstart',
+      (e) => {
+        if (!shouldHandleSwipe(e.target)) return;
+        const touch = e.touches?.[0];
+        if (!touch) return;
+        tracking = true;
+        startX = touch.clientX;
+        startY = touch.clientY;
+        startTime = Date.now();
+      },
+      { passive: true }
+    );
+    document.addEventListener('touchend', (e) => {
+      if (!tracking) return;
+      tracking = false;
+      const touch = e.changedTouches?.[0];
+      if (!touch) return;
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      const dt = Date.now() - startTime;
+      if (dt > 800) return;
+      if (Math.abs(dx) < 80 || Math.abs(dx) < Math.abs(dy)) return;
+      const sequence = getNavSequence();
+      if (sequence.length < 2) return;
+      const activeView = getActiveNavView() || sequence[0];
+      const idx = Math.max(0, sequence.indexOf(activeView));
+      const nextIndex = dx < 0 ? Math.min(sequence.length - 1, idx + 1) : Math.max(0, idx - 1);
+      if (nextIndex === idx) return;
+      showView(sequence[nextIndex]);
+    });
   }
 
   function computeNextPatientId() {
@@ -693,12 +1147,324 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     return `P${String(next).padStart(4, '0')}`;
   }
 
+  function normalizePatientIdInput(raw) {
+    const text = String(raw || '').trim();
+    if (!text) return '';
+    const compact = text.replace(/\s+/g, '');
+    if (/^\d+$/.test(compact)) {
+      return `P${compact.padStart(4, '0')}`;
+    }
+    return compact.toUpperCase();
+  }
+
+  function safeStorageGet(key) {
+    try {
+      const raw = window.localStorage?.getItem?.(key);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  function safeStorageSet(key, value) {
+    try {
+      window.localStorage?.setItem?.(key, JSON.stringify(value));
+    } catch {}
+  }
+
+  function safeStorageRemove(key) {
+    try {
+      window.localStorage?.removeItem?.(key);
+    } catch {}
+  }
+
+  function loadOperationHistory() {
+    const raw = safeStorageGet(OP_HISTORY_KEY);
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((item) => ({
+        type: String(item?.type || '').trim(),
+        detail: String(item?.detail || '').trim(),
+        time: Number(item?.time) || Date.now(),
+      }))
+      .filter((item) => item.type);
+  }
+
+  function recordOperation(type, detail = '') {
+    const entry = {
+      type: String(type || '').trim(),
+      detail: String(detail || '').trim(),
+      time: Date.now(),
+    };
+    if (!entry.type) return;
+    state.operationHistory = [entry, ...(state.operationHistory || [])].slice(0, MAX_HISTORY);
+    safeStorageSet(OP_HISTORY_KEY, state.operationHistory);
+    renderOperationHistory();
+  }
+
+  function renderOperationHistory() {
+    const listNode = document.getElementById('historyList');
+    if (!listNode) return;
+    const history = Array.isArray(state.operationHistory) ? state.operationHistory : [];
+    listNode.innerHTML = '';
+    if (!history.length) {
+      listNode.innerHTML = `<div class="empty-tip">${t('historyEmpty')}</div>`;
+      return;
+    }
+    history.forEach((item) => {
+      const row = document.createElement('div');
+      row.className = 'history-item';
+      const label = document.createElement('span');
+      let title = '';
+      if (item.type === 'patient-delete') title = t('historyDeletePatient');
+      else if (item.type === 'patient-restore') title = t('historyRestorePatient');
+      else if (item.type === 'auto-save') title = t('historyAutoSave');
+      else if (item.type === 'manual-save') title = t('historyManualSave');
+      else if (item.type === 'calibration') title = t('historyCalibration');
+      else title = item.type;
+      label.textContent = item.detail ? `${title} · ${item.detail}` : title;
+      const meta = document.createElement('small');
+      meta.textContent = new Date(item.time).toLocaleString();
+      row.append(label, meta);
+      listNode.appendChild(row);
+    });
+  }
+
+  function clampNumber(val, min, max, fallback) {
+    const num = Number(val);
+    if (!Number.isFinite(num)) return fallback;
+    return Math.min(max, Math.max(min, num));
+  }
+
+  function collectAutoSaveSnapshot(manual = false) {
+    const patientId = String(state.treatmentPatientId || state.activePatient?.id || '').trim();
+    const pressureSlider = document.getElementById('pressMmHg');
+    const durationSlider = document.getElementById('treatDuration');
+    const pressure = clampNumber(
+      pressureSlider?.value ?? state.targets.pressure,
+      Number(pressureSlider?.min ?? 150),
+      Number(pressureSlider?.max ?? 350),
+      250
+    );
+    const duration = clampNumber(
+      durationSlider?.value ?? state.targets.durationMin,
+      Number(durationSlider?.min ?? 1),
+      Number(durationSlider?.max ?? 15),
+      10
+    );
+    const remainingMs =
+      state.running && state.countdownEnd ? Math.max(0, state.countdownEnd - Date.now()) : 0;
+    return {
+      savedAt: new Date().toISOString(),
+      patientId: patientId || null,
+      pressure,
+      duration,
+      remainingMs,
+      running: !!state.running,
+      manual: !!manual,
+    };
+  }
+
+  function saveAutoProgress({ manual = false } = {}) {
+    const snapshot = collectAutoSaveSnapshot(manual);
+    if (!snapshot.patientId && !snapshot.running && !manual) return false;
+    safeStorageSet(AUTO_SAVE_KEY, snapshot);
+    if (manual) {
+      showAlert(t('autoSaveSaved'), 2500, 'success');
+      recordOperation('manual-save', snapshot.patientId || '');
+    } else {
+      recordOperation('auto-save', snapshot.patientId || '');
+    }
+    return true;
+  }
+
+  function startAutoSaveTimer() {
+    stopAutoSaveTimer();
+    saveAutoProgress({ manual: false });
+    state.autoSaveTimer = setInterval(() => {
+      saveAutoProgress({ manual: false });
+    }, AUTO_SAVE_INTERVAL);
+  }
+
+  function stopAutoSaveTimer() {
+    if (state.autoSaveTimer) {
+      clearInterval(state.autoSaveTimer);
+      state.autoSaveTimer = null;
+    }
+  }
+
+  function clearAutoSaveSnapshot() {
+    safeStorageRemove(AUTO_SAVE_KEY);
+  }
+
+  function loadAutoSaveSnapshot() {
+    const snapshot = safeStorageGet(AUTO_SAVE_KEY);
+    if (!snapshot || typeof snapshot !== 'object') return null;
+    if (!snapshot.patientId && !snapshot.running && !snapshot.manual) return null;
+    return snapshot;
+  }
+
+  function updateCountdownDisplay(remainingMs) {
+    const node = document.getElementById('countdown');
+    if (!node) return;
+    const sec = Math.max(0, Math.ceil((remainingMs || 0) / 1000));
+    const m = Math.floor(sec / 60).toString().padStart(2, '0');
+    const s = (sec % 60).toString().padStart(2, '0');
+    node.textContent = `${m}:${s}`;
+  }
+
+  function openAutoSaveRestoreModal(snapshot) {
+    const modal = document.getElementById('autosaveRestoreModal');
+    if (!modal) return;
+    state.pendingAutosave = snapshot;
+    const meta = document.getElementById('autosaveRestoreMeta');
+    if (meta) {
+      const savedTime = snapshot?.savedAt ? new Date(snapshot.savedAt).toLocaleString() : '--';
+      const patient = snapshot?.patientId ? getPatientById(snapshot.patientId) : null;
+      const label = t('autoSaveMeta').replace('{time}', savedTime);
+      if (patient && (patient.id || patient.name)) {
+        meta.textContent = `${label} · ${[patient.id, patient.name].filter(Boolean).join(' · ')}`;
+      } else if (snapshot?.patientId) {
+        meta.textContent = `${label} · ${snapshot.patientId}`;
+      } else {
+        meta.textContent = label;
+      }
+    }
+    modal.hidden = false;
+  }
+
+  function closeAutoSaveRestoreModal() {
+    const modal = document.getElementById('autosaveRestoreModal');
+    if (modal) modal.hidden = true;
+  }
+
+  async function restoreAutoSaveSnapshot() {
+    const snapshot = state.pendingAutosave;
+    if (!snapshot) return;
+    await ensurePatientsLoaded();
+    if (snapshot.patientId) {
+      state.treatmentPatientId = snapshot.patientId;
+      state.activePatient = getPatientById(snapshot.patientId) || state.activePatient;
+      state.lastAppliedPatientId = snapshot.patientId;
+    }
+    const pressureSlider = document.getElementById('pressMmHg');
+    const durationSlider = document.getElementById('treatDuration');
+    if (pressureSlider) {
+      pressureSlider.value = String(snapshot.pressure ?? pressureSlider.value);
+      state.targets.pressure = Number(pressureSlider.value);
+    }
+    if (durationSlider) {
+      durationSlider.value = String(snapshot.duration ?? durationSlider.value);
+      state.targets.durationMin = Number(durationSlider.value);
+    }
+    updateModeMeta();
+    if (snapshot.remainingMs && snapshot.running) {
+      updateCountdownDisplay(snapshot.remainingMs);
+    }
+    renderQuickPatientPicker();
+    showView('quick');
+    clearAutoSaveSnapshot();
+    state.pendingAutosave = null;
+    closeAutoSaveRestoreModal();
+    showAlert(t('autoSaveRestored'), 3000, 'success');
+  }
+
+  function discardAutoSaveSnapshot() {
+    clearAutoSaveSnapshot();
+    state.pendingAutosave = null;
+    closeAutoSaveRestoreModal();
+    showAlert(t('autoSaveDiscarded'), 2500, 'info');
+  }
+
+  async function checkAutoSaveRestore() {
+    const snapshot = loadAutoSaveSnapshot();
+    if (!snapshot) return;
+    await ensurePatientsLoaded();
+    openAutoSaveRestoreModal(snapshot);
+  }
+
+  function updateUndoButton() {
+    const btn = document.getElementById('btnUndoPatientDelete');
+    if (!btn) return;
+    const canUndo = !!(state.undoSnapshot && state.undoSnapshot.items?.length);
+    btn.disabled = !canUndo;
+  }
+
+  function setUndoSnapshot(items) {
+    state.undoSnapshot = Array.isArray(items) && items.length ? { items, time: Date.now() } : null;
+    updateUndoButton();
+  }
+
+  async function handleUndoPatientDelete() {
+    if (!state.undoSnapshot?.items?.length) {
+      showAlert(t('undoUnavailable'), 2500, 'info');
+      return;
+    }
+    try {
+      const res = await api?.restorePatients?.(state.undoSnapshot.items);
+      if (res?.success) {
+        await ensurePatientsLoaded();
+        renderPatientList();
+        renderQuickPatientPicker();
+        recordOperation('patient-restore', `+${state.undoSnapshot.items.length}`);
+        setUndoSnapshot(null);
+        showAlert(t('undoDone'), 3000, 'success');
+      } else {
+        showAlert(t('undoFailed'), 3000, 'error');
+      }
+    } catch (err) {
+      console.warn('[PPHC] undo restore failed', err);
+      showAlert(t('undoFailed'), 3000, 'error');
+    }
+  }
+
   function setPatientIdValue() {
     const input = document.getElementById('patientId');
     if (!input) return null;
     const next = computeNextPatientId();
     input.value = next;
     return next;
+  }
+
+  async function checkPatientIdInput(opts = {}) {
+    const skipFill = !!opts.skipFill;
+    const input = document.getElementById('patientId');
+    if (!input) return;
+    const normalized = normalizePatientIdInput(input.value);
+    if (normalized && normalized !== input.value) input.value = normalized;
+    if (!normalized) {
+      setPatientIdHint(null);
+      if (!skipFill) state.editingPatientId = null;
+      return;
+    }
+    await ensurePatientsLoaded();
+    const existing = getPatientById(normalized);
+    if (existing) {
+      if (skipFill) {
+        const summary = formatTreatmentSummary(existing.lastTreatment || existing.lastParams);
+        const historyText = summary
+          ? t('patientHistorySummary').replace('{summary}', summary)
+          : t('patientHistoryNone');
+        setPatientIdHint(`${t('patientIdLoaded')} · ${historyText}`, false);
+        return;
+      }
+      applyPatientFormData(existing);
+      return;
+    }
+    if (state.editingPatientId && !skipFill) {
+      state.editingPatientId = null;
+      clearPatientFormFields({ preserveId: true });
+    }
+    setPatientIdHint(t('patientIdAvailable'), false);
+  }
+
+  function schedulePatientIdCheck() {
+    if (state.patientIdCheckTimer) clearTimeout(state.patientIdCheckTimer);
+    state.patientIdCheckTimer = setTimeout(() => {
+      state.patientIdCheckTimer = null;
+      checkPatientIdInput();
+    }, 350);
   }
 
   function setPatientFormMessage(msg, isError = false) {
@@ -715,19 +1481,84 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     node.classList.toggle('error', !!isError);
   }
 
-  function resetPatientForm(clearMsg = true) {
+  function setPatientIdHint(msg, isError = false) {
+    const node = document.getElementById('patientIdHint');
+    if (!node) return;
+    if (!msg) {
+      node.hidden = true;
+      node.textContent = '';
+      node.classList.remove('error');
+      node.classList.add('info');
+      return;
+    }
+    node.hidden = false;
+    node.textContent = msg;
+    node.classList.toggle('error', !!isError);
+    node.classList.toggle('info', !isError);
+  }
+
+  function applyPatientFormData(patient) {
+    if (!patient) return;
     const idInput = document.getElementById('patientId');
     const nameInput = document.getElementById('patientName');
     const phoneInput = document.getElementById('patientPhone');
+    const therapistInput = document.getElementById('patientTherapist');
+    const deviceInput = document.getElementById('patientDeviceModel');
+    const statusInput = document.getElementById('patientStatus');
+    const birthInput = document.getElementById('patientBirth');
+    const notesInput = document.getElementById('patientNotes');
+    if (idInput) idInput.value = patient.id || '';
+    if (nameInput) nameInput.value = patient.name || '';
+    if (phoneInput) phoneInput.value = patient.phone || '';
+    if (therapistInput) therapistInput.value = patient.therapist || '';
+    if (deviceInput) deviceInput.value = patient.deviceModel || '';
+    if (statusInput) statusInput.value = patient.status || 'active';
+    if (birthInput) birthInput.value = patient.birth || '';
+    if (notesInput) notesInput.value = patient.notes || '';
+    const gender = patient.gender === '女' ? '女' : '男';
+    const genderNode = document.querySelector(`input[name="patientGender"][value="${gender}"]`);
+    if (genderNode) genderNode.checked = true;
+    state.newPatientPhoto = patient.photoData || null;
+    updatePatientPhotoPreview();
+    state.editingPatientId = patient.id || null;
+    const summary = formatTreatmentSummary(patient.lastTreatment || patient.lastParams);
+    const historyText = summary
+      ? t('patientHistorySummary').replace('{summary}', summary)
+      : t('patientHistoryNone');
+    setPatientIdHint(`${t('patientIdLoaded')} · ${historyText}`, false);
+  }
+
+  function clearPatientFormFields({ preserveId = false } = {}) {
+    const idInput = document.getElementById('patientId');
+    const nameInput = document.getElementById('patientName');
+    const phoneInput = document.getElementById('patientPhone');
+    const therapistInput = document.getElementById('patientTherapist');
+    const deviceInput = document.getElementById('patientDeviceModel');
+    const statusInput = document.getElementById('patientStatus');
     const birthInput = document.getElementById('patientBirth');
     const notesInput = document.getElementById('patientNotes');
     if (nameInput) nameInput.value = '';
     if (phoneInput) phoneInput.value = '';
+    if (therapistInput) therapistInput.value = '';
+    if (deviceInput) deviceInput.value = '';
+    if (statusInput) statusInput.value = 'active';
     if (birthInput) birthInput.value = '';
     if (notesInput) notesInput.value = '';
     const male = document.querySelector('input[name="patientGender"][value="男"]');
     if (male) male.checked = true;
-    if (idInput) idInput.value = computeNextPatientId();
+    if (!preserveId && idInput) idInput.value = computeNextPatientId();
+    state.newPatientPhoto = null;
+    updatePatientPhotoPreview();
+  }
+
+  function resetPatientForm(clearMsg = true) {
+    clearPatientFormFields({ preserveId: false });
+    state.editingPatientId = null;
+    setPatientIdHint(t('patientIdAvailable'), false);
+    if (state.patientIdCheckTimer) {
+      clearTimeout(state.patientIdCheckTimer);
+      state.patientIdCheckTimer = null;
+    }
     if (clearMsg) setPatientFormMessage(null);
   }
 
@@ -736,6 +1567,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     month: new Date().getMonth(),
     selected: null,
     view: 'calendar',
+    targetId: 'patientBirth',
   };
 
   function formatDateYMD(date) {
@@ -755,6 +1587,11 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (Number.isNaN(dt.getTime())) return null;
     if (dt.getFullYear() !== y || dt.getMonth() !== mo || dt.getDate() !== d) return null;
     return dt;
+  }
+
+  function normalizeDateOnly(date) {
+    if (!(date instanceof Date)) return null;
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   }
 
   function getWeekdayLabels() {
@@ -843,8 +1680,11 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       if (datePickerState.selected && dtStr === datePickerState.selected) cell.classList.add('selected');
       cell.addEventListener('click', () => {
         datePickerState.selected = dtStr;
-        const input = document.getElementById('patientBirth');
+        const input = document.getElementById(datePickerState.targetId || 'patientBirth');
         if (input) input.value = dtStr;
+        if (String(datePickerState.targetId || '').startsWith('filter')) {
+          applyPatientFiltersFromUI();
+        }
         closeDatePicker();
       });
       gridNode.appendChild(cell);
@@ -856,7 +1696,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (btnCancel) btnCancel.textContent = t('datePickerCancel');
   }
 
-  function openDatePicker(initialValue) {
+  function openDatePicker(initialValue, targetId = 'patientBirth') {
     const modal = document.getElementById('datePickerModal');
     if (!modal) return;
     const initDate = parseDateYMD(initialValue) || new Date();
@@ -864,6 +1704,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     datePickerState.month = initDate.getMonth();
     datePickerState.selected = formatDateYMD(initDate);
     datePickerState.view = 'calendar';
+    datePickerState.targetId = targetId || 'patientBirth';
     modal.hidden = false;
     renderDatePicker();
   }
@@ -873,13 +1714,123 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (modal) modal.hidden = true;
   }
 
+  let photoStream = null;
+
+  function updatePatientPhotoPreview() {
+    const img = document.getElementById('patientPhotoPreview');
+    if (!img) return;
+    if (state.newPatientPhoto) {
+      img.src = state.newPatientPhoto;
+      img.hidden = false;
+    } else {
+      img.removeAttribute('src');
+      img.hidden = true;
+    }
+  }
+
+  async function openPhotoCaptureModal() {
+    const modal = document.getElementById('photoCaptureModal');
+    const video = document.getElementById('photoVideo');
+    if (!modal || !video) return;
+    if (!navigator.mediaDevices?.getUserMedia) {
+      showAlert(t('photoCaptureNoCamera'), 3000, 'error');
+      return;
+    }
+    try {
+      photoStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+      video.srcObject = photoStream;
+      await video.play();
+      modal.hidden = false;
+    } catch (err) {
+      console.warn('[PPHC] camera open failed', err);
+      showAlert(t('photoCaptureFailed'), 3000, 'error');
+    }
+  }
+
+  function stopPhotoStream() {
+    if (!photoStream) return;
+    photoStream.getTracks().forEach((track) => track.stop());
+    photoStream = null;
+  }
+
+  function closePhotoCaptureModal() {
+    const modal = document.getElementById('photoCaptureModal');
+    if (modal) modal.hidden = true;
+    stopPhotoStream();
+  }
+
+  function capturePhoto() {
+    const video = document.getElementById('photoVideo');
+    const canvas = document.getElementById('photoCanvas');
+    if (!video || !canvas) return;
+    const width = video.videoWidth || 640;
+    const height = video.videoHeight || 480;
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, width, height);
+    try {
+      state.newPatientPhoto = canvas.toDataURL('image/jpeg', 0.85);
+      updatePatientPhotoPreview();
+      closePhotoCaptureModal();
+    } catch (err) {
+      console.warn('[PPHC] capture photo failed', err);
+      showAlert(t('photoCaptureFailed'), 3000, 'error');
+    }
+  }
+
   function renderPatientList() {
     const listNode = document.getElementById('patientList');
     const emptyNode = document.getElementById('patientListEmpty');
     if (!listNode) return;
     listNode.innerHTML = '';
     const patients = Array.isArray(state.patients) ? state.patients : [];
-    if (!patients.length) {
+    state.selectedPatientIds = state.selectedPatientIds.filter((id) =>
+      patients.some((p) => String(p?.id || '') === id)
+    );
+    const filters = state.patientFilters || {};
+    const startInput = document.getElementById('filterStartDate');
+    const endInput = document.getElementById('filterEndDate');
+    const idInput = document.getElementById('filterPatientId');
+    const nameInput = document.getElementById('filterPatientName');
+    const therapistInput = document.getElementById('filterTherapist');
+    const deviceInput = document.getElementById('filterDeviceModel');
+    const statusInput = document.getElementById('filterStatus');
+    if (startInput) startInput.value = filters.startDate || '';
+    if (endInput) endInput.value = filters.endDate || '';
+    if (idInput) idInput.value = filters.patientId || '';
+    if (nameInput) nameInput.value = filters.name || '';
+    if (therapistInput) therapistInput.value = filters.therapist || '';
+    if (deviceInput) deviceInput.value = filters.deviceModel || '';
+    if (statusInput) statusInput.value = filters.status || '';
+    const startDate = normalizeDateOnly(parseDateYMD(filters.startDate));
+    const endDate = normalizeDateOnly(parseDateYMD(filters.endDate));
+    const idFilter = String(filters.patientId || '').trim().toUpperCase();
+    const nameFilter = String(filters.name || '').trim().toLowerCase();
+    const therapistFilter = String(filters.therapist || '').trim().toLowerCase();
+    const deviceFilter = String(filters.deviceModel || '').trim().toLowerCase();
+    const statusFilter = String(filters.status || '').trim();
+    const filtered = patients.filter((p) => {
+      if (idFilter && !String(p?.id || '').toUpperCase().includes(idFilter)) return false;
+      if (nameFilter && !String(p?.name || '').toLowerCase().includes(nameFilter)) return false;
+      if (statusFilter && String(p?.status || '') !== statusFilter) return false;
+      if (therapistFilter && !String(p?.therapist || '').toLowerCase().includes(therapistFilter)) {
+        return false;
+      }
+      if (deviceFilter && !String(p?.deviceModel || '').toLowerCase().includes(deviceFilter)) {
+        return false;
+      }
+      if (startDate || endDate) {
+        const base = p?.lastTreatment?.startedAt || p?.createdAt || '';
+        const dt = normalizeDateOnly(base ? new Date(base) : null);
+        if (!dt) return false;
+        if (startDate && dt < startDate) return false;
+        if (endDate && dt > endDate) return false;
+      }
+      return true;
+    });
+    if (!filtered.length) {
       if (emptyNode) emptyNode.hidden = false;
       return;
     }
@@ -894,9 +1845,13 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       { key: 'patientName', className: 'name' },
       { key: 'patientGender', className: 'gender' },
       { key: 'patientPhone', className: 'phone' },
+      { key: 'patientTherapist', className: 'therapist' },
+      { key: 'patientDevice', className: 'device' },
+      { key: 'patientStatus', className: 'status' },
       { key: 'patientBirth', className: 'birth' },
       { key: 'patientNotes', className: 'notes' },
       { key: 'patientCreatedAt', className: 'created' },
+      { key: 'patientDetail', className: 'detail' },
     ];
     headerCells.forEach(({ key, className }) => {
       const cell = document.createElement('div');
@@ -906,29 +1861,86 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     });
     table.appendChild(headerRow);
 
-    patients.forEach((p) => {
+    filtered.forEach((p) => {
       const row = document.createElement('div');
       row.className = 'patient-row';
-      row.classList.toggle('selected', String(p.id || '') === String(state.selectedPatientId || ''));
+      const pid = String(p.id || '');
+      row.classList.toggle('selected', state.selectedPatientIds.includes(pid));
       const created = p.createdAt ? (p.createdAt.split?.('T')?.[0] || p.createdAt) : '--';
       const values = {
         id: p.id || '--',
         name: p.name || '--',
         gender: p.gender || '--',
         phone: p.phone || '--',
+        therapist: p.therapist || '--',
+        device: p.deviceModel || '--',
+        status: (() => {
+          const map = {
+            active: t('statusActive'),
+            completed: t('statusCompleted'),
+            archived: t('statusArchived'),
+          };
+          return map[p.status] || '--';
+        })(),
         birth: p.birth || '--',
         notes: p.notes || '--',
         created,
       };
-      ['id', 'name', 'gender', 'phone', 'birth', 'notes', 'created'].forEach((col) => {
+      ['id', 'name', 'gender', 'phone', 'therapist', 'device', 'status', 'birth', 'notes', 'created'].forEach((col) => {
         const cell = document.createElement('div');
         cell.className = `patient-cell ${col}`;
         cell.textContent = values[col];
         row.appendChild(cell);
       });
-      row.addEventListener('click', () => {
-        state.selectedPatientId = String(p.id || '');
+      const detailCell = document.createElement('div');
+      detailCell.className = 'patient-cell detail';
+      const detailBtn = document.createElement('button');
+      detailBtn.type = 'button';
+      detailBtn.className = 'ghost-btn';
+      detailBtn.textContent = t('patientDetail');
+      detailBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openReportForPatient(p);
+      });
+      detailCell.appendChild(detailBtn);
+      row.appendChild(detailCell);
+      if (p.curveSnapshot) {
+        const preview = document.createElement('div');
+        preview.className = 'patient-preview';
+        preview.hidden = true;
+        const canvas = document.createElement('canvas');
+        canvas.width = 260;
+        canvas.height = 120;
+        preview.appendChild(canvas);
+        const meta = document.createElement('div');
+        meta.className = 'patient-preview-meta';
+        meta.textContent = formatTreatmentSummary(p.lastTreatment || p.lastParams) || '--';
+        preview.appendChild(meta);
+        row.appendChild(preview);
+        row.addEventListener('mouseenter', () => {
+          drawPreviewCurve(canvas, p.curveSnapshot);
+          preview.hidden = false;
+        });
+        row.addEventListener('mouseleave', () => {
+          preview.hidden = true;
+        });
+      }
+      row.addEventListener('click', (e) => {
+        const id = String(p.id || '');
+        if (e.ctrlKey) {
+          if (state.selectedPatientIds.includes(id)) {
+            state.selectedPatientIds = state.selectedPatientIds.filter((x) => x !== id);
+          } else {
+            state.selectedPatientIds = [...state.selectedPatientIds, id];
+          }
+        } else {
+          state.selectedPatientIds = [id];
+        }
+        state.selectedPatientId = id;
         renderPatientList();
+      });
+      row.addEventListener('dblclick', () => {
+        openReportForPatient(p);
       });
       table.appendChild(row);
     });
@@ -936,12 +1948,157 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     listNode.appendChild(table);
   }
 
+  function applyPatientFiltersFromUI() {
+    const startInput = document.getElementById('filterStartDate');
+    const endInput = document.getElementById('filterEndDate');
+    const idInput = document.getElementById('filterPatientId');
+    const nameInput = document.getElementById('filterPatientName');
+    const therapistInput = document.getElementById('filterTherapist');
+    const deviceInput = document.getElementById('filterDeviceModel');
+    const statusInput = document.getElementById('filterStatus');
+    state.patientFilters = {
+      startDate: startInput?.value || '',
+      endDate: endInput?.value || '',
+      patientId: idInput?.value || '',
+      name: nameInput?.value || '',
+      therapist: therapistInput?.value || '',
+      deviceModel: deviceInput?.value || '',
+      status: statusInput?.value || '',
+    };
+    renderPatientList();
+  }
+
+  function resetPatientFilters() {
+    state.patientFilters = {
+      startDate: '',
+      endDate: '',
+      patientId: '',
+      name: '',
+      therapist: '',
+      deviceModel: '',
+      status: '',
+    };
+    const startInput = document.getElementById('filterStartDate');
+    const endInput = document.getElementById('filterEndDate');
+    const idInput = document.getElementById('filterPatientId');
+    const nameInput = document.getElementById('filterPatientName');
+    const therapistInput = document.getElementById('filterTherapist');
+    const deviceInput = document.getElementById('filterDeviceModel');
+    const statusInput = document.getElementById('filterStatus');
+    if (startInput) startInput.value = '';
+    if (endInput) endInput.value = '';
+    if (idInput) idInput.value = '';
+    if (nameInput) nameInput.value = '';
+    if (therapistInput) therapistInput.value = '';
+    if (deviceInput) deviceInput.value = '';
+    if (statusInput) statusInput.value = '';
+    renderPatientList();
+  }
+
   function getPatientById(id) {
-    const key = String(id || '').trim();
+    const key = normalizePatientIdInput(id);
     if (!key) return null;
     return (Array.isArray(state.patients) ? state.patients : []).find(
-      (p) => String(p?.id || '').trim() === key
+      (p) => normalizePatientIdInput(p?.id || '') === key
     );
+  }
+
+  function formatTreatmentSummary(treatment) {
+    if (!treatment) return '';
+    const press = Number.isFinite(Number(treatment.pressureMmHg))
+      ? `${Number(treatment.pressureMmHg)} mmHg`
+      : '--';
+    const duration = Number.isFinite(Number(treatment.durationMin))
+      ? `${Number(treatment.durationMin)} min`
+      : '--';
+    const temp = Number.isFinite(Number(treatment.tempC))
+      ? `${Number(treatment.tempC).toFixed(1)} ℃`
+      : '--';
+    const when = treatment.startedAt ? new Date(treatment.startedAt).toLocaleDateString() : '';
+    return [press, duration, temp, when].filter(Boolean).join(' · ');
+  }
+
+  function updateQuickPatientHistory(patient) {
+    const node = document.getElementById('quickPatientHistory');
+    if (!node) return;
+    if (!patient?.lastTreatment) {
+      node.textContent = t('quickPatientHistoryEmpty');
+      return;
+    }
+    node.textContent = `${t('quickPatientHistory')}: ${formatTreatmentSummary(patient.lastTreatment)}`;
+  }
+
+  function updateRecommendedPlan(patient) {
+    const node = document.getElementById('recommendPlanValue');
+    if (!node) return;
+    const params = patient?.lastParams || patient?.lastTreatment;
+    if (params) {
+      const text = formatTreatmentSummary(params);
+      node.textContent = text || t('recommendPlanDefault');
+      return;
+    }
+    node.textContent = t('recommendPlanDefault');
+  }
+
+  function applyPatientDefaults(patient) {
+    if (!patient || state.running) {
+      updateRecommendedPlan(patient);
+      return;
+    }
+    const params = patient.lastParams || patient.lastTreatment;
+    if (!params) {
+      updateRecommendedPlan(null);
+      return;
+    }
+    const pressure = Number(params.pressureMmHg);
+    const duration = Number(params.durationMin);
+    const tempC = Number(params.tempC);
+    const pressSlider = document.getElementById('pressMmHg');
+    const durationSlider = document.getElementById('treatDuration');
+    if (pressSlider && Number.isFinite(pressure)) pressSlider.value = String(pressure);
+    if (durationSlider && Number.isFinite(duration)) durationSlider.value = String(duration);
+    if (Number.isFinite(pressure)) state.targets.pressure = pressure;
+    if (Number.isFinite(duration)) state.targets.durationMin = duration;
+    if (Number.isFinite(tempC)) state.targets.temp = tempC;
+    updateModeMeta();
+    updateRecommendedPlan(patient);
+  }
+
+  function drawPreviewCurve(canvas, snapshot) {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const left = Array.isArray(snapshot?.[0]) ? snapshot[0] : [];
+    const right = Array.isArray(snapshot?.[2]) ? snapshot[2] : [];
+    const maxLen = Math.max(left.length, right.length, 2);
+    if (maxLen < 2) return;
+    const dataL = left.slice(-maxLen);
+    const dataR = right.slice(-maxLen);
+    const vals = [...dataL, ...dataR].filter((v) => typeof v === 'number');
+    if (!vals.length) return;
+    const minVal = Math.min(...vals);
+    const maxVal = Math.max(...vals);
+    const range = maxVal - minVal || 1;
+    const pad = range * 0.1 || 1;
+    const min = minVal - pad;
+    const max = maxVal + pad;
+    const yFor = (v) => canvas.height * (1 - (v - min) / (max - min));
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const drawLine = (data, color) => {
+      if (!data.length) return;
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      data.forEach((val, idx) => {
+        const x = (idx / (data.length - 1 || 1)) * canvas.width;
+        const y = yFor(val);
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    };
+    drawLine(dataL, 'rgba(53,209,192,0.9)');
+    drawLine(dataR, 'rgba(245,165,36,0.9)');
   }
 
   function ensureTreatmentPatientSelected() {
@@ -979,6 +2136,14 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     ensureTreatmentPatientSelected();
     const activeId = String(state.treatmentPatientId || '').trim();
     const activePatient = activeId ? getPatientById(activeId) : null;
+    updateQuickPatientHistory(activePatient);
+    if (activeId && activeId !== state.lastAppliedPatientId) {
+      applyPatientDefaults(activePatient);
+      state.lastAppliedPatientId = activeId;
+    } else if (!activeId) {
+      updateRecommendedPlan(null);
+      state.lastAppliedPatientId = null;
+    }
 
     if (selectedNode) {
       if (activePatient) {
@@ -1073,6 +2238,104 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     gridNode.appendChild(field);
   }
 
+  function applyReportTemplate(template, opts = {}) {
+    const next = template === 'compact' ? 'compact' : 'standard';
+    state.reportTemplate = next;
+    const hideExtras = next === 'compact';
+    const tipsSection = document.getElementById('reportSectionTips');
+    const disclaimerSection = document.getElementById('reportSectionDisclaimer');
+    if (tipsSection) tipsSection.hidden = hideExtras;
+    if (disclaimerSection) disclaimerSection.hidden = hideExtras;
+    const select = document.getElementById('reportTemplateSelect');
+    if (select) select.value = next;
+    if (opts.syncChecks) {
+      const includePatient = document.getElementById('exportIncludePatient');
+      const includeTreatment = document.getElementById('exportIncludeTreatment');
+      const includeTips = document.getElementById('exportIncludeTips');
+      const includeDisclaimer = document.getElementById('exportIncludeDisclaimer');
+      if (includePatient) includePatient.checked = true;
+      if (includeTreatment) includeTreatment.checked = true;
+      if (includeTips) includeTips.checked = !hideExtras;
+      if (includeDisclaimer) includeDisclaimer.checked = !hideExtras;
+    }
+  }
+
+  function getCurrentTreatmentInfo() {
+    const pressureMmHg =
+      state.lastTreatment?.pressureMmHg ??
+      state.targets.pressure ??
+      Number(document.getElementById('pressMmHg')?.value ?? 0);
+    const durationMin =
+      state.lastTreatment?.durationMin ??
+      (state.user?.role === 'engineer' && Number.isFinite(Number(state.targets.durationMin))
+        ? Number(state.targets.durationMin)
+        : Number(document.getElementById('treatDuration')?.value ?? 0));
+    const modeVal = state.lastTreatment?.mode ?? state.mode ?? 1;
+    const sides = state.lastTreatment?.sides || state.activeSides || [];
+    const tempC =
+      state.lastTreatment?.tempC ??
+      (Number.isFinite(Number(state.targets.temp)) ? Number(state.targets.temp) : TEMP_FIXED_C);
+    const sidesText = sides.length
+      ? sides.map((s) => (s === 'left' ? t('leftEye') : t('rightEye'))).join(' / ')
+      : '--';
+    const startedAt = state.lastTreatment?.startedAt
+      ? new Date(state.lastTreatment.startedAt).toLocaleString()
+      : '--';
+    return {
+      pressureMmHg,
+      durationMin,
+      modeVal,
+      sidesText,
+      tempC,
+      startedAt,
+    };
+  }
+
+  function collectReportData(options = {}) {
+    const patient = state.activePatient || {};
+    const info = getCurrentTreatmentInfo();
+    const data = {
+      title: `${t('homeTitle')} ${t('reportSuffix')}`,
+      generatedAt: new Date().toLocaleString(),
+      patientTitle: t('reportPatientInfoTitle'),
+      treatmentTitle: t('reportTreatmentInfoTitle'),
+      tipsTitle: t('reportTipsTitle'),
+      disclaimerTitle: t('reportDisclaimerTitle'),
+      patientInfo: [],
+      treatmentInfo: [],
+      tips: [],
+      disclaimer: '',
+    };
+    if (options.includePatient) {
+      data.patientInfo = [
+        { label: t('patientId'), value: patient?.id || '--' },
+        { label: t('patientName'), value: patient?.name || '--' },
+        { label: t('patientGender'), value: patient?.gender || '--' },
+        { label: t('patientPhone'), value: patient?.phone || '--' },
+        { label: t('patientBirth'), value: patient?.birth || '--' },
+        { label: t('patientCreatedAt'), value: patient?.createdAt ? new Date(patient.createdAt).toLocaleDateString() : '--' },
+        { label: t('patientNotes'), value: patient?.notes || '--' },
+      ];
+    }
+    if (options.includeTreatment) {
+      data.treatmentInfo = [
+        { label: t('reportPressureLabel'), value: info.pressureMmHg ? `${info.pressureMmHg} mmHg` : '--' },
+        { label: t('reportDurationLabel'), value: info.durationMin ? `${info.durationMin} min` : '--' },
+        { label: t('reportTempLabel'), value: `${info.tempC} ℃` },
+        { label: t('reportModeLabel'), value: String(info.modeVal) },
+        { label: t('reportSidesLabel'), value: info.sidesText },
+        { label: t('reportStartTimeLabel'), value: info.startedAt },
+      ];
+    }
+    if (options.includeTips) {
+      data.tips = REPORT_TIPS[currentLang] || REPORT_TIPS.zh;
+    }
+    if (options.includeDisclaimer) {
+      data.disclaimer = REPORT_DISCLAIMER[currentLang] || REPORT_DISCLAIMER.zh;
+    }
+    return data;
+  }
+
   function renderReport() {
     const patient = state.activePatient;
     const headerTitle = document.getElementById('reportHeaderTitle');
@@ -1102,42 +2365,21 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     const treatGrid = document.getElementById('reportTreatmentInfoGrid');
     if (treatGrid) {
       treatGrid.innerHTML = '';
-      const pressureMmHg =
-        state.lastTreatment?.pressureMmHg ??
-        state.targets.pressure ??
-        Number(document.getElementById('pressMmHg')?.value ?? 0);
-      const durationMin =
-        state.lastTreatment?.durationMin ??
-        (state.user?.role === 'engineer' && Number.isFinite(Number(state.targets.durationMin))
-          ? Number(state.targets.durationMin)
-          : Number(document.getElementById('treatDuration')?.value ?? 0));
-      const modeVal = state.lastTreatment?.mode ?? state.mode ?? 1;
-      const sides = state.lastTreatment?.sides || state.activeSides || [];
-      const tempC =
-        state.lastTreatment?.tempC ??
-        (Number.isFinite(Number(state.targets.temp)) ? Number(state.targets.temp) : TEMP_FIXED_C);
-      const sidesText = sides.length
-        ? sides
-            .map((s) => (s === 'left' ? t('leftEye') : t('rightEye')))
-            .join(' / ')
-        : '--';
+      const info = getCurrentTreatmentInfo();
       appendReportField(
         treatGrid,
         t('reportPressureLabel'),
-        pressureMmHg ? `${pressureMmHg} mmHg` : '--'
+        info.pressureMmHg ? `${info.pressureMmHg} mmHg` : '--'
       );
       appendReportField(
         treatGrid,
         t('reportDurationLabel'),
-        durationMin ? `${durationMin} min` : '--'
+        info.durationMin ? `${info.durationMin} min` : '--'
       );
-      appendReportField(treatGrid, t('reportTempLabel'), `${tempC} ℃`);
-      appendReportField(treatGrid, t('reportModeLabel'), String(modeVal));
-      appendReportField(treatGrid, t('reportSidesLabel'), sidesText);
-      const startedAt = state.lastTreatment?.startedAt
-        ? new Date(state.lastTreatment.startedAt).toLocaleString()
-        : '--';
-      appendReportField(treatGrid, t('reportStartTimeLabel'), startedAt);
+      appendReportField(treatGrid, t('reportTempLabel'), `${info.tempC} ℃`);
+      appendReportField(treatGrid, t('reportModeLabel'), String(info.modeVal));
+      appendReportField(treatGrid, t('reportSidesLabel'), info.sidesText);
+      appendReportField(treatGrid, t('reportStartTimeLabel'), info.startedAt);
     }
 
     const tipsList = document.getElementById('reportTipsList');
@@ -1169,31 +2411,86 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     const dateNode = document.getElementById('reportDoctorDate');
     if (dateNode) dateNode.textContent = t('reportDoctorDate');
     const exportBtn = document.getElementById('btnExportPdf');
-    if (exportBtn) exportBtn.textContent = t('exportPdf');
+    if (exportBtn) exportBtn.textContent = t('exportReport');
     const printBtn = document.getElementById('btnPrintReport');
     if (printBtn) printBtn.textContent = t('printReport');
+    const formatLabel = document.getElementById('reportExportFormatLabel');
+    if (formatLabel) formatLabel.textContent = t('exportFormatLabel');
+    const templateLabel = document.getElementById('reportTemplateLabel');
+    if (templateLabel) templateLabel.textContent = t('reportTemplateLabel');
+    const templateSelect = document.getElementById('reportTemplateSelect');
+    if (templateSelect) {
+      const opts = templateSelect.querySelectorAll('option');
+      if (opts[0]) opts[0].textContent = t('reportTemplateStandard');
+      if (opts[1]) opts[1].textContent = t('reportTemplateCompact');
+    }
+    const includePatient = document.getElementById('exportIncludePatientLabel');
+    if (includePatient) includePatient.textContent = t('exportIncludePatient');
+    const includeTreatment = document.getElementById('exportIncludeTreatmentLabel');
+    if (includeTreatment) includeTreatment.textContent = t('exportIncludeTreatment');
+    const includeTips = document.getElementById('exportIncludeTipsLabel');
+    if (includeTips) includeTips.textContent = t('exportIncludeTips');
+    const includeDisclaimer = document.getElementById('exportIncludeDisclaimerLabel');
+    if (includeDisclaimer) includeDisclaimer.textContent = t('exportIncludeDisclaimer');
+    applyReportTemplate(state.reportTemplate || 'standard', { syncChecks: false });
   }
 
   async function handleExportReportPdf() {
-    showAlert(t('exportingPdf'), 2000, 'info');
+    const format = document.getElementById('reportExportFormat')?.value || 'pdf';
+    const includePatient = !!document.getElementById('exportIncludePatient')?.checked;
+    const includeTreatment = !!document.getElementById('exportIncludeTreatment')?.checked;
+    const includeTips = !!document.getElementById('exportIncludeTips')?.checked;
+    const includeDisclaimer = !!document.getElementById('exportIncludeDisclaimer')?.checked;
+    if (format === 'pdf') {
+      showAlert(t('exportingPdf'), 2000, 'info');
+      try {
+        const res = api?.exportReportPdf
+          ? await api.exportReportPdf({
+              patientId: state.activePatient?.id || '',
+            })
+          : null;
+        if (res?.success) {
+          const filePath = String(res.filePath || '');
+          const base = filePath.split(/[\\/]/).filter(Boolean).pop() || '';
+          const hint = base ? `reports/${base}` : 'reports/';
+          showAlert(`${t('exportPdfSuccess')}: ${hint}`, 6000, 'success');
+        } else {
+          const reason = res?.failureReason ? `: ${res.failureReason}` : '';
+          showAlert(`${t('exportPdfFailed')}${reason}`, 4500, 'error');
+        }
+      } catch (err) {
+        console.warn('[PPHC] export pdf failed', err);
+        showAlert(t('exportPdfFailed'), 4500, 'error');
+      }
+      return;
+    }
+    showAlert(t('exportingReport'), 2000, 'info');
     try {
-      const res = api?.exportReportPdf
-        ? await api.exportReportPdf({
+      const data = collectReportData({
+        includePatient,
+        includeTreatment,
+        includeTips,
+        includeDisclaimer,
+      });
+      const res = api?.exportReportData
+        ? await api.exportReportData({
+            format,
             patientId: state.activePatient?.id || '',
+            data,
           })
         : null;
       if (res?.success) {
         const filePath = String(res.filePath || '');
         const base = filePath.split(/[\\/]/).filter(Boolean).pop() || '';
         const hint = base ? `reports/${base}` : 'reports/';
-        showAlert(`${t('exportPdfSuccess')}: ${hint}`, 6000, 'success');
+        showAlert(`${t('exportReportSuccess')}: ${hint}`, 6000, 'success');
       } else {
         const reason = res?.failureReason ? `: ${res.failureReason}` : '';
-        showAlert(`${t('exportPdfFailed')}${reason}`, 4500, 'error');
+        showAlert(`${t('exportReportFailed')}${reason}`, 4500, 'error');
       }
     } catch (err) {
-      console.warn('[PPHC] export pdf failed', err);
-      showAlert(t('exportPdfFailed'), 4500, 'error');
+      console.warn('[PPHC] export report failed', err);
+      showAlert(t('exportReportFailed'), 4500, 'error');
     }
   }
 
@@ -1260,29 +2557,160 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     }
   }
 
-  async function handleDeleteSelectedPatient() {
-    const id = String(state.selectedPatientId || '').trim();
-    if (!id) {
-      showAlert(t('patientDeleteNeedSelect'), 3500, 'error');
+  async function handleShareReport() {
+    const name = getActiveReportName();
+    if (!name) {
+      showAlert(t('reportShareNeedSelect'), 3500, 'error');
       return;
     }
     try {
-      const res = api?.removePatient ? await api.removePatient(id) : null;
+      const res = api?.shareReport ? await api.shareReport({ name }) : null;
       if (res?.success) {
-        state.selectedPatientId = null;
-        await ensurePatientsLoaded();
-        state.patients = state.patients.filter((p) => String(p?.id || '').trim() !== id);
-        if (String(state.treatmentPatientId || '').trim() === id) state.treatmentPatientId = null;
-        renderPatientList();
-        renderQuickPatientPicker();
-        showAlert(t('patientDeleted'), 3500, 'success');
+        const filePath = String(res.filePath || '');
+        const base = filePath.split(/[\\/]/).filter(Boolean).pop() || name;
+        const hint = base ? `reports/share/${base}` : 'reports/share';
+        showAlert(t('reportShareSuccess').replace('{path}', hint), 6000, 'success');
       } else {
-        showAlert(t('patientDeleteFailed'), 3500, 'error');
+        const reason = res?.failureReason ? `: ${res.failureReason}` : '';
+        showAlert(`${t('reportShareFailed')}${reason}`, 4500, 'error');
       }
     } catch (err) {
-      console.warn('[PPHC] delete patient failed', err);
-      showAlert(t('patientDeleteFailed'), 3500, 'error');
+      console.warn('[PPHC] share report failed', err);
+      showAlert(t('reportShareFailed'), 4500, 'error');
     }
+  }
+
+  function setPatientDeleteMessage(msg, isError = false) {
+    const node = document.getElementById('patientDeleteMessage');
+    if (!node) return;
+    if (!msg) {
+      node.hidden = true;
+      node.textContent = '';
+      node.classList.remove('error');
+      return;
+    }
+    node.hidden = false;
+    node.textContent = msg;
+    node.classList.toggle('error', !!isError);
+  }
+
+  function openPatientDeleteModal(ids) {
+    const modal = document.getElementById('patientDeleteModal');
+    if (!modal) return;
+    state.pendingPatientDeleteIds = Array.isArray(ids) ? ids : [];
+    const input = document.getElementById('patientDeletePassword');
+    if (input) input.value = '';
+    const text = document.getElementById('patientDeleteText');
+    if (text) {
+      const count = state.pendingPatientDeleteIds.length || 1;
+      text.textContent = `${t('patientDeleteText')} (${count})`;
+    }
+    setPatientDeleteMessage(null);
+    modal.hidden = false;
+  }
+
+  function closePatientDeleteModal() {
+    const modal = document.getElementById('patientDeleteModal');
+    if (modal) modal.hidden = true;
+    state.pendingPatientDeleteIds = [];
+    hideKeyboard();
+  }
+
+  async function confirmPatientDelete() {
+    const ids = Array.isArray(state.pendingPatientDeleteIds) ? state.pendingPatientDeleteIds : [];
+    if (!ids.length) {
+      closePatientDeleteModal();
+      return;
+    }
+    const password = document.getElementById('patientDeletePassword')?.value || '';
+    if (!password) {
+      setPatientDeleteMessage(t('confirmPasswordPlaceholder'), true);
+      return;
+    }
+    try {
+      const auth = api?.login ? await api.login(state.user?.username || '', password) : null;
+      if (!auth?.ok) {
+        setPatientDeleteMessage(t('loginFailed'), true);
+        return;
+      }
+      const removedPatients = (state.patients || []).filter((p) =>
+        ids.includes(String(p?.id || ''))
+      );
+      for (const id of ids) {
+        await api?.removePatient?.(id);
+      }
+      state.selectedPatientIds = [];
+      state.selectedPatientId = null;
+      await ensurePatientsLoaded();
+      state.patients = state.patients.filter((p) => !ids.includes(String(p?.id || '')));
+      if (ids.includes(String(state.treatmentPatientId || ''))) state.treatmentPatientId = null;
+      renderPatientList();
+      renderQuickPatientPicker();
+      setUndoSnapshot(removedPatients);
+      recordOperation('patient-delete', `-${ids.length}`);
+      showAlert(t('patientDeleted'), 3500, 'success');
+      closePatientDeleteModal();
+    } catch (err) {
+      console.warn('[PPHC] delete patient failed', err);
+      setPatientDeleteMessage(t('patientDeleteFailed'), true);
+    }
+  }
+
+  async function handleBatchExportReports() {
+    const ids = state.selectedPatientIds.length
+      ? state.selectedPatientIds.slice()
+      : [String(state.selectedPatientId || '').trim()].filter(Boolean);
+    if (!ids.length) {
+      showAlert(t('batchExportNeedSelect'), 3500, 'error');
+      return;
+    }
+    const format = document.getElementById('reportExportFormat')?.value || 'pdf';
+    const includePatient = !!document.getElementById('exportIncludePatient')?.checked;
+    const includeTreatment = !!document.getElementById('exportIncludeTreatment')?.checked;
+    const includeTips = !!document.getElementById('exportIncludeTips')?.checked;
+    const includeDisclaimer = !!document.getElementById('exportIncludeDisclaimer')?.checked;
+    const prevView = state.currentView;
+    const prevPatient = state.activePatient;
+    showAlert(t('batchExportStart'), 2000, 'info');
+    try {
+      for (const id of ids) {
+        const patient = getPatientById(id);
+        if (!patient) continue;
+        state.activePatient = patient;
+        showView('report');
+        renderReport();
+        if (format === 'pdf') {
+          await api?.exportReportPdf?.({ patientId: patient.id || '' });
+        } else {
+          const data = collectReportData({
+            includePatient,
+            includeTreatment,
+            includeTips,
+            includeDisclaimer,
+          });
+          await api?.exportReportData?.({ format, patientId: patient.id || '', data });
+        }
+      }
+      state.activePatient = prevPatient;
+      showView(prevView || 'patientList');
+      showAlert(t('batchExportDone'), 4000, 'success');
+    } catch (err) {
+      console.warn('[PPHC] batch export failed', err);
+      state.activePatient = prevPatient;
+      showView(prevView || 'patientList');
+      showAlert(t('batchExportFailed'), 4000, 'error');
+    }
+  }
+
+  async function handleDeleteSelectedPatient() {
+    const ids = state.selectedPatientIds.length
+      ? state.selectedPatientIds.slice()
+      : [String(state.selectedPatientId || '').trim()].filter(Boolean);
+    if (!ids.length) {
+      showAlert(t('patientDeleteNeedSelect'), 3500, 'error');
+      return;
+    }
+    openPatientDeleteModal(ids);
   }
 
   async function handleClearPatients() {
@@ -1290,11 +2718,13 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       const res = api?.clearPatients ? await api.clearPatients() : null;
       if (res?.success) {
         state.selectedPatientId = null;
+        state.selectedPatientIds = [];
         state.treatmentPatientId = null;
         state.patients = [];
         state.patientsLoaded = true;
         renderPatientList();
         renderQuickPatientPicker();
+        setUndoSnapshot(null);
         showAlert(t('patientsCleared'), 3500, 'success');
       } else {
         showAlert(t('patientsClearFailed'), 3500, 'error');
@@ -1544,29 +2974,80 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
 
   async function handlePatientSubmit(e) {
     e.preventDefault();
+    const idInput = document.getElementById('patientId');
     const nameInput = document.getElementById('patientName');
     const phoneInput = document.getElementById('patientPhone');
     const birthInput = document.getElementById('patientBirth');
     const notesInput = document.getElementById('patientNotes');
+    const therapistInput = document.getElementById('patientTherapist');
+    const deviceInput = document.getElementById('patientDeviceModel');
+    const statusInput = document.getElementById('patientStatus');
     const genderInput = document.querySelector('input[name="patientGender"]:checked');
+    const patientId = normalizePatientIdInput(idInput?.value || '');
+    if (!patientId) {
+      setPatientFormMessage(t('patientIdRequired'), true);
+      return;
+    }
     const name = nameInput?.value?.trim() || '';
     if (!name) {
       setPatientFormMessage(t('patientNameRequired'), true);
       return;
     }
+    if (!CHINESE_NAME_RE.test(name)) {
+      setPatientFormMessage(t('patientNameInvalid'), true);
+      return;
+    }
     setPatientFormMessage(null);
     await ensurePatientsLoaded();
     try {
-      const payload = {
+      const existing = getPatientById(patientId);
+      const isEditing =
+        state.editingPatientId && normalizePatientIdInput(state.editingPatientId) === patientId;
+      if (existing && !isEditing) {
+        setPatientFormMessage(t('patientIdDuplicate'), true);
+        return;
+      }
+      const basePayload = {
         name,
         phone: phoneInput?.value?.trim() || '',
+        therapist: therapistInput?.value?.trim() || '',
+        deviceModel: deviceInput?.value?.trim() || '',
+        status: statusInput?.value || 'active',
         birth: birthInput?.value || '',
         notes: notesInput?.value?.trim() || '',
         gender: genderInput?.value || '男',
       };
+      if (isEditing && existing) {
+        const patch = { ...basePayload };
+        if (state.newPatientPhoto != null) patch.photoData = state.newPatientPhoto;
+        const updated = api?.updatePatient
+          ? await api.updatePatient({ id: existing.id, patch })
+          : { id: existing.id, ...patch };
+        if (updated && updated.id) {
+          state.patients = state.patients.map((p) =>
+            String(p?.id || '') === String(updated.id) ? { ...p, ...updated } : p
+          );
+          if (state.activePatient && String(state.activePatient.id || '') === String(updated.id)) {
+            state.activePatient = { ...state.activePatient, ...updated };
+          }
+          renderPatientList();
+          renderQuickPatientPicker();
+          resetPatientForm();
+          setPatientFormMessage(t('patientUpdated'));
+          showView('patientList');
+        } else {
+          setPatientFormMessage(t('patientSaveFailed'), true);
+        }
+        return;
+      }
+      const payload = {
+        id: patientId,
+        ...basePayload,
+        photoData: state.newPatientPhoto || null,
+      };
       const saved = api?.addPatient
         ? await api.addPatient(payload)
-        : { ...payload, id: computeNextPatientId(), createdAt: new Date().toISOString() };
+        : { ...payload, id: patientId, createdAt: new Date().toISOString() };
       if (saved && saved.id) {
         state.patients = [...state.patients, saved];
         state.patientsLoaded = true;
@@ -1697,19 +3178,52 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     document.body.classList.add('keyboard-open');
   }
 
+  function handleKeyboardConfirm(target) {
+    const loginOverlay = document.getElementById('loginOverlay');
+    const loginActive =
+      loginOverlay && loginOverlay.classList.contains('active') && !loginOverlay.classList.contains('hidden');
+    if (loginActive) {
+      const addModal = document.getElementById('loginAddUserModal');
+      const resetModal = document.getElementById('loginResetModal');
+      if (addModal && !addModal.hidden) {
+        handleLoginAddUserSubmit();
+        return;
+      }
+      if (resetModal && !resetModal.hidden) {
+        handleLoginResetSubmit();
+        return;
+      }
+      attemptLogin();
+      return;
+    }
+    const accountRemoveModal = document.getElementById('accountRemoveModal');
+    if (accountRemoveModal && !accountRemoveModal.hidden) {
+      confirmAccountRemove();
+      return;
+    }
+    const patientDeleteModal = document.getElementById('patientDeleteModal');
+    if (patientDeleteModal && !patientDeleteModal.hidden) {
+      confirmPatientDelete();
+      return;
+    }
+    if (target && typeof target.blur === 'function') target.blur();
+    hideKeyboard();
+  }
+
   function handleKeyboardAction(action) {
     const target = getKeyboardTarget();
     if (!target) return;
     const actionKey = action?.toLowerCase?.() || action;
     const isSpaceKey = actionKey === 'space' || actionKey === '空格';
+    const isEnterKey = actionKey === 'enter' || actionKey === '确认' || actionKey === '回车';
     const isBackspaceKey =
       actionKey === 'backspace' || actionKey === '退格' || actionKey === '←';
 
     if (keyboardState.lang === 'zh') {
-      if (action === 'enter') {
+      if (isEnterKey) {
         const cand = keyboardState.candidates?.[0] || keyboardState.composing;
         if (cand) commitCandidate(cand);
-        else attemptLogin();
+        handleKeyboardConfirm(target);
         return;
       }
       if (isBackspaceKey) {
@@ -1765,7 +3279,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
         break;
       }
       case 'enter':
-        attemptLogin();
+        handleKeyboardConfirm(target);
         break;
       default:
         break;
@@ -2125,6 +3639,10 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       handleKeyboardAction('clear');
       return;
     }
+    if (key === 'enter' || key === '确认' || key === '回车') {
+      handleKeyboardAction('enter');
+      return;
+    }
     if (keyboardState.lang === 'zh') {
       handleZhKey(label);
     } else {
@@ -2132,35 +3650,239 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     }
   }
 
+  function formatLockSeconds(ms) {
+    const sec = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
+    return sec;
+  }
+
+  function showLoginToast(message, kind = 'success') {
+    const toast = document.getElementById('loginToast');
+    if (!toast) return;
+    toast.classList.remove('success', 'error');
+    toast.classList.add(kind);
+    const icon = kind === 'success' ? '✅' : '⚠';
+    toast.textContent = `${icon} ${message}`;
+    toast.hidden = false;
+    if (toast._timer) clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+      toast.hidden = true;
+    }, LOGIN_TOAST_DURATION);
+  }
+
+  function setLoginLocked(remainingMs) {
+    const lockMs = Number(remainingMs) || 0;
+    state.loginLockedUntil = Date.now() + lockMs;
+    const btn = document.getElementById('loginSubmit');
+    if (btn) btn.disabled = true;
+    const tick = () => {
+      const left = state.loginLockedUntil - Date.now();
+      if (left <= 0) {
+        clearLoginLock();
+        return;
+      }
+      const msg = t('loginLocked').replace('{seconds}', formatLockSeconds(left));
+      setLoginError(msg);
+    };
+    tick();
+    if (state.loginLockTimer) clearInterval(state.loginLockTimer);
+    state.loginLockTimer = setInterval(tick, 1000);
+  }
+
+  function clearLoginLock() {
+    state.loginLockedUntil = 0;
+    if (state.loginLockTimer) {
+      clearInterval(state.loginLockTimer);
+      state.loginLockTimer = null;
+    }
+    const btn = document.getElementById('loginSubmit');
+    if (btn) btn.disabled = false;
+    setLoginError(null);
+  }
+
+  function isValidUsername(username) {
+    return USERNAME_RE.test(String(username || ''));
+  }
+
   function setLoginError(msg) {
     const node = document.getElementById('loginError');
+    const textNode = document.getElementById('loginErrorText');
     if (!node) return;
     if (!msg) {
       node.hidden = true;
       return;
     }
-    node.textContent = msg;
+    if (textNode) textNode.textContent = msg;
+    else node.textContent = msg;
     node.hidden = false;
+  }
+
+  function setLoginFormDisabled(disabled) {
+    ['loginUser', 'loginPass', 'loginSubmit'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = !!disabled;
+    });
   }
 
   async function attemptLogin() {
     const userRaw = document.getElementById('loginUser')?.value ?? '';
     const pass = document.getElementById('loginPass')?.value ?? '';
     const user = userRaw.trim();
+    if (state.loginLockedUntil && Date.now() < state.loginLockedUntil) {
+      setLoginLocked(state.loginLockedUntil - Date.now());
+      return false;
+    }
+    if (!pass) {
+      setLoginError(t('passwordRequired'));
+      return false;
+    }
     try {
       const res = api?.login
         ? await api.login(user, pass)
         : { ok: user === LOGIN_CREDENTIALS.username && pass === LOGIN_CREDENTIALS.password, role: 'admin', username: user };
       if (res && res.ok) {
         setLoginError(null);
-        completeLogin({ username: res.username || user, role: res.role || 'user' });
+        clearLoginLock();
+        setLoginFormDisabled(true);
+        showLoginToast(t('loginSuccess').replace('{user}', res.username || user), 'success');
+        if (state.loginPendingTimer) clearTimeout(state.loginPendingTimer);
+        state.loginPendingTimer = setTimeout(() => {
+          state.loginPendingTimer = null;
+          setLoginFormDisabled(false);
+          completeLogin({ username: res.username || user, role: res.role || 'user' });
+        }, LOGIN_TOAST_DURATION);
         return true;
+      }
+      if (res && res.locked) {
+        setLoginLocked(res.remainingMs || 0);
+        return false;
       }
     } catch (err) {
       console.warn('[PPHC] login failed', err);
     }
     setLoginError(t('loginFailed'));
+    showLoginToast(t('loginFailed'), 'error');
     return false;
+  }
+
+  function setLoginAddUserMessage(msg, isError = false) {
+    const node = document.getElementById('loginAddUserMessage');
+    if (!node) return;
+    if (!msg) {
+      node.hidden = true;
+      node.textContent = '';
+      node.classList.remove('error');
+      return;
+    }
+    node.hidden = false;
+    node.textContent = msg;
+    node.classList.toggle('error', !!isError);
+  }
+
+  function setLoginResetMessage(msg, isError = false) {
+    const node = document.getElementById('loginResetMessage');
+    if (!node) return;
+    if (!msg) {
+      node.hidden = true;
+      node.textContent = '';
+      node.classList.remove('error');
+      return;
+    }
+    node.hidden = false;
+    node.textContent = msg;
+    node.classList.toggle('error', !!isError);
+  }
+
+  function openLoginAddUserModal() {
+    const modal = document.getElementById('loginAddUserModal');
+    if (!modal) return;
+    setLoginAddUserMessage(null);
+    ['loginAddUsername', 'loginAddPassword', 'loginAddPassword2'].forEach((id) => {
+      const node = document.getElementById(id);
+      if (node) node.value = '';
+    });
+    modal.hidden = false;
+  }
+
+  function closeLoginAddUserModal() {
+    const modal = document.getElementById('loginAddUserModal');
+    if (modal) modal.hidden = true;
+    hideKeyboard();
+  }
+
+  async function handleLoginAddUserSubmit() {
+    setLoginAddUserMessage(null);
+    const username = document.getElementById('loginAddUsername')?.value?.trim() || '';
+    const password = document.getElementById('loginAddPassword')?.value || '';
+    const password2 = document.getElementById('loginAddPassword2')?.value || '';
+    const role = document.getElementById('loginAddRole')?.value || 'operator';
+    const safeRole = role === 'admin' ? 'admin' : 'operator';
+    if (!isValidUsername(username)) {
+      setLoginAddUserMessage(t('usernameFormatHint'), true);
+      return;
+    }
+    if (!password) {
+      setLoginAddUserMessage(t('passwordRequired'), true);
+      return;
+    }
+    if (password !== password2) {
+      setLoginAddUserMessage(t('accountsPasswordMismatch'), true);
+      return;
+    }
+    try {
+      await api?.addAccount?.({ username, password, role: safeRole });
+      setLoginAddUserMessage(t('loginAddSuccess'), false);
+      showLoginToast(t('loginAddSuccess'), 'success');
+      hideKeyboard();
+      setTimeout(closeLoginAddUserModal, 800);
+    } catch (err) {
+      console.warn('[PPHC] add user failed', err);
+      setLoginAddUserMessage(t('loginAddFailed'), true);
+    }
+  }
+
+  function openLoginResetModal() {
+    const modal = document.getElementById('loginResetModal');
+    if (!modal) return;
+    setLoginResetMessage(null);
+    ['resetUsername', 'resetPassword', 'resetPassword2'].forEach((id) => {
+      const node = document.getElementById(id);
+      if (node) node.value = '';
+    });
+    modal.hidden = false;
+  }
+
+  function closeLoginResetModal() {
+    const modal = document.getElementById('loginResetModal');
+    if (modal) modal.hidden = true;
+    hideKeyboard();
+  }
+
+  async function handleLoginResetSubmit() {
+    setLoginResetMessage(null);
+    const username = document.getElementById('resetUsername')?.value?.trim() || '';
+    const password = document.getElementById('resetPassword')?.value || '';
+    const password2 = document.getElementById('resetPassword2')?.value || '';
+    if (!username) {
+      setLoginResetMessage(t('accountsAddFailed'), true);
+      return;
+    }
+    if (!password || password !== password2) {
+      setLoginResetMessage(t('accountsPasswordMismatch'), true);
+      return;
+    }
+    try {
+      await api?.resetAccountPassword?.({
+        username,
+        newPassword: password,
+      });
+      setLoginResetMessage(t('loginResetSuccess'), false);
+      showLoginToast(t('loginResetSuccess'), 'success');
+      hideKeyboard();
+      setTimeout(closeLoginResetModal, 800);
+    } catch (err) {
+      console.warn('[PPHC] reset password failed', err);
+      setLoginResetMessage(t('loginResetFailed'), true);
+    }
   }
 
   function setKeyboardTarget(input) {
@@ -2174,6 +3896,59 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     }
   }
 
+  function getRoleLabel(role) {
+    if (role === 'admin') return t('roleAdmin');
+    if (role === 'operator') return t('roleOperator');
+    return t('roleUser');
+  }
+
+  function updateUserBadge() {
+    const badge = document.getElementById('userBadge');
+    if (!badge) return;
+    if (!state.loggedIn) {
+      badge.hidden = true;
+      return;
+    }
+    const username = state.user?.username || '--';
+    const avatar = document.getElementById('userAvatar');
+    const nameNode = document.getElementById('userName');
+    const roleNode = document.getElementById('userRole');
+    if (avatar) avatar.textContent = username ? username.slice(0, 1).toUpperCase() : '--';
+    if (nameNode) nameNode.textContent = username;
+    if (roleNode) roleNode.textContent = getRoleLabel(state.user?.role || 'user');
+    badge.hidden = false;
+  }
+
+  function applyRoleUI() {
+    const role = state.user?.role || 'user';
+    document.body.dataset.role = role;
+    const isAdmin = role === 'admin';
+    const isOperator = role === 'operator';
+
+    const accountsNav = document.querySelector('.settings-nav button[data-module="accounts"]');
+    const accountsModule = document.getElementById('settingsModuleAccounts');
+    if (accountsNav) accountsNav.hidden = !isAdmin;
+    if (accountsModule) accountsModule.hidden = !isAdmin;
+
+    const btnHomeDevice = document.getElementById('btnHomeDevice');
+    const btnHomeNewPatient = document.getElementById('btnHomeNewPatient');
+    const btnHomePatientList = document.getElementById('btnHomePatientList');
+    if (btnHomeDevice) btnHomeDevice.hidden = isOperator;
+    if (btnHomeNewPatient) btnHomeNewPatient.hidden = isOperator;
+    if (btnHomePatientList) btnHomePatientList.hidden = isOperator;
+
+    const bottomNav = document.getElementById('bottomNav');
+    if (bottomNav) {
+      bottomNav.querySelectorAll('.nav-item').forEach((btn) => {
+        const view = btn.dataset.view;
+        btn.hidden = !view || !canAccessView(view);
+      });
+    }
+
+    if (isOperator && state.currentView === 'settings') showView('quick');
+    updateBottomNav();
+  }
+
   function completeLogin(info = {}) {
     if (state.loggedIn) return;
     state.loggedIn = true;
@@ -2181,6 +3956,8 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       username: String(info.username || ''),
       role: String(info.role || 'user') || 'user',
     };
+    applyRoleUI();
+    updateUserBadge();
     document.body.classList.remove('login-locked');
     document.body.classList.remove('view-login');
     const overlay = document.getElementById('loginOverlay');
@@ -2189,11 +3966,15 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       overlay.classList.add('hidden');
     }
     keyboardState.target = null;
+    hideKeyboard();
     showView(state.user.role === 'engineer' ? 'engineer' : 'home');
     scheduleAutoConnect(0);
     ensureTelemetryLoop();
     startHeroClock();
     updateTelemetry();
+    startAutoSaveTimer();
+    checkAutoSaveRestore();
+    updateBottomNav();
   }
 
   function initLoginOverlay() {
@@ -2237,6 +4018,18 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       e.preventDefault();
       attemptLogin();
     });
+    document.getElementById('loginAddUser')?.addEventListener('click', openLoginAddUserModal);
+    document.getElementById('loginResetLink')?.addEventListener('click', openLoginResetModal);
+    document.getElementById('loginAddUserCancel')?.addEventListener('click', closeLoginAddUserModal);
+    document.getElementById('loginAddUserSubmit')?.addEventListener('click', handleLoginAddUserSubmit);
+    document.getElementById('loginResetCancel')?.addEventListener('click', closeLoginResetModal);
+    document.getElementById('loginResetSubmit')?.addEventListener('click', handleLoginResetSubmit);
+    document.getElementById('loginAddUserModal')?.addEventListener('click', (e) => {
+      if (e.target?.id === 'loginAddUserModal') closeLoginAddUserModal();
+    });
+    document.getElementById('loginResetModal')?.addEventListener('click', (e) => {
+      if (e.target?.id === 'loginResetModal') closeLoginResetModal();
+    });
   }
 
   function showLoginOverlay() {
@@ -2244,6 +4037,9 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (!overlay) return;
     state.loggedIn = false;
     state.user = { username: '', role: 'user' };
+    clearLoginLock();
+    setLoginFormDisabled(false);
+    updateUserBadge();
     document.body.classList.add('login-locked');
     document.body.classList.add('view-login');
     overlay.classList.remove('hidden');
@@ -2255,6 +4051,10 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     setLoginError(null);
     hideKeyboard();
     showView('home');
+    stopAutoSaveTimer();
+    setUndoSnapshot(null);
+    closeAutoSaveRestoreModal();
+    updateBottomNav();
   }
 
   function hideLoginOverlay() {
@@ -2264,14 +4064,37 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     overlay.classList.add('hidden');
     document.body.classList.remove('login-locked');
     document.body.classList.remove('view-login');
+    hideKeyboard();
+  }
+
+  let oskInputsBound = false;
+
+  function isOskEligibleInput(node) {
+    if (!node || !(node instanceof HTMLElement)) return false;
+    if (!node.matches('input, textarea')) return false;
+    if (!node.matches('.osk-input, [data-osk-target]')) return false;
+    if (node.classList.contains('date-input')) return false;
+    return true;
   }
 
   function bindOskInputs() {
-    const inputs = document.querySelectorAll('input[data-osk-target], textarea[data-osk-target], .osk-input');
-    inputs.forEach((input) => {
-      if (input.classList.contains('date-input')) return;
-      input.addEventListener('focus', () => setKeyboardTarget(input));
-      input.addEventListener('click', () => setKeyboardTarget(input));
+    if (oskInputsBound) return;
+    oskInputsBound = true;
+    document.addEventListener('focusin', (e) => {
+      const target = e.target;
+      if (!isOskEligibleInput(target)) return;
+      setKeyboardTarget(target);
+    });
+    document.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest('.osk')) return;
+      const input = target.closest('input[data-osk-target], textarea[data-osk-target], .osk-input');
+      if (isOskEligibleInput(input)) {
+        setKeyboardTarget(input);
+        return;
+      }
+      hideKeyboard();
     });
   }
 
@@ -2281,8 +4104,82 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     return presentRaw === true || presentNum === 1; // 高电平 = 在线
   }
 
+  function updateDeviceStatusUI() {
+    const statusNode = document.getElementById('deviceStatusText');
+    if (statusNode) {
+      const status = state.connecting
+        ? t('deviceStatusConnecting')
+        : state.connected
+          ? t('deviceStatusConnected')
+          : t('deviceStatusDisconnected');
+      statusNode.textContent = status;
+    }
+    const autoToggle = document.getElementById('deviceAutoReconnect');
+    if (autoToggle) autoToggle.checked = !!state.settings.autoConnect;
+
+    const calibNode = document.getElementById('deviceCalibrationValue');
+    if (calibNode) {
+      const last = state.settings.lastCalibrationAt
+        ? new Date(state.settings.lastCalibrationAt)
+        : null;
+      if (!last || Number.isNaN(last.getTime())) {
+        calibNode.textContent = t('deviceCalibrationNever');
+      } else {
+        const dateText = formatDateYMD(last);
+        const elapsedDays = Math.floor((Date.now() - last.getTime()) / (24 * 60 * 60 * 1000));
+        const remaining = CALIBRATION_INTERVAL_DAYS - elapsedDays;
+        const dueText =
+          remaining >= 0
+            ? t('deviceCalibrationDue').replace('{days}', String(remaining))
+            : t('deviceCalibrationOverdue').replace('{days}', String(Math.abs(remaining)));
+        calibNode.textContent = `${t('deviceCalibrationAt').replace('{date}', dateText)} · ${dueText}`;
+      }
+    }
+  }
+
+  function setStatusChip(node, level) {
+    if (!node) return;
+    node.classList.remove('status-ok', 'status-warn', 'status-bad');
+    if (level) node.classList.add(`status-${level}`);
+  }
+
+  function classifyStatusValue(value) {
+    if (value == null) return null;
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      if (value <= 0) return 'ok';
+      if (value <= 2) return 'warn';
+      return 'bad';
+    }
+    const text = String(value || '').trim().toLowerCase();
+    if (!text || text === '--') return null;
+    if (['0', 'ok', 'normal', 'ready', 'running', 'standby'].includes(text)) return 'ok';
+    if (text.includes('warn') || text.includes('warning') || text.includes('警') || text.includes('注意')) {
+      return 'warn';
+    }
+    if (
+      text.includes('err') ||
+      text.includes('error') ||
+      text.includes('fault') ||
+      text.includes('alarm') ||
+      text.includes('异常') ||
+      text.includes('错误')
+    ) {
+      return 'bad';
+    }
+    return null;
+  }
+
+  function updateStatusChips() {
+    const connLevel = state.connected ? 'ok' : state.connecting ? 'warn' : 'bad';
+    setStatusChip(document.getElementById('connectionState'), connLevel);
+    setStatusChip(document.getElementById('alarmState'), classifyStatusValue(state.alarmState));
+    setStatusChip(document.getElementById('systemState'), classifyStatusValue(state.systemState));
+    setStatusChip(document.getElementById('runState'), state.running ? 'ok' : null);
+  }
+
   function setConnected(on) {
     state.connected = on;
+    if (on) state.connecting = false;
     const connectionNode = $('#connectionState');
     if (connectionNode) connectionNode.textContent = on ? t('connected') : t('disconnected');
     const toggleBtn = $('#btnStartStop');
@@ -2301,6 +4198,8 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       updateRunState();
       scheduleAutoConnect(2000);
     }
+    updateDeviceStatusUI();
+    updateStatusChips();
   }
 
   function startHeartbeat() {
@@ -2324,16 +4223,19 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       clearTimeout(state.autoConnectTimer);
       state.autoConnectTimer = null;
     }
+    if (!state.settings.autoConnect) return;
     state.autoConnectTimer = setTimeout(() => {
       state.autoConnectTimer = null;
       attemptAutoConnect();
     }, Math.max(0, delay));
   }
 
-  async function attemptAutoConnect() {
+  async function attemptAutoConnect(opts = {}) {
     if (WEB_DEBUG) return;
+    if (!opts.force && !state.settings.autoConnect) return;
     if (state.connected || state.connecting || !api?.connect) return;
     state.connecting = true;
+    updateDeviceStatusUI();
     try {
       const ok = await api.connect(AUTO_PORT, AUTO_BAUD);
       if (ok) {
@@ -2344,6 +4246,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       console.warn('auto connect failed', err);
     } finally {
       state.connecting = false;
+      updateDeviceStatusUI();
       if (!state.connected) scheduleAutoConnect(3000);
     }
   }
@@ -2385,6 +4288,42 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
 
     set('title', 'appTitle');
     set('#btnExit', 'exit');
+    set('#loginAddUser', 'loginAddUserBtn');
+    set('#loginResetLink', 'loginResetLink');
+    set('#loginAddUserTitle', 'loginAddUserTitle');
+    set('#loginAddUserHint', 'loginAddUserHint');
+    set('#loginResetTitle', 'loginResetTitle');
+    set('#loginResetHint', 'loginResetHint');
+    set('#loginAddUserCancel', 'actionCancel');
+    set('#loginAddUserSubmit', 'actionSubmit');
+    set('#loginResetCancel', 'actionCancel');
+    set('#loginResetSubmit', 'actionConfirm');
+    set('#accountRemoveTitle', 'accountsRemoveConfirmTitle');
+    set('#accountRemoveText', 'accountsRemoveConfirmText');
+    set('#accountRemoveImpact', 'accountsDeleteImpact');
+    set('#accountRemovePasswordLabel', 'confirmPassword');
+    set('#accountRemoveCancel', 'actionCancel');
+    set('#accountRemoveConfirm', 'actionConfirm');
+
+    const addUserLabels = [
+      ['label[for="loginAddUsername"]', 'accountsUsernameLabel'],
+      ['label[for="loginAddPassword"]', 'accountsPasswordLabel'],
+      ['label[for="loginAddPassword2"]', 'accountsPassword2Label'],
+      ['label[for="loginAddRole"]', 'accountsRoleLabel'],
+    ];
+    addUserLabels.forEach(([sel, key]) => set(sel, key));
+    const resetLabels = [
+      ['label[for="resetUsername"]', 'accountsUsernameLabel'],
+      ['label[for="resetPassword"]', 'accountsPasswordLabel'],
+      ['label[for="resetPassword2"]', 'accountsPassword2Label'],
+    ];
+    resetLabels.forEach(([sel, key]) => set(sel, key));
+    const roleSelect = document.getElementById('loginAddRole');
+    if (roleSelect) {
+      const opts = roleSelect.querySelectorAll('option');
+      if (opts[0]) opts[0].textContent = t('roleOperator');
+      if (opts[1]) opts[1].textContent = t('roleAdmin');
+    }
     set('#homeScreen h1', 'homeTitle');
     set('#homeScreen .hero-subtitle', 'homeSubtitle');
     const heroDesc = document.querySelector('#homeScreen .hero-desc');
@@ -2411,6 +4350,10 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (refreshReportsBtn) refreshReportsBtn.textContent = t('reportArchiveRefresh');
     const printReportsBtn = document.getElementById('btnPrintArchiveReport');
     if (printReportsBtn) printReportsBtn.textContent = t('reportArchivePrint');
+    const shareReportsBtn = document.getElementById('btnShareReport');
+    if (shareReportsBtn) shareReportsBtn.textContent = t('reportShare');
+    const batchBtn = document.getElementById('btnBatchExport');
+    if (batchBtn) batchBtn.textContent = t('batchExport');
     const delPatientBtn = document.getElementById('btnDeletePatient');
     if (delPatientBtn) delPatientBtn.textContent = t('deleteOne');
     const clearPatientsBtn = document.getElementById('btnClearPatients');
@@ -2440,13 +4383,39 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       '#lblPatientName': 'patientName',
       '#lblPatientGender': 'patientGender',
       '#lblPatientPhone': 'patientPhone',
+      '#lblPatientTherapist': 'patientTherapist',
+      '#lblPatientDevice': 'patientDevice',
+      '#lblPatientStatus': 'patientStatus',
       '#lblPatientBirth': 'patientBirth',
       '#lblPatientNotes': 'patientNotes',
+      '#lblPatientPhoto': 'patientPhoto',
     };
     Object.entries(labelMap).forEach(([selector, key]) => {
       const el = document.querySelector(selector);
       if (el && TRANSLATIONS[next]?.[key]) el.textContent = TRANSLATIONS[next][key];
     });
+    set('#filterDateLabel', 'filterDate');
+    set('#filterIdLabel', 'filterId');
+    set('#filterNameLabel', 'filterName');
+    set('#filterTherapistLabel', 'filterTherapist');
+    set('#filterDeviceLabel', 'filterDevice');
+    set('#filterStatusLabel', 'filterStatus');
+    set('#btnClearFilters', 'filterReset');
+    const statusSelect = document.getElementById('patientStatus');
+    if (statusSelect) {
+      const opts = statusSelect.querySelectorAll('option');
+      if (opts[0]) opts[0].textContent = t('statusActive');
+      if (opts[1]) opts[1].textContent = t('statusCompleted');
+      if (opts[2]) opts[2].textContent = t('statusArchived');
+    }
+    const filterStatus = document.getElementById('filterStatus');
+    if (filterStatus) {
+      const opts = filterStatus.querySelectorAll('option');
+      if (opts[0]) opts[0].textContent = t('filterAll');
+      if (opts[1]) opts[1].textContent = t('statusActive');
+      if (opts[2]) opts[2].textContent = t('statusCompleted');
+      if (opts[3]) opts[3].textContent = t('statusArchived');
+    }
     const dpModal = document.getElementById('datePickerModal');
     if (dpModal && !dpModal.hidden) renderDatePicker();
     if (state.currentView === 'patientList') renderPatientList();
@@ -2457,6 +4426,15 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     set('.summary-panel .panel-overline', 'summaryOverline');
     set('.summary-panel .panel-title', 'summaryTitle');
     set('#quickPatientTitle', 'quickPatientTitle');
+    set('#recommendPlanTitle', 'recommendPlanTitle');
+    set('#photoModalTitle', 'photoModalTitle');
+    set('#photoCaptureCancel', 'actionCancel');
+    set('#photoCaptureTake', 'photoCapture');
+    set('#patientDeleteTitle', 'patientDeleteTitle');
+    set('#patientDeleteText', 'patientDeleteText');
+    set('#patientDeletePasswordLabel', 'confirmPassword');
+    set('#patientDeleteCancel', 'actionCancel');
+    set('#patientDeleteConfirm', 'actionConfirm');
     set('.curve-panel .panel-overline', 'curveOverline');
     set('.curve-panel .panel-title', 'curveTitle');
 
@@ -2509,10 +4487,12 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     const navMap = {
       display: ['navDisplay', 'navDisplayHint'],
       sound: ['navSound', 'navSoundHint'],
+      device: ['navDevice', 'navDeviceHint'],
       printer: ['navPrinter', 'navPrinterHint'],
       accounts: ['navAccounts', 'navAccountsHint'],
       language: ['navLanguage', 'navLanguageHint'],
       about: ['navAbout', 'navAboutHint'],
+      history: ['navHistory', 'navHistoryHint'],
       logs: ['navLogs', 'navLogsHint'],
     };
     navBtns.forEach((btn) => {
@@ -2534,9 +4514,60 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       const metaRows = displayCard.querySelectorAll('.setting-row .meta strong');
       if (metaRows[0]) metaRows[0].textContent = t('brightnessLabel');
       if (metaRows[1]) metaRows[1].textContent = t('screensaverLabel');
+      if (metaRows[2]) metaRows[2].textContent = t('themeLabel');
+      if (metaRows[3]) metaRows[3].textContent = t('fontScaleLabel');
       const metaHints = displayCard.querySelectorAll('.setting-row .meta span');
       if (metaHints[0]) metaHints[0].textContent = t('brightnessHint');
       if (metaHints[1]) metaHints[1].textContent = t('screensaverHint');
+      if (metaHints[2]) metaHints[2].textContent = t('themeHint');
+      if (metaHints[3]) metaHints[3].textContent = t('fontScaleHint');
+    }
+
+    const themeSelect = document.getElementById('themeSelect');
+    if (themeSelect) {
+      const opts = themeSelect.querySelectorAll('option');
+      if (opts[0]) opts[0].textContent = t('themeDark');
+      if (opts[1]) opts[1].textContent = t('themeLight');
+    }
+    const fontScaleSelect = document.getElementById('fontScaleSelect');
+    if (fontScaleSelect) {
+      const opts = fontScaleSelect.querySelectorAll('option');
+      if (opts[0]) opts[0].textContent = t('fontScaleSmall');
+      if (opts[1]) opts[1].textContent = t('fontScaleNormal');
+      if (opts[2]) opts[2].textContent = t('fontScaleLarge');
+      if (opts[3]) opts[3].textContent = t('fontScaleXL');
+    }
+
+    set('#deviceTitle', 'deviceTitle');
+    set('#deviceStatusLabel', 'deviceStatusLabel');
+    set('#deviceStatusHint', 'deviceStatusHint');
+    set('#deviceAutoReconnectLabel', 'deviceAutoReconnectLabel');
+    set('#deviceAutoReconnectHint', 'deviceAutoReconnectHint');
+    set('#deviceCalibrationLabel', 'deviceCalibrationLabel');
+    set('#deviceCalibrationHint', 'deviceCalibrationHint');
+    set('#btnDeviceReconnect', 'deviceReconnectNow');
+    set('#btnDeviceCalibrated', 'deviceCalibrationAction');
+    set('#historyTitle', 'historyTitle');
+    set('#btnManualSave', 'manualSave');
+    set('#btnUndoPatientDelete', 'undoDelete');
+    set('#autosaveRestoreTitle', 'autoSaveTitle');
+    set('#autosaveRestoreText', 'autoSaveText');
+    set('#btnAutosaveRestore', 'autoSaveRestore');
+    set('#btnAutosaveDiscard', 'autoSaveDiscard');
+
+    const bottomNav = document.getElementById('bottomNav');
+    if (bottomNav) {
+      const navLabels = {
+        quick: t('bottomNavQuick'),
+        patientList: t('bottomNavPatients'),
+        reportArchive: t('bottomNavReports'),
+        settings: t('bottomNavSettings'),
+      };
+      bottomNav.querySelectorAll('.nav-item').forEach((btn) => {
+        const view = btn.dataset.view;
+        const label = btn.querySelector('.label');
+        if (label && navLabels[view]) label.textContent = navLabels[view];
+      });
     }
 
     const soundCard = document.querySelector('#settingsModuleSound .settings-card');
@@ -2549,6 +4580,10 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       if (hints[0]) hints[0].textContent = t('volumeHint');
       if (meta[1]) meta[1].textContent = t('chimeLabel');
       if (hints[1]) hints[1].textContent = t('chimeHint');
+      const pressureLabel = document.getElementById('pressureAlertSoundLabel');
+      if (pressureLabel) pressureLabel.textContent = t('pressureAlertSoundLabel');
+      const pressureHint = document.getElementById('pressureAlertSoundHint');
+      if (pressureHint) pressureHint.textContent = t('pressureAlertSoundHint');
     }
     const printerCard = document.querySelector('#settingsModulePrinter .settings-card');
     if (printerCard) {
@@ -2577,10 +4612,18 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       if (pLabel) pLabel.textContent = t('accountsPasswordLabel');
       const p2Label = document.getElementById('accountsPassword2Label');
       if (p2Label) p2Label.textContent = t('accountsPassword2Label');
+      const roleLabel = document.getElementById('accountsRoleLabel');
+      if (roleLabel) roleLabel.textContent = t('accountsRoleLabel');
       const addBtn = document.getElementById('btnAddAccount');
       if (addBtn) addBtn.textContent = t('accountsAddBtn');
       const logoutBtn = document.getElementById('btnLogout');
       if (logoutBtn) logoutBtn.textContent = t('accountsLogoutBtn');
+      const roleSelect = document.getElementById('accountRole');
+      if (roleSelect) {
+        const opts = roleSelect.querySelectorAll('option');
+        if (opts[0]) opts[0].textContent = t('roleOperator');
+        if (opts[1]) opts[1].textContent = t('roleAdmin');
+      }
     }
     const languageCard = document.querySelector('#settingsModuleLanguage .settings-card');
     if (languageCard) {
@@ -2633,6 +4676,36 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     updateRunState();
     setModeStage(state.modeStage);
     renderShieldIndicators();
+    updateUserBadge();
+    updateCurveActions();
+    updateDeviceStatusUI();
+    renderOperationHistory();
+    updateUndoButton();
+    checkPatientIdInput({ skipFill: true });
+    const titleMap = {
+      home: t('homeTitle'),
+      quick: t('quickTitle'),
+      patientList: t('patientListTitle'),
+      reportArchive: t('reportArchiveTitle'),
+      report: t('reportScreenTitle'),
+      settings: t('settingsTitle'),
+      newPatient: t('newPatientTitle'),
+      engineer: t('engineerTitle'),
+    };
+    if (titleMap[state.currentView]) document.title = titleMap[state.currentView];
+  }
+
+  function applyTheme(theme) {
+    const next = theme === 'light' ? 'light' : 'dark';
+    state.settings.theme = next;
+    document.body.classList.toggle('theme-light', next === 'light');
+    document.body.classList.toggle('theme-dark', next === 'dark');
+  }
+
+  function applyFontScale(scale) {
+    const next = clampFontScale(scale);
+    state.settings.fontScale = next;
+    document.body.style.zoom = String(next);
   }
 
   function updateSettingsUI() {
@@ -2647,6 +4720,11 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     const saverChip = document.getElementById('screensaverValue');
     if (saverChip) saverChip.textContent = `${state.settings.screensaver} min`;
     updateCustomSelectDisplay(screensaver);
+
+    const themeSelect = document.getElementById('themeSelect');
+    if (themeSelect) themeSelect.value = state.settings.theme === 'light' ? 'light' : 'dark';
+    const fontScaleSelect = document.getElementById('fontScaleSelect');
+    if (fontScaleSelect) fontScaleSelect.value = String(clampFontScale(state.settings.fontScale));
 
     const volume = document.getElementById('settingsVolume');
     const volumeValue = document.getElementById('settingsVolumeValue');
@@ -2663,6 +4741,8 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
 
     const chimeToggle = document.getElementById('chimeToggle');
     if (chimeToggle) chimeToggle.checked = !!state.settings.playChime;
+    const pressureToggle = document.getElementById('pressureAlertToggle');
+    if (pressureToggle) pressureToggle.checked = !!state.settings.pressureAlertSound;
 
     const printerNameNode = document.getElementById('printerCurrentName');
     if (printerNameNode) {
@@ -2680,13 +4760,17 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (appVersion) appVersion.textContent = state.settings.appVersion;
     const firmware = document.getElementById('settingsFirmwareVersion');
     if (firmware) firmware.textContent = state.settings.firmwareVersion;
+
+    updateDeviceStatusUI();
   }
 
   let logsCache = [];
   let activeLogName = null;
 
   function setSettingsModule(moduleKey) {
-    const next = moduleKey || state.settingsActiveModule || 'display';
+    let next = moduleKey || state.settingsActiveModule || 'display';
+    const navBtn = document.querySelector(`.settings-nav button[data-module="${next}"]`);
+    if (navBtn && navBtn.hidden) next = 'display';
     state.settingsActiveModule = next;
     $$('.settings-module').forEach((mod) => {
       mod.classList.toggle('active', mod.dataset.module === next);
@@ -2700,6 +4784,10 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       loadPrintersList();
     } else if (next === 'accounts') {
       loadAccounts();
+    } else if (next === 'history') {
+      renderOperationHistory();
+    } else if (next === 'device') {
+      updateDeviceStatusUI();
     }
   }
 
@@ -2826,6 +4914,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
   }
 
   let accountsCache = [];
+  let pendingAccountRemove = null;
 
   function setAccountsMessage(msg, isError = false) {
     const node = document.getElementById('accountsMessage');
@@ -2839,6 +4928,62 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     node.hidden = false;
     node.textContent = msg;
     node.classList.toggle('error', !!isError);
+  }
+
+  function setAccountRemoveMessage(msg, isError = false) {
+    const node = document.getElementById('accountRemoveMessage');
+    if (!node) return;
+    if (!msg) {
+      node.hidden = true;
+      node.textContent = '';
+      node.classList.remove('error');
+      return;
+    }
+    node.hidden = false;
+    node.textContent = msg;
+    node.classList.toggle('error', !!isError);
+  }
+
+  function openAccountRemoveModal(username) {
+    const modal = document.getElementById('accountRemoveModal');
+    if (!modal) return;
+    pendingAccountRemove = username;
+    const input = document.getElementById('accountRemovePassword');
+    if (input) input.value = '';
+    setAccountRemoveMessage(null);
+    modal.hidden = false;
+  }
+
+  function closeAccountRemoveModal() {
+    const modal = document.getElementById('accountRemoveModal');
+    if (modal) modal.hidden = true;
+    pendingAccountRemove = null;
+    hideKeyboard();
+  }
+
+  async function confirmAccountRemove() {
+    if (!pendingAccountRemove) return;
+    if (state.user?.role !== 'admin') {
+      setAccountRemoveMessage(t('adminOnly'), true);
+      return;
+    }
+    const password = document.getElementById('accountRemovePassword')?.value || '';
+    if (!password) {
+      setAccountRemoveMessage(t('confirmPasswordPlaceholder'), true);
+      return;
+    }
+    try {
+      await api?.removeAccount?.({
+        username: pendingAccountRemove,
+        actor: state.user?.username || '',
+        actorPassword: password,
+      });
+      closeAccountRemoveModal();
+      await loadAccounts();
+    } catch (err) {
+      console.warn('[PPHC] remove account failed', err);
+      setAccountRemoveMessage(t('accountsRemoveFailed'), true);
+    }
   }
 
   function renderAccountsList() {
@@ -2857,22 +5002,18 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       const title = document.createElement('strong');
       title.textContent = acc.username || '--';
       const sub = document.createElement('small');
-      sub.textContent = acc.role ? String(acc.role) : '';
+      sub.textContent = getRoleLabel(acc.role ? String(acc.role) : 'user');
       meta.append(title, sub);
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'account-remove';
       removeBtn.textContent = t('accountsRemoveBtn');
+      const isAdmin = state.user?.role === 'admin';
+      removeBtn.hidden = !isAdmin;
       removeBtn.disabled = String(acc.username || '').toLowerCase() === 'admin';
       removeBtn.addEventListener('click', async () => {
         if (removeBtn.disabled) return;
-        try {
-          await api?.removeAccount?.(acc.username);
-          await loadAccounts();
-        } catch (err) {
-          console.warn('[PPHC] remove account failed', err);
-          setAccountsMessage(t('accountsRemoveFailed'), true);
-        }
+        openAccountRemoveModal(acc.username);
       });
       row.append(meta, removeBtn);
       listNode.appendChild(row);
@@ -2898,11 +5039,22 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     const u = document.getElementById('accountUsername');
     const p = document.getElementById('accountPassword');
     const p2 = document.getElementById('accountPassword2');
+    const roleNode = document.getElementById('accountRole');
     const username = u?.value?.trim() || '';
     const password = p?.value || '';
     const password2 = p2?.value || '';
+    const role = roleNode?.value || 'operator';
+    const safeRole = role === 'admin' ? 'admin' : 'operator';
+    if (state.user?.role !== 'admin') {
+      setAccountsMessage(t('adminOnly'), true);
+      return;
+    }
     if (!username || !password) {
       setAccountsMessage(t('accountsAddFailed'), true);
+      return;
+    }
+    if (!isValidUsername(username)) {
+      setAccountsMessage(t('usernameFormatHint'), true);
       return;
     }
     if (password !== password2) {
@@ -2910,12 +5062,18 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       return;
     }
     try {
-      await api?.addAccount?.({ username, password, role: 'user' });
+      await api?.addAccount?.({
+        username,
+        password,
+        role: safeRole,
+      });
       if (u) u.value = '';
       if (p) p.value = '';
       if (p2) p2.value = '';
+      if (roleNode) roleNode.value = 'operator';
       setAccountsMessage(t('accountsAddSuccess'), false);
       await loadAccounts();
+      hideKeyboard();
     } catch (err) {
       console.warn('[PPHC] add account failed', err);
       setAccountsMessage(t('accountsAddFailed'), true);
@@ -2974,6 +5132,88 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       }
     } catch (err) {
       console.warn('[PPHC] getPlayChime failed', err);
+    }
+  }
+
+  async function syncPressureAlertSound() {
+    if (!api?.getPressureAlertSound) return;
+    try {
+      const info = await api.getPressureAlertSound();
+      if (info && typeof info.on === 'boolean') {
+        state.settings.pressureAlertSound = info.on;
+        updateSettingsUI();
+      }
+    } catch (err) {
+      console.warn('[PPHC] getPressureAlertSound failed', err);
+    }
+  }
+
+  async function syncAppSettings() {
+    if (!api?.getSettings) return;
+    try {
+      const info = await api.getSettings();
+      if (!info) return;
+      if (typeof info.language === 'string') {
+        state.settings.language = info.language === 'en' ? 'en' : 'zh';
+      }
+      if (typeof info.theme === 'string') {
+        state.settings.theme = info.theme === 'light' ? 'light' : 'dark';
+      }
+      if (info.fontScale != null) {
+        state.settings.fontScale = clampFontScale(info.fontScale);
+      }
+      if (typeof info.autoConnect === 'boolean') {
+        state.settings.autoConnect = info.autoConnect;
+      }
+      if ('lastCalibrationAt' in info) {
+        state.settings.lastCalibrationAt = info.lastCalibrationAt || null;
+      }
+      applyTheme(state.settings.theme);
+      applyFontScale(state.settings.fontScale);
+      applyLanguage(state.settings.language || 'zh');
+      updateSettingsUI();
+      if (!state.settings.autoConnect && state.autoConnectTimer) {
+        clearTimeout(state.autoConnectTimer);
+        state.autoConnectTimer = null;
+      } else if (state.settings.autoConnect && state.loggedIn && !state.connected) {
+        scheduleAutoConnect(0);
+      }
+    } catch (err) {
+      console.warn('[PPHC] getSettings failed', err);
+    }
+  }
+
+  async function persistAppSettings(patch = {}) {
+    if (!api?.updateSettings) return;
+    try {
+      const info = await api.updateSettings(patch);
+      if (!info) return;
+      if (typeof info.language === 'string') {
+        state.settings.language = info.language === 'en' ? 'en' : 'zh';
+      }
+      if (typeof info.theme === 'string') {
+        state.settings.theme = info.theme === 'light' ? 'light' : 'dark';
+      }
+      if (info.fontScale != null) {
+        state.settings.fontScale = clampFontScale(info.fontScale);
+      }
+      if (typeof info.autoConnect === 'boolean') {
+        state.settings.autoConnect = info.autoConnect;
+      }
+      if ('lastCalibrationAt' in info) {
+        state.settings.lastCalibrationAt = info.lastCalibrationAt || null;
+      }
+      applyTheme(state.settings.theme);
+      applyFontScale(state.settings.fontScale);
+      updateSettingsUI();
+      if (!state.settings.autoConnect && state.autoConnectTimer) {
+        clearTimeout(state.autoConnectTimer);
+        state.autoConnectTimer = null;
+      } else if (state.settings.autoConnect && state.loggedIn && !state.connected) {
+        scheduleAutoConnect(0);
+      }
+    } catch (err) {
+      console.warn('[PPHC] updateSettings failed', err);
     }
   }
 
@@ -3154,16 +5394,23 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
   }
 
   function drawSparkline(canvas, data, color, cfg = {}) {
-    const { visibleMax, yMin, yMax, target } = cfg || {};
+    const { visibleMax, yMin, yMax, target, windowSize, history, axisTicks = 10 } = cfg || {};
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const targetRaw = typeof target === 'function' ? target() : target;
     const targetVal = Number.isFinite(targetRaw) ? Number(targetRaw) : null;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const samples = Array.isArray(data) ? data.slice(-canvas.width) : [];
-    if (!samples.length && targetVal == null) return;
+    const window = Math.max(10, Math.round(Number(windowSize) || canvas.width));
+    const samples = Array.isArray(data) ? data.slice(-window) : [];
+    const historySets = Array.isArray(history) ? history : [];
+    if (!samples.length && targetVal == null && !historySets.length) return;
+
     const vals = samples.slice();
+    historySets.forEach((hist) => {
+      if (Array.isArray(hist) && hist.length) {
+        vals.push(...hist.slice(-window));
+      }
+    });
     if (targetVal != null) vals.push(targetVal);
     let minVal = typeof yMin === 'number' ? yMin : vals.length ? Math.min(...vals) : 0;
     let maxVal = typeof yMax === 'number' ? yMax : vals.length ? Math.max(...vals) : 1;
@@ -3181,7 +5428,32 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     minVal -= padding;
     maxVal += padding;
     const range = maxVal - minVal || 1;
-    const yFor = (v) => canvas.height * (1 - (v - minVal) / range);
+    const axisHeight = 22;
+    const plotHeight = Math.max(20, canvas.height - axisHeight);
+    const yFor = (v) => plotHeight * (1 - (v - minVal) / range);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (historySets.length) {
+      historySets.forEach((hist, idx) => {
+        const histSamples = Array.isArray(hist) ? hist.slice(-window) : [];
+        if (!histSamples.length) return;
+        ctx.save();
+        ctx.beginPath();
+        ctx.setLineDash([8, 6]);
+        ctx.strokeStyle = color.replace('0.9', '0.35');
+        ctx.lineWidth = 1.4;
+        histSamples.forEach((val, hIdx) => {
+          const x = (hIdx / (histSamples.length - 1 || 1)) * canvas.width;
+          const y = yFor(val);
+          if (hIdx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.restore();
+      });
+    }
+
     if (samples.length) {
       ctx.beginPath();
       ctx.strokeStyle = color;
@@ -3194,6 +5466,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       });
       ctx.stroke();
     }
+
     if (targetVal != null) {
       ctx.save();
       ctx.setLineDash([6, 4]);
@@ -3205,6 +5478,137 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       ctx.lineTo(canvas.width, ty);
       ctx.stroke();
       ctx.restore();
+    }
+
+    if (samples.length > 1) {
+      const tickEvery = Math.max(2, Number(axisTicks) || 10);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 1;
+      ctx.font = '12px sans-serif';
+      const baseY = plotHeight + 6;
+      ctx.beginPath();
+      ctx.moveTo(0, plotHeight + 0.5);
+      ctx.lineTo(canvas.width, plotHeight + 0.5);
+      ctx.stroke();
+      const lastIdx = samples.length - 1;
+      for (let i = 0; i <= lastIdx; i += tickEvery) {
+        const x = (i / (samples.length - 1 || 1)) * canvas.width;
+        ctx.beginPath();
+        ctx.moveTo(x, plotHeight + 0.5);
+        ctx.lineTo(x, plotHeight + 6.5);
+        ctx.stroke();
+        const sec = i - lastIdx;
+        const label = `${sec}s`;
+        ctx.fillText(label, Math.max(0, x - 10), baseY + 12);
+      }
+      ctx.restore();
+    }
+  }
+
+  function getCurveWindowSize() {
+    const zoom = Number(state.curveZoom) || 1;
+    return Math.max(30, Math.round(state.max / Math.max(1, zoom)));
+  }
+
+  function updateCurveActions() {
+    const historyBtn = document.getElementById('btnCurveHistory');
+    if (historyBtn) {
+      historyBtn.textContent = state.historyEnabled ? t('curveHistoryOn') : t('curveHistoryOff');
+    }
+    const zoomBtn = document.getElementById('btnCurveZoom');
+    if (zoomBtn) {
+      zoomBtn.textContent = t('curveZoomLabel').replace('{zoom}', String(state.curveZoom));
+    }
+  }
+
+  function captureHistorySnapshot() {
+    const maxHistory = 3;
+    [0, 1, 2, 3].forEach((ch) => {
+      const snap = Array.isArray(state.buf[ch]) ? state.buf[ch].slice() : [];
+      if (!state.historyBufs[ch]) state.historyBufs[ch] = [];
+      if (snap.length) state.historyBufs[ch].unshift(snap);
+      if (state.historyBufs[ch].length > maxHistory) state.historyBufs[ch].pop();
+    });
+  }
+
+  async function persistLastTreatment() {
+    const patientId = String(state.treatmentPatientId || '').trim();
+    if (!patientId || !state.lastTreatment || !api?.updatePatient) return;
+    const endedAt = new Date().toISOString();
+    const patch = {
+      lastTreatment: { ...state.lastTreatment, endedAt },
+      lastParams: {
+        pressureMmHg: state.lastTreatment.pressureMmHg,
+        durationMin: state.lastTreatment.durationMin,
+        tempC: state.lastTreatment.tempC,
+        mode: state.lastTreatment.mode,
+      },
+      curveSnapshot: {
+        0: Array.isArray(state.buf[0]) ? state.buf[0].slice() : [],
+        1: Array.isArray(state.buf[1]) ? state.buf[1].slice() : [],
+        2: Array.isArray(state.buf[2]) ? state.buf[2].slice() : [],
+        3: Array.isArray(state.buf[3]) ? state.buf[3].slice() : [],
+      },
+    };
+    try {
+      const updated = await api.updatePatient({ id: patientId, patch });
+      if (updated && updated.id) {
+        state.patients = state.patients.map((p) =>
+          String(p?.id || '') === patientId ? { ...p, ...patch } : p
+        );
+        if (state.activePatient && String(state.activePatient.id || '') === patientId) {
+          state.activePatient = { ...state.activePatient, ...patch };
+        }
+        if (state.currentView === 'quick') {
+          renderQuickPatientPicker();
+        }
+        if (state.currentView === 'patientList') {
+          renderPatientList();
+        }
+      }
+    } catch (err) {
+      console.warn('[PPHC] persist treatment failed', err);
+    }
+  }
+
+  function logPressureEvent(side, active, value) {
+    if (!api?.logToMain) return;
+    const label = side === 'left' ? '左眼' : '右眼';
+    const safeVal = Number.isFinite(value) ? Number(value).toFixed(0) : '--';
+    const msg = active
+      ? `压力超限: ${label} ${safeVal} mmHg`
+      : `压力恢复: ${label} ${safeVal} mmHg`;
+    api.logToMain({ level: active ? 'warn' : 'info', message: msg, source: 'renderer' });
+  }
+
+  function updatePressureAlertStatus() {
+    const leftVal = typeof state.latest[0] === 'number' ? state.latest[0] : NaN;
+    const rightVal = typeof state.latest[2] === 'number' ? state.latest[2] : NaN;
+    const leftAlert = Number.isFinite(leftVal) && leftVal > PRESSURE_ALERT_THRESHOLD;
+    const rightAlert = Number.isFinite(rightVal) && rightVal > PRESSURE_ALERT_THRESHOLD;
+
+    const leftNodes = [document.getElementById('pressureLeft'), document.getElementById('pressureLeftLabel')];
+    const rightNodes = [document.getElementById('pressureRight'), document.getElementById('pressureRightLabel')];
+    leftNodes.forEach((node) => node?.classList.toggle('value-alert', leftAlert));
+    rightNodes.forEach((node) => node?.classList.toggle('value-alert', rightAlert));
+
+    if (leftAlert !== state.pressureAlerted.left) {
+      logPressureEvent('left', leftAlert, leftVal);
+      state.pressureAlerted.left = leftAlert;
+    }
+    if (rightAlert !== state.pressureAlerted.right) {
+      logPressureEvent('right', rightAlert, rightVal);
+      state.pressureAlerted.right = rightAlert;
+    }
+
+    if ((leftAlert || rightAlert) && state.settings.pressureAlertSound) {
+      const now = Date.now();
+      if (now - state.pressureAlertLastSound > PRESSURE_ALERT_SOUND_COOLDOWN) {
+        playSound('pressureHigh');
+        state.pressureAlertLastSound = now;
+      }
     }
   }
 
@@ -3226,15 +5630,21 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (tr) tr.textContent = `${formatTemp(state.latest[3])}℃`;
     if (tll) tll.textContent = `${formatTemp(state.latest[1])}℃`;
     if (trl) trl.textContent = `${formatTemp(state.latest[3])}℃`;
+    const windowSize = getCurveWindowSize();
     sparkTargets.forEach((target) =>
-      drawSparkline(target.canvas(), state.buf[target.key], target.color, target)
+      drawSparkline(target.canvas(), state.buf[target.key], target.color, {
+        ...target,
+        windowSize,
+        history: state.historyEnabled ? state.historyBufs[target.key] : [],
+      })
     );
+    updatePressureAlertStatus();
     updateHeartbeatUI();
   }
 
   function ensureTelemetryLoop() {
     if (state.telemetryTimer) return;
-    state.telemetryTimer = setInterval(updateTelemetry, 200);
+    state.telemetryTimer = setInterval(updateTelemetry, 1000);
   }
 
   function startHeroClock() {
@@ -3251,6 +5661,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       toggleBtn.textContent = state.running ? t('stop') : t('start');
       toggleBtn.classList.toggle('active', state.running);
     }
+    updateStatusChips();
   }
 
   function showAlert(msg, duration = 2500, kind = 'info') {
@@ -3378,6 +5789,9 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (remain <= 0) {
       // 自动停止
       api.sendU8(0x10c2, 1);
+      captureHistorySnapshot();
+      persistLastTreatment();
+      clearAutoSaveSnapshot();
       state.running = false;
       state.activeSides = [];
       state.shieldDropShown = false;
@@ -3459,6 +5873,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
   function startTreatmentForSides(sides) {
     const enableLeft = sides.includes('left');
     const enableRight = sides.includes('right');
+    ensureTreatmentPatientSelected();
     clearTelemetryBuffers();
     setModeStage('--');
     state.pendingSides = null;
@@ -3495,6 +5910,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (state.countdownTimer) clearInterval(state.countdownTimer);
     state.countdownTimer = setInterval(updateCountdown, 250);
     updateRunState();
+    saveAutoProgress({ manual: false });
     playSound('start');
   }
 
@@ -3502,6 +5918,9 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     if (!state.running || state.shieldDropShown) return;
     state.shieldDropShown = true;
     api.sendU8(0x10c2, 1);
+    captureHistorySnapshot();
+    persistLastTreatment();
+    clearAutoSaveSnapshot();
     state.running = false;
     state.activeSides = [];
     if (state.countdownTimer) {
@@ -3556,6 +5975,28 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       });
     }
 
+    const themeSelect = document.getElementById('themeSelect');
+    if (themeSelect) {
+      themeSelect.value = state.settings.theme === 'light' ? 'light' : 'dark';
+      themeSelect.addEventListener('change', () => {
+        state.settings.theme = themeSelect.value === 'light' ? 'light' : 'dark';
+        applyTheme(state.settings.theme);
+        updateSettingsUI();
+        persistAppSettings({ theme: state.settings.theme });
+      });
+    }
+
+    const fontScaleSelect = document.getElementById('fontScaleSelect');
+    if (fontScaleSelect) {
+      fontScaleSelect.value = String(clampFontScale(state.settings.fontScale));
+      fontScaleSelect.addEventListener('change', () => {
+        state.settings.fontScale = clampFontScale(fontScaleSelect.value);
+        applyFontScale(state.settings.fontScale);
+        updateSettingsUI();
+        persistAppSettings({ fontScale: state.settings.fontScale });
+      });
+    }
+
     const volume = document.getElementById('settingsVolume');
     if (volume) {
       volume.value = clampVolume(state.settings.volume);
@@ -3570,11 +6011,13 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       state.settings.language = 'zh';
       applyLanguage('zh');
       updateSettingsUI();
+      persistAppSettings({ language: state.settings.language });
     });
     document.getElementById('languageEn')?.addEventListener('change', () => {
       state.settings.language = 'en';
       applyLanguage('en');
       updateSettingsUI();
+      persistAppSettings({ language: state.settings.language });
     });
 
     const chimeToggle = document.getElementById('chimeToggle');
@@ -3586,6 +6029,43 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
         api?.setPlayChime?.(state.settings.playChime);
       });
     }
+
+    const pressureToggle = document.getElementById('pressureAlertToggle');
+    if (pressureToggle) {
+      pressureToggle.checked = !!state.settings.pressureAlertSound;
+      pressureToggle.addEventListener('change', () => {
+        state.settings.pressureAlertSound = !!pressureToggle.checked;
+        updateSettingsUI();
+        api?.setPressureAlertSound?.(state.settings.pressureAlertSound);
+      });
+    }
+
+    const autoReconnectToggle = document.getElementById('deviceAutoReconnect');
+    if (autoReconnectToggle) {
+      autoReconnectToggle.checked = !!state.settings.autoConnect;
+      autoReconnectToggle.addEventListener('change', () => {
+        state.settings.autoConnect = !!autoReconnectToggle.checked;
+        updateSettingsUI();
+        persistAppSettings({ autoConnect: state.settings.autoConnect });
+        if (!state.settings.autoConnect && state.autoConnectTimer) {
+          clearTimeout(state.autoConnectTimer);
+          state.autoConnectTimer = null;
+        } else if (state.settings.autoConnect && !state.connected) {
+          scheduleAutoConnect(0);
+        }
+      });
+    }
+    document.getElementById('btnDeviceReconnect')?.addEventListener('click', () =>
+      attemptAutoConnect({ force: true })
+    );
+    document.getElementById('btnDeviceCalibrated')?.addEventListener('click', () => {
+      const stamp = new Date().toISOString();
+      state.settings.lastCalibrationAt = stamp;
+      updateSettingsUI();
+      persistAppSettings({ lastCalibrationAt: stamp });
+      recordOperation('calibration', formatDateYMD(new Date(stamp)));
+      showAlert(t('deviceCalibrationSet'), 2500, 'success');
+    });
 
     document.getElementById('btnCheckUpdates')?.addEventListener('click', () => {
       handleCheckUpdates();
@@ -3614,6 +6094,11 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
 
     document.getElementById('btnAddAccount')?.addEventListener('click', handleAddAccount);
     document.getElementById('btnLogout')?.addEventListener('click', showLoginOverlay);
+    document.getElementById('accountRemoveCancel')?.addEventListener('click', closeAccountRemoveModal);
+    document.getElementById('accountRemoveConfirm')?.addEventListener('click', confirmAccountRemove);
+    document.getElementById('accountRemoveModal')?.addEventListener('click', (e) => {
+      if (e.target?.id === 'accountRemoveModal') closeAccountRemoveModal();
+    });
 
     $$('.settings-nav button').forEach((btn) => {
       btn.addEventListener('click', () => setSettingsModule(btn.dataset.module));
@@ -3647,9 +6132,34 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       'btnRefreshReportArchive',
       'btnBackEngineer',
       'btnExportPdf',
+      'btnCurveHistory',
+      'btnCurveZoom',
+      'btnManualSave',
+      'btnCapturePhoto',
+      'photoCaptureCancel',
+      'photoCaptureTake',
+      'photoCaptureModal',
+      'filterPatientId',
+      'filterPatientName',
+      'filterStartDate',
+      'filterEndDate',
+      'filterTherapist',
+      'filterDeviceModel',
+      'filterStatus',
+      'btnClearFilters',
+      'patientDeleteModal',
+      'patientDeleteCancel',
+      'patientDeleteConfirm',
+      'btnBatchExport',
+      'btnUndoPatientDelete',
       'btnPrintReport',
+      'reportTemplateSelect',
       'btnGoPatientList',
       'patientForm',
+      'autosaveRestoreModal',
+      'btnAutosaveRestore',
+      'btnAutosaveDiscard',
+      'btnShareReport',
     ].forEach((id) => {
       if (!document.getElementById(id)) console.warn('[PPHC] missing element', id);
     });
@@ -3683,7 +6193,25 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     document.getElementById('btnOpenReportArchive')?.addEventListener('click', () =>
       showView('reportArchive')
     );
+    document.getElementById('btnBatchExport')?.addEventListener('click', handleBatchExportReports);
+    document.getElementById('btnCurveHistory')?.addEventListener('click', () => {
+      state.historyEnabled = !state.historyEnabled;
+      updateCurveActions();
+      updateTelemetry();
+    });
+    document.getElementById('btnCurveZoom')?.addEventListener('click', () => {
+      const levels = Array.isArray(state.curveZoomLevels) ? state.curveZoomLevels : [1, 2, 4];
+      const idx = Math.max(0, levels.indexOf(state.curveZoom));
+      const next = levels[(idx + 1) % levels.length] || 1;
+      state.curveZoom = next;
+      updateCurveActions();
+      updateTelemetry();
+    });
+    document.getElementById('btnManualSave')?.addEventListener('click', () =>
+      saveAutoProgress({ manual: true })
+    );
     document.getElementById('btnDeletePatient')?.addEventListener('click', handleDeleteSelectedPatient);
+    document.getElementById('btnUndoPatientDelete')?.addEventListener('click', handleUndoPatientDelete);
     document.getElementById('btnClearPatients')?.addEventListener('click', handleClearPatients);
     document.getElementById('btnBackReport')?.addEventListener('click', () =>
       showView('patientList')
@@ -3698,28 +6226,72 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       loadReportArchive()
     );
     document.getElementById('btnPrintArchiveReport')?.addEventListener('click', handlePrintArchiveReport);
+    document.getElementById('btnShareReport')?.addEventListener('click', handleShareReport);
     document.getElementById('btnDeleteReport')?.addEventListener('click', handleDeleteSelectedReport);
     document.getElementById('btnClearReports')?.addEventListener('click', handleClearReports);
     document.getElementById('btnExportPdf')?.addEventListener('click', handleExportReportPdf);
     document.getElementById('btnPrintReport')?.addEventListener('click', handlePrintReport);
+    document.getElementById('reportTemplateSelect')?.addEventListener('change', (e) => {
+      const value = e.target?.value || 'standard';
+      applyReportTemplate(value, { syncChecks: true });
+      renderReport();
+    });
+    document.getElementById('btnCapturePhoto')?.addEventListener('click', openPhotoCaptureModal);
+    document.getElementById('photoCaptureCancel')?.addEventListener('click', closePhotoCaptureModal);
+    document.getElementById('photoCaptureTake')?.addEventListener('click', capturePhoto);
+    document.getElementById('photoCaptureModal')?.addEventListener('click', (e) => {
+      if (e.target?.id === 'photoCaptureModal') closePhotoCaptureModal();
+    });
+    document.getElementById('patientDeleteCancel')?.addEventListener('click', closePatientDeleteModal);
+    document.getElementById('patientDeleteConfirm')?.addEventListener('click', confirmPatientDelete);
+    document.getElementById('patientDeleteModal')?.addEventListener('click', (e) => {
+      if (e.target?.id === 'patientDeleteModal') closePatientDeleteModal();
+    });
     document.getElementById('btnGoPatientList')?.addEventListener('click', () => {
       ensurePatientsLoaded();
       showView('patientList');
     });
+    document.getElementById('btnAutosaveRestore')?.addEventListener('click', restoreAutoSaveSnapshot);
+    document.getElementById('btnAutosaveDiscard')?.addEventListener('click', discardAutoSaveSnapshot);
+    document.getElementById('autosaveRestoreModal')?.addEventListener('click', (e) => {
+      if (e.target?.id === 'autosaveRestoreModal') discardAutoSaveSnapshot();
+    });
     document.getElementById('patientForm')?.addEventListener('submit', handlePatientSubmit);
     document.getElementById('patientId')?.addEventListener('click', async () => {
       await ensurePatientsLoaded();
-      setPatientIdValue();
       const input = document.getElementById('patientId');
+      if (input && !input.value) setPatientIdValue();
       if (input) setKeyboardTarget(input);
     });
+    document.getElementById('patientId')?.addEventListener('input', schedulePatientIdCheck);
+    document.getElementById('patientId')?.addEventListener('blur', checkPatientIdInput);
     document.getElementById('patientBirth')?.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopImmediatePropagation();
       hideKeyboard();
       const val = e.currentTarget?.value || '';
-      openDatePicker(val);
+      openDatePicker(val, 'patientBirth');
     });
+    document.getElementById('filterStartDate')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      hideKeyboard();
+      const val = e.currentTarget?.value || '';
+      openDatePicker(val, 'filterStartDate');
+    });
+    document.getElementById('filterEndDate')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      hideKeyboard();
+      const val = e.currentTarget?.value || '';
+      openDatePicker(val, 'filterEndDate');
+    });
+    document.getElementById('filterPatientId')?.addEventListener('input', applyPatientFiltersFromUI);
+    document.getElementById('filterPatientName')?.addEventListener('input', applyPatientFiltersFromUI);
+    document.getElementById('filterTherapist')?.addEventListener('input', applyPatientFiltersFromUI);
+    document.getElementById('filterDeviceModel')?.addEventListener('input', applyPatientFiltersFromUI);
+    document.getElementById('filterStatus')?.addEventListener('change', applyPatientFiltersFromUI);
+    document.getElementById('btnClearFilters')?.addEventListener('click', resetPatientFilters);
     document.getElementById('datePrevMonth')?.addEventListener('click', () => {
       datePickerState.month -= 1;
       if (datePickerState.month < 0) {
@@ -3741,8 +6313,11 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       datePickerState.year = today.getFullYear();
       datePickerState.month = today.getMonth();
       datePickerState.selected = formatDateYMD(today);
-      const input = document.getElementById('patientBirth');
+      const input = document.getElementById(datePickerState.targetId || 'patientBirth');
       if (input) input.value = datePickerState.selected;
+      if (String(datePickerState.targetId || '').startsWith('filter')) {
+        applyPatientFiltersFromUI();
+      }
       closeDatePicker();
     });
     document.getElementById('datePickerTitle')?.addEventListener('click', () => {
@@ -3763,6 +6338,9 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
       if (!state.connected) return;
       if (state.running) {
         api.sendU8(0x10c2, 1);
+        captureHistorySnapshot();
+        persistLastTreatment();
+        clearAutoSaveSnapshot();
         state.running = false;
         state.activeSides = [];
         state.shieldDropShown = false;
@@ -3817,6 +6395,12 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
         if (lost && !lost.hidden) lost.hidden = true;
         const exportModal = document.getElementById('exportAfterTreatmentModal');
         if (exportModal && !exportModal.hidden) exportModal.hidden = true;
+        const autosaveModal = document.getElementById('autosaveRestoreModal');
+        if (autosaveModal && !autosaveModal.hidden) discardAutoSaveSnapshot();
+        const photoModal = document.getElementById('photoCaptureModal');
+        if (photoModal && !photoModal.hidden) closePhotoCaptureModal();
+        const patientDeleteModal = document.getElementById('patientDeleteModal');
+        if (patientDeleteModal && !patientDeleteModal.hidden) closePatientDeleteModal();
         state.pendingSides = null;
       }
     });
@@ -3873,6 +6457,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
         state.systemState = value;
         const sysNode = $('#systemState');
         if (sysNode) sysNode.textContent = value ?? '--';
+        updateStatusChips();
         if (!state.shieldExplicit && typeof value === 'number') {
           state.shields.left = !!(value & 0x01);
           state.shields.right = !!(value & 0x02);
@@ -3892,6 +6477,7 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
         state.alarmState = value;
         const alarmNode = $('#alarmState');
         if (alarmNode) alarmNode.textContent = value ?? '--';
+        updateStatusChips();
       });
     }
     if (api.onModeCurves) {
@@ -3905,6 +6491,9 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
           clearInterval(state.countdownTimer);
           state.countdownTimer = null;
         }
+        captureHistorySnapshot();
+        persistLastTreatment();
+        clearAutoSaveSnapshot();
         state.running = false;
         updateRunState();
         showAlert(t('stoppedByDevice'));
@@ -3944,13 +6533,23 @@ const VIEW_CLASSES = VIEWS.map((v) => `view-${v}`);
     bindOskInputs();
     bindSettingsControls();
     bindEngineerControls();
+    bindBottomNav();
+    bindSwipeNav();
     wireIpc();
+    state.operationHistory = loadOperationHistory();
+    renderOperationHistory();
+    updateUndoButton();
     updateModeMeta();
+    updateStatusChips();
     updateSettingsUI();
+    applyTheme(state.settings.theme);
+    applyFontScale(state.settings.fontScale);
     syncSystemBrightness();
     syncSystemVolume();
     syncPlayChime();
+    syncPressureAlertSound();
     syncPrinterSelection();
+    syncAppSettings();
     applyLanguage(state.settings.language || 'zh');
     ensurePatientsLoaded();
     // 默认进入 home
