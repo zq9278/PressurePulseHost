@@ -29,9 +29,6 @@ Thumbs.db
 .env.production.local
 .env.test.local
 
-
-.exe
-tools/package/windows/
 *.exe
 *.msi
 *.zip
