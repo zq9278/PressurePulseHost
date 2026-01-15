@@ -95,12 +95,12 @@ function initStoragePaths() {
   SETTINGS_PATH = path.join(dataBase, 'settings.json');
   LEGACY_SETTINGS_PATH = path.join(legacyBase, 'settings.json');
 
-  PATIENTS_DIR = path.join(dataBase, 'patients');
+  PATIENTS_DIR = path.join(legacyBase, 'patients');
   PATIENTS_FILE = path.join(PATIENTS_DIR, 'patients.json');
-  LEGACY_PATIENTS_FILE = path.join(legacyBase, 'patients', 'patients.json');
+  LEGACY_PATIENTS_FILE = path.join(dataBase, 'patients', 'patients.json');
 
   LOGS_DIR = path.join(dataBase, 'logs');
-  REPORTS_DIR = path.join(dataBase, 'reports');
+  REPORTS_DIR = path.join(legacyBase, 'reports');
 
   // Updates manifest is a read-only bundle artifact, keep it next to the app in legacy base
   UPDATES_FILE = path.join(legacyBase, 'updates', 'latest.json');

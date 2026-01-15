@@ -91,6 +91,8 @@
       quickPatientEmpty: '暂无患者，请先创建档案。',
       quickPatientHistoryEmpty: '暂无历史治疗记录',
       quickPatientHistory: '上次治疗',
+      quickPatientSearchPlaceholder: '搜索患者编号/姓名',
+      quickPatientSearchEmpty: '未找到匹配患者',
       summaryOverline: '实时数据',
       summaryTitle: '压力 / 温度',
       curveOverline: '实时曲线',
@@ -192,6 +194,9 @@
       actionSubmit: '提交',
       actionConfirm: '确认',
       adminOnly: '仅管理员可执行此操作',
+      treatmentRunningTitle: '???',
+      treatmentRunningText: '???????????????',
+      treatmentRunningOk: '???',
       accountsTitle: '账户',
       accountsAddTitle: '添加账户',
       accountsAddHint: '新账户可用于登录系统',
@@ -245,10 +250,6 @@
       reportArchiveRefresh: '刷新',
       reportArchiveEmpty: '暂无报告，请先导出。',
       reportArchivePrint: '打印',
-      reportShare: '分享',
-      reportShareNeedSelect: '请先选择要分享的报告',
-      reportShareSuccess: '已分享至 {path}',
-      reportShareFailed: '分享失败',
       deleteOne: '删除',
       clearAll: '清空',
       patientDeleteNeedSelect: '请先选择要删除的病例',
@@ -464,6 +465,8 @@
       quickPatientEmpty: 'No patients yet. Create a profile first.',
       quickPatientHistoryEmpty: 'No treatment history',
       quickPatientHistory: 'Last session',
+      quickPatientSearchPlaceholder: 'Search by ID or name',
+      quickPatientSearchEmpty: 'No matching patients',
       summaryOverline: 'Live Data',
       summaryTitle: 'Pressure / Temp',
       curveOverline: 'Live Curves',
@@ -565,6 +568,9 @@
       actionSubmit: 'Submit',
       actionConfirm: 'Confirm',
       adminOnly: 'Admin only',
+      treatmentRunningTitle: 'Treatment Running',
+      treatmentRunningText: 'Treatment is in progress. Please stop it first.',
+      treatmentRunningOk: 'OK',
       accountsTitle: 'Accounts',
       accountsAddTitle: 'Add Account',
       accountsAddHint: 'New accounts can log into the system',
@@ -618,10 +624,6 @@
       reportArchiveRefresh: 'Refresh',
       reportArchiveEmpty: 'No reports yet. Export one first.',
       reportArchivePrint: 'Print',
-      reportShare: 'Share',
-      reportShareNeedSelect: 'Select a report to share',
-      reportShareSuccess: 'Shared to {path}',
-      reportShareFailed: 'Share failed',
       deleteOne: 'Delete',
       clearAll: 'Clear',
       patientDeleteNeedSelect: 'Select a patient to delete',
@@ -833,6 +835,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   const USERNAME_RE = /^[A-Za-z0-9_]{6,20}$/;
   const CHINESE_NAME_RE = /^[\u4e00-\u9fa5·]{2,20}$/;
   const LOGIN_TOAST_DURATION = 3000;
+  const LOGIN_SUCCESS_DELAY = 200;
   const AUTO_SAVE_INTERVAL = 5 * 60 * 1000;
   const AUTO_SAVE_KEY = 'pphc.autosave';
   const OP_HISTORY_KEY = 'pphc.history';
@@ -912,6 +915,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     newPatientPhoto: null,
     editingPatientId: null,
     lastAppliedPatientId: null,
+    quickPatientQuery: '',
     selectedPatientIds: [],
     pendingPatientDeleteIds: [],
     undoSnapshot: null,
@@ -925,7 +929,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       name: '',
       therapist: '',
       deviceModel: '',
-      status: '',
     },
     selectedPatientId: null,
     treatmentPatientId: null,
@@ -994,17 +997,19 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
 
   function canAccessView(view) {
     const role = state.user?.role || 'user';
-    if (role === 'operator') {
-      return ['home', 'quick', 'report', 'reportArchive'].includes(view);
-    }
+    if (view === 'engineer') return role === 'engineer';
     return true;
   }
 
   function showView(view) {
     const prev = state.currentView;
     const candidate = VIEWS.includes(view) ? view : 'home';
-    const fallback = state.user?.role === 'operator' ? 'quick' : 'home';
+    const fallback = 'home';
     const next = canAccessView(candidate) ? candidate : fallback;
+    if (state.running && next !== state.currentView) {
+      showTreatmentRunningModal();
+      return;
+    }
     state.currentView = next;
     const shell = document.querySelector('.app-shell');
     if (shell) shell.setAttribute('data-view', next);
@@ -1019,6 +1024,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
         if (state.currentView === 'quick') renderQuickPatientPicker();
       });
       renderQuickPatientPicker();
+      checkAutoSaveRestore();
     } else if (next === 'newPatient') {
       ensurePatientsLoaded();
       resetPatientForm();
@@ -1076,6 +1082,10 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     nav._bound = true;
     nav.querySelectorAll('.nav-item').forEach((btn) => {
       btn.addEventListener('click', () => {
+        if (state.running) {
+          showTreatmentRunningModal();
+          return;
+        }
         const view = btn.dataset.view;
         if (!view) return;
         showView(view);
@@ -1093,7 +1103,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     if (document.body.classList.contains('login-locked')) return false;
     if (document.body.classList.contains('keyboard-open')) return false;
     if (isModalOpen()) return false;
-    if (target && target.closest('input, textarea, select, button, .osk, .date-picker-modal, .modal')) {
+    if (target && target.closest('input, textarea, select, button, .osk, .custom-select, .date-picker-modal, .modal')) {
       return false;
     }
     return true;
@@ -1262,6 +1272,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       duration,
       remainingMs,
       running: !!state.running,
+      sides: Array.isArray(state.activeSides) ? state.activeSides.slice() : [],
       manual: !!manual,
     };
   }
@@ -1343,10 +1354,12 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const snapshot = state.pendingAutosave;
     if (!snapshot) return;
     await ensurePatientsLoaded();
-    if (snapshot.patientId) {
-      state.treatmentPatientId = snapshot.patientId;
-      state.activePatient = getPatientById(snapshot.patientId) || state.activePatient;
-      state.lastAppliedPatientId = snapshot.patientId;
+    const patientId = String(snapshot.patientId || '').trim();
+    const activePatient = patientId ? getPatientById(patientId) : null;
+    if (patientId) {
+      state.treatmentPatientId = patientId;
+      state.activePatient = activePatient || state.activePatient;
+      state.lastAppliedPatientId = patientId;
     }
     const pressureSlider = document.getElementById('pressMmHg');
     const durationSlider = document.getElementById('treatDuration');
@@ -1359,9 +1372,23 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       state.targets.durationMin = Number(durationSlider.value);
     }
     updateModeMeta();
-    if (snapshot.remainingMs && snapshot.running) {
-      updateCountdownDisplay(snapshot.remainingMs);
+    if (state.countdownTimer) {
+      clearInterval(state.countdownTimer);
+      state.countdownTimer = null;
     }
+    const shouldResume = !!snapshot.running && Number(snapshot.remainingMs) > 0;
+    state.running = shouldResume;
+    if (shouldResume) {
+      state.countdownEnd = Date.now() + Number(snapshot.remainingMs || 0);
+      state.activeSides = Array.isArray(snapshot.sides) ? snapshot.sides.slice() : state.activeSides;
+      state.countdownTimer = setInterval(updateCountdown, 250);
+      updateCountdownDisplay(snapshot.remainingMs);
+    } else {
+      state.countdownEnd = 0;
+      state.activeSides = [];
+    }
+    updateRunState();
+    updateRecommendedPlan(activePatient);
     renderQuickPatientPicker();
     showView('quick');
     clearAutoSaveSnapshot();
@@ -1380,8 +1407,9 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   async function checkAutoSaveRestore() {
     const snapshot = loadAutoSaveSnapshot();
     if (!snapshot) return;
-    await ensurePatientsLoaded();
-    openAutoSaveRestoreModal(snapshot);
+    clearAutoSaveSnapshot();
+    state.pendingAutosave = null;
+    closeAutoSaveRestoreModal();
   }
 
   function updateUndoButton() {
@@ -1504,7 +1532,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const phoneInput = document.getElementById('patientPhone');
     const therapistInput = document.getElementById('patientTherapist');
     const deviceInput = document.getElementById('patientDeviceModel');
-    const statusInput = document.getElementById('patientStatus');
     const birthInput = document.getElementById('patientBirth');
     const notesInput = document.getElementById('patientNotes');
     if (idInput) idInput.value = patient.id || '';
@@ -1512,14 +1539,12 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     if (phoneInput) phoneInput.value = patient.phone || '';
     if (therapistInput) therapistInput.value = patient.therapist || '';
     if (deviceInput) deviceInput.value = patient.deviceModel || '';
-    if (statusInput) statusInput.value = patient.status || 'active';
     if (birthInput) birthInput.value = patient.birth || '';
     if (notesInput) notesInput.value = patient.notes || '';
     const gender = patient.gender === '女' ? '女' : '男';
     const genderNode = document.querySelector(`input[name="patientGender"][value="${gender}"]`);
     if (genderNode) genderNode.checked = true;
-    state.newPatientPhoto = patient.photoData || null;
-    updatePatientPhotoPreview();
+    state.newPatientPhoto = null;
     state.editingPatientId = patient.id || null;
     const summary = formatTreatmentSummary(patient.lastTreatment || patient.lastParams);
     const historyText = summary
@@ -1534,21 +1559,18 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const phoneInput = document.getElementById('patientPhone');
     const therapistInput = document.getElementById('patientTherapist');
     const deviceInput = document.getElementById('patientDeviceModel');
-    const statusInput = document.getElementById('patientStatus');
     const birthInput = document.getElementById('patientBirth');
     const notesInput = document.getElementById('patientNotes');
     if (nameInput) nameInput.value = '';
     if (phoneInput) phoneInput.value = '';
     if (therapistInput) therapistInput.value = '';
     if (deviceInput) deviceInput.value = '';
-    if (statusInput) statusInput.value = 'active';
     if (birthInput) birthInput.value = '';
     if (notesInput) notesInput.value = '';
     const male = document.querySelector('input[name="patientGender"][value="男"]');
     if (male) male.checked = true;
     if (!preserveId && idInput) idInput.value = computeNextPatientId();
     state.newPatientPhoto = null;
-    updatePatientPhotoPreview();
   }
 
   function resetPatientForm(clearMsg = true) {
@@ -1606,13 +1628,14 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const titleNode = document.getElementById('datePickerYearTitle');
     const backBtn = document.getElementById('datePickerBack');
     if (!panel || !listNode) return;
+    setupDragScroll(listNode);
     if (titleNode) titleNode.textContent = t('datePickerSelectYear');
     if (backBtn) backBtn.textContent = t('datePickerBack');
     listNode.innerHTML = '';
 
     const nowYear = new Date().getFullYear();
     const startYear = nowYear - 80;
-    const endYear = nowYear + 10;
+    const endYear = 2099;
     for (let y = startYear; y <= endYear; y += 1) {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -1796,25 +1819,21 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const nameInput = document.getElementById('filterPatientName');
     const therapistInput = document.getElementById('filterTherapist');
     const deviceInput = document.getElementById('filterDeviceModel');
-    const statusInput = document.getElementById('filterStatus');
     if (startInput) startInput.value = filters.startDate || '';
     if (endInput) endInput.value = filters.endDate || '';
     if (idInput) idInput.value = filters.patientId || '';
     if (nameInput) nameInput.value = filters.name || '';
     if (therapistInput) therapistInput.value = filters.therapist || '';
     if (deviceInput) deviceInput.value = filters.deviceModel || '';
-    if (statusInput) statusInput.value = filters.status || '';
     const startDate = normalizeDateOnly(parseDateYMD(filters.startDate));
     const endDate = normalizeDateOnly(parseDateYMD(filters.endDate));
     const idFilter = String(filters.patientId || '').trim().toUpperCase();
     const nameFilter = String(filters.name || '').trim().toLowerCase();
     const therapistFilter = String(filters.therapist || '').trim().toLowerCase();
     const deviceFilter = String(filters.deviceModel || '').trim().toLowerCase();
-    const statusFilter = String(filters.status || '').trim();
     const filtered = patients.filter((p) => {
       if (idFilter && !String(p?.id || '').toUpperCase().includes(idFilter)) return false;
       if (nameFilter && !String(p?.name || '').toLowerCase().includes(nameFilter)) return false;
-      if (statusFilter && String(p?.status || '') !== statusFilter) return false;
       if (therapistFilter && !String(p?.therapist || '').toLowerCase().includes(therapistFilter)) {
         return false;
       }
@@ -1841,13 +1860,13 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const headerRow = document.createElement('div');
     headerRow.className = 'patient-row header';
     const headerCells = [
+      { key: '', className: 'select' },
       { key: 'patientId', className: 'id' },
       { key: 'patientName', className: 'name' },
       { key: 'patientGender', className: 'gender' },
       { key: 'patientPhone', className: 'phone' },
       { key: 'patientTherapist', className: 'therapist' },
       { key: 'patientDevice', className: 'device' },
-      { key: 'patientStatus', className: 'status' },
       { key: 'patientBirth', className: 'birth' },
       { key: 'patientNotes', className: 'notes' },
       { key: 'patientCreatedAt', className: 'created' },
@@ -1856,7 +1875,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     headerCells.forEach(({ key, className }) => {
       const cell = document.createElement('div');
       cell.className = `patient-cell ${className}`;
-      cell.textContent = t(key);
+      if (key) cell.textContent = t(key);
       headerRow.appendChild(cell);
     });
     table.appendChild(headerRow);
@@ -1866,6 +1885,32 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       row.className = 'patient-row';
       const pid = String(p.id || '');
       row.classList.toggle('selected', state.selectedPatientIds.includes(pid));
+      const selectCell = document.createElement('div');
+      selectCell.className = 'patient-cell select';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'patient-select';
+      checkbox.checked = state.selectedPatientIds.includes(pid);
+      checkbox.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      checkbox.addEventListener('change', (e) => {
+        e.stopPropagation();
+        if (checkbox.checked) {
+          if (!state.selectedPatientIds.includes(pid)) {
+            state.selectedPatientIds = [...state.selectedPatientIds, pid];
+          }
+          state.selectedPatientId = pid;
+        } else {
+          state.selectedPatientIds = state.selectedPatientIds.filter((id) => id !== pid);
+          if (state.selectedPatientId === pid) {
+            state.selectedPatientId = state.selectedPatientIds[0] || null;
+          }
+        }
+        renderPatientList();
+      });
+      selectCell.appendChild(checkbox);
+      row.appendChild(selectCell);
       const created = p.createdAt ? (p.createdAt.split?.('T')?.[0] || p.createdAt) : '--';
       const values = {
         id: p.id || '--',
@@ -1874,19 +1919,12 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
         phone: p.phone || '--',
         therapist: p.therapist || '--',
         device: p.deviceModel || '--',
-        status: (() => {
-          const map = {
-            active: t('statusActive'),
-            completed: t('statusCompleted'),
-            archived: t('statusArchived'),
-          };
-          return map[p.status] || '--';
-        })(),
+
         birth: p.birth || '--',
         notes: p.notes || '--',
         created,
       };
-      ['id', 'name', 'gender', 'phone', 'therapist', 'device', 'status', 'birth', 'notes', 'created'].forEach((col) => {
+      ['id', 'name', 'gender', 'phone', 'therapist', 'device', 'birth', 'notes', 'created'].forEach((col) => {
         const cell = document.createElement('div');
         cell.className = `patient-cell ${col}`;
         cell.textContent = values[col];
@@ -1955,7 +1993,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const nameInput = document.getElementById('filterPatientName');
     const therapistInput = document.getElementById('filterTherapist');
     const deviceInput = document.getElementById('filterDeviceModel');
-    const statusInput = document.getElementById('filterStatus');
     state.patientFilters = {
       startDate: startInput?.value || '',
       endDate: endInput?.value || '',
@@ -1963,7 +2000,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       name: nameInput?.value || '',
       therapist: therapistInput?.value || '',
       deviceModel: deviceInput?.value || '',
-      status: statusInput?.value || '',
     };
     renderPatientList();
   }
@@ -1976,7 +2012,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       name: '',
       therapist: '',
       deviceModel: '',
-      status: '',
     };
     const startInput = document.getElementById('filterStartDate');
     const endInput = document.getElementById('filterEndDate');
@@ -1984,14 +2019,12 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const nameInput = document.getElementById('filterPatientName');
     const therapistInput = document.getElementById('filterTherapist');
     const deviceInput = document.getElementById('filterDeviceModel');
-    const statusInput = document.getElementById('filterStatus');
     if (startInput) startInput.value = '';
     if (endInput) endInput.value = '';
     if (idInput) idInput.value = '';
     if (nameInput) nameInput.value = '';
     if (therapistInput) therapistInput.value = '';
     if (deviceInput) deviceInput.value = '';
-    if (statusInput) statusInput.value = '';
     renderPatientList();
   }
 
@@ -2122,6 +2155,11 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const selectedNode = document.getElementById('quickPatientSelected');
     if (!listNode && !selectedNode) return;
     if (listNode) setupDragScroll(listNode);
+    const searchInput = document.getElementById('quickPatientSearch');
+    const queryRaw = searchInput ? searchInput.value : state.quickPatientQuery;
+    const query = String(queryRaw || '').trim();
+    state.quickPatientQuery = query;
+    const queryLower = query.toLowerCase();
 
     const patients = Array.isArray(state.patients) ? state.patients : [];
     const sortedPatients = patients.slice().sort((a, b) => {
@@ -2133,6 +2171,21 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       if (aNum !== bNum) return bNum - aNum;
       return String(b?.id || '').localeCompare(String(a?.id || ''));
     });
+    const filteredPatients = queryLower
+      ? sortedPatients.filter((p) => {
+          const hay = [
+            p?.id,
+            p?.name,
+            p?.phone,
+            p?.therapist,
+            p?.deviceModel,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+          return hay.includes(queryLower);
+        })
+      : sortedPatients;
     ensureTreatmentPatientSelected();
     const activeId = String(state.treatmentPatientId || '').trim();
     const activePatient = activeId ? getPatientById(activeId) : null;
@@ -2158,12 +2211,13 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     if (!listNode) return;
     listNode.innerHTML = '';
 
-    if (!sortedPatients.length) {
-      listNode.innerHTML = `<div class="empty-tip">${t('quickPatientEmpty')}</div>`;
+    if (!filteredPatients.length) {
+      const emptyText = queryLower ? t('quickPatientSearchEmpty') : t('quickPatientEmpty');
+      listNode.innerHTML = `<div class="empty-tip">${emptyText}</div>`;
       return;
     }
 
-    sortedPatients.forEach((p) => {
+    filteredPatients.forEach((p) => {
       const id = String(p?.id || '').trim();
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -2218,7 +2272,8 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     ].join('\n'),
   };
 
-  function openReportForPatient(patient) {
+
+    function openReportForPatient(patient) {
     if (!patient) return;
     state.activePatient = patient;
     showView('report');
@@ -2247,7 +2302,10 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     if (tipsSection) tipsSection.hidden = hideExtras;
     if (disclaimerSection) disclaimerSection.hidden = hideExtras;
     const select = document.getElementById('reportTemplateSelect');
-    if (select) select.value = next;
+    if (select) {
+      select.value = next;
+      updateCustomSelectDisplay(select);
+    }
     if (opts.syncChecks) {
       const includePatient = document.getElementById('exportIncludePatient');
       const includeTreatment = document.getElementById('exportIncludeTreatment');
@@ -2432,15 +2490,19 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     if (includeTips) includeTips.textContent = t('exportIncludeTips');
     const includeDisclaimer = document.getElementById('exportIncludeDisclaimerLabel');
     if (includeDisclaimer) includeDisclaimer.textContent = t('exportIncludeDisclaimer');
-    applyReportTemplate(state.reportTemplate || 'standard', { syncChecks: false });
+    applyReportTemplate('standard', { syncChecks: false });
   }
 
   async function handleExportReportPdf() {
     const format = document.getElementById('reportExportFormat')?.value || 'pdf';
-    const includePatient = !!document.getElementById('exportIncludePatient')?.checked;
-    const includeTreatment = !!document.getElementById('exportIncludeTreatment')?.checked;
-    const includeTips = !!document.getElementById('exportIncludeTips')?.checked;
-    const includeDisclaimer = !!document.getElementById('exportIncludeDisclaimer')?.checked;
+    const includePatientNode = document.getElementById('exportIncludePatient');
+    const includeTreatmentNode = document.getElementById('exportIncludeTreatment');
+    const includeTipsNode = document.getElementById('exportIncludeTips');
+    const includeDisclaimerNode = document.getElementById('exportIncludeDisclaimer');
+    const includePatient = includePatientNode ? includePatientNode.checked : true;
+    const includeTreatment = includeTreatmentNode ? includeTreatmentNode.checked : true;
+    const includeTips = includeTipsNode ? includeTipsNode.checked : true;
+    const includeDisclaimer = includeDisclaimerNode ? includeDisclaimerNode.checked : true;
     if (format === 'pdf') {
       showAlert(t('exportingPdf'), 2000, 'info');
       try {
@@ -2557,29 +2619,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     }
   }
 
-  async function handleShareReport() {
-    const name = getActiveReportName();
-    if (!name) {
-      showAlert(t('reportShareNeedSelect'), 3500, 'error');
-      return;
-    }
-    try {
-      const res = api?.shareReport ? await api.shareReport({ name }) : null;
-      if (res?.success) {
-        const filePath = String(res.filePath || '');
-        const base = filePath.split(/[\\/]/).filter(Boolean).pop() || name;
-        const hint = base ? `reports/share/${base}` : 'reports/share';
-        showAlert(t('reportShareSuccess').replace('{path}', hint), 6000, 'success');
-      } else {
-        const reason = res?.failureReason ? `: ${res.failureReason}` : '';
-        showAlert(`${t('reportShareFailed')}${reason}`, 4500, 'error');
-      }
-    } catch (err) {
-      console.warn('[PPHC] share report failed', err);
-      showAlert(t('reportShareFailed'), 4500, 'error');
-    }
-  }
-
   function setPatientDeleteMessage(msg, isError = false) {
     const node = document.getElementById('patientDeleteMessage');
     if (!node) return;
@@ -2665,10 +2704,14 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       return;
     }
     const format = document.getElementById('reportExportFormat')?.value || 'pdf';
-    const includePatient = !!document.getElementById('exportIncludePatient')?.checked;
-    const includeTreatment = !!document.getElementById('exportIncludeTreatment')?.checked;
-    const includeTips = !!document.getElementById('exportIncludeTips')?.checked;
-    const includeDisclaimer = !!document.getElementById('exportIncludeDisclaimer')?.checked;
+    const includePatientNode = document.getElementById('exportIncludePatient');
+    const includeTreatmentNode = document.getElementById('exportIncludeTreatment');
+    const includeTipsNode = document.getElementById('exportIncludeTips');
+    const includeDisclaimerNode = document.getElementById('exportIncludeDisclaimer');
+    const includePatient = includePatientNode ? includePatientNode.checked : true;
+    const includeTreatment = includeTreatmentNode ? includeTreatmentNode.checked : true;
+    const includeTips = includeTipsNode ? includeTipsNode.checked : true;
+    const includeDisclaimer = includeDisclaimerNode ? includeDisclaimerNode.checked : true;
     const prevView = state.currentView;
     const prevPatient = state.activePatient;
     showAlert(t('batchExportStart'), 2000, 'info');
@@ -2843,11 +2886,23 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     if (v) v.value = String(clampVolume(state.settings.volume));
     const vv = document.getElementById('engineerVolumeValue');
     if (vv) vv.textContent = `${clampVolume(state.settings.volume)}%`;
+
+    updateRangeFill(p);
+    updateRangeFill(d);
+    updateRangeFill(tSlider);
+    updateRangeFill(b);
+    updateRangeFill(v);
+    bindRangeFill(p);
+    bindRangeFill(d);
+    bindRangeFill(tSlider);
+    bindRangeFill(b);
+    bindRangeFill(v);
   }
 
   function bindEngineerControls() {
     const p = document.getElementById('engineerPressure');
     if (p) {
+      bindRangeFill(p);
       p.addEventListener('input', () => {
         const mmHg = Math.max(0, Math.min(400, Math.round(Number(p.value || 0))));
         const pv = document.getElementById('engineerPressureValue');
@@ -2861,6 +2916,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     }
     const d = document.getElementById('engineerDuration');
     if (d) {
+      bindRangeFill(d);
       d.addEventListener('input', () => {
         const min = Math.max(1, Math.min(30, Math.round(Number(d.value || 10))));
         const dv = document.getElementById('engineerDurationValue');
@@ -2868,12 +2924,11 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
         state.targets.durationMin = min;
         const quickD = document.getElementById('treatDuration');
         if (quickD) quickD.value = String(Math.max(1, Math.min(15, min)));
-        const durationNode = document.getElementById('durationValue');
-        if (durationNode) durationNode.textContent = `${Math.max(1, Math.min(15, min))} min`;
       });
     }
     const tSlider = document.getElementById('engineerTemp');
     if (tSlider) {
+      bindRangeFill(tSlider);
       tSlider.addEventListener('input', () => {
         const temp = Math.max(35, Math.min(45, Number(tSlider.value || TEMP_FIXED_C)));
         state.targets.temp = Number(temp.toFixed(1));
@@ -2883,6 +2938,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     }
     const b = document.getElementById('engineerBrightness');
     if (b) {
+      bindRangeFill(b);
       b.addEventListener('input', () => {
         requestBrightnessApply(b.value);
         const bv = document.getElementById('engineerBrightnessValue');
@@ -2891,6 +2947,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     }
     const v = document.getElementById('engineerVolume');
     if (v) {
+      bindRangeFill(v);
       v.addEventListener('input', () => {
         requestVolumeApply(v.value);
         const vv = document.getElementById('engineerVolumeValue');
@@ -2981,7 +3038,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const notesInput = document.getElementById('patientNotes');
     const therapistInput = document.getElementById('patientTherapist');
     const deviceInput = document.getElementById('patientDeviceModel');
-    const statusInput = document.getElementById('patientStatus');
     const genderInput = document.querySelector('input[name="patientGender"]:checked');
     const patientId = normalizePatientIdInput(idInput?.value || '');
     if (!patientId) {
@@ -3007,19 +3063,19 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
         setPatientFormMessage(t('patientIdDuplicate'), true);
         return;
       }
+      const status = existing?.status || 'active';
       const basePayload = {
         name,
         phone: phoneInput?.value?.trim() || '',
         therapist: therapistInput?.value?.trim() || '',
         deviceModel: deviceInput?.value?.trim() || '',
-        status: statusInput?.value || 'active',
+        status,
         birth: birthInput?.value || '',
         notes: notesInput?.value?.trim() || '',
         gender: genderInput?.value || '男',
       };
       if (isEditing && existing) {
         const patch = { ...basePayload };
-        if (state.newPatientPhoto != null) patch.photoData = state.newPatientPhoto;
         const updated = api?.updatePatient
           ? await api.updatePatient({ id: existing.id, patch })
           : { id: existing.id, ...patch };
@@ -3043,7 +3099,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       const payload = {
         id: patientId,
         ...basePayload,
-        photoData: state.newPatientPhoto || null,
       };
       const saved = api?.addPatient
         ? await api.addPatient(payload)
@@ -3154,6 +3209,48 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     target.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
+
+  function clearKeyboardShift() {
+    document.body.classList.remove('keyboard-shift');
+    document.body.style.removeProperty('--keyboard-shift');
+  }
+
+  function updateKeyboardShiftForTarget(target) {
+    if (!document.body.classList.contains('view-newPatient')) {
+      clearKeyboardShift();
+      return;
+    }
+    const host = getKeyboardHost(keyboardState.zone);
+    const osk = host ? document.getElementById(host.oskId) : null;
+    if (!osk || osk.classList.contains('osk-hidden') || !target) {
+      clearKeyboardShift();
+      return;
+    }
+    if (!document.body.contains(target)) {
+      clearKeyboardShift();
+      return;
+    }
+    const targetRect = target.getBoundingClientRect();
+    const oskRect = osk.getBoundingClientRect();
+    if (!oskRect.height) {
+      clearKeyboardShift();
+      return;
+    }
+    const keyboardTop = oskRect.top;
+    const margin = 24;
+    const currentShift =
+      parseFloat(getComputedStyle(document.body).getPropertyValue('--keyboard-shift')) || 0;
+    const effectiveBottom = targetRect.bottom + currentShift;
+    const overlap = effectiveBottom - (keyboardTop - margin);
+    if (overlap > 0) {
+      const shift = overlap;
+      document.body.style.setProperty('--keyboard-shift', `${Math.ceil(shift)}px`);
+      document.body.classList.add('keyboard-shift');
+      return;
+    }
+    clearKeyboardShift();
+  }
+
   function hideKeyboard() {
     keyboardState.visible = false;
     Object.values(KEYBOARD_HOSTS).forEach(({ oskId, imeId }) => {
@@ -3163,6 +3260,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       if (ime) ime.classList.add('osk-hidden');
     });
     document.body.classList.remove('keyboard-open');
+    clearKeyboardShift();
   }
 
   function showKeyboard() {
@@ -3176,6 +3274,8 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       }
     });
     document.body.classList.add('keyboard-open');
+    requestAnimationFrame(() => updateKeyboardShiftForTarget(keyboardState.target));
+    setTimeout(() => updateKeyboardShiftForTarget(keyboardState.target), 120);
   }
 
   function handleKeyboardConfirm(target) {
@@ -3548,9 +3648,25 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       btn.type = 'button';
       btn.className = 'ime-candidate';
       btn.textContent = `${start + idx + 1}.${cand}`;
-      btn.addEventListener('click', () => commitCandidate(cand));
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        commitCandidate(cand);
+      });
       list.appendChild(btn);
     });
+    if (slice.length < pageSize) {
+      const fill = pageSize - slice.length;
+      for (let i = 0; i < fill; i += 1) {
+        const placeholder = document.createElement('button');
+        placeholder.type = 'button';
+        placeholder.className = 'ime-candidate placeholder';
+        placeholder.textContent = '00.00';
+        placeholder.disabled = true;
+        placeholder.tabIndex = -1;
+        placeholder.setAttribute('aria-hidden', 'true');
+        list.appendChild(placeholder);
+      }
+    }
 
     if (pageCount > 1) {
       const pager = document.createElement('div');
@@ -3560,7 +3676,10 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       prev.className = 'ime-pager-btn';
       prev.textContent = '上一页';
       prev.disabled = keyboardState.candidatePage === 0;
-      prev.addEventListener('click', () => changeCandidatePage(-1));
+      prev.addEventListener('click', (e) => {
+        e.stopPropagation();
+        changeCandidatePage(-1);
+      });
       const info = document.createElement('div');
       info.className = 'ime-pager-info';
       info.textContent = `${keyboardState.candidatePage + 1} / ${pageCount}`;
@@ -3569,7 +3688,10 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       next.className = 'ime-pager-btn';
       next.textContent = '下一页';
       next.disabled = keyboardState.candidatePage >= pageCount - 1;
-      next.addEventListener('click', () => changeCandidatePage(1));
+      next.addEventListener('click', (e) => {
+        e.stopPropagation();
+        changeCandidatePage(1);
+      });
       pager.appendChild(prev);
       pager.appendChild(info);
       pager.appendChild(next);
@@ -3749,7 +3871,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
           state.loginPendingTimer = null;
           setLoginFormDisabled(false);
           completeLogin({ username: res.username || user, role: res.role || 'user' });
-        }, LOGIN_TOAST_DURATION);
+        }, LOGIN_SUCCESS_DELAY);
         return true;
       }
       if (res && res.locked) {
@@ -3893,6 +4015,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       focusEnd(input);
       showKeyboard();
       renderImeCandidates();
+      requestAnimationFrame(() => updateKeyboardShiftForTarget(input));
     }
   }
 
@@ -3922,20 +4045,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   function applyRoleUI() {
     const role = state.user?.role || 'user';
     document.body.dataset.role = role;
-    const isAdmin = role === 'admin';
-    const isOperator = role === 'operator';
-
-    const accountsNav = document.querySelector('.settings-nav button[data-module="accounts"]');
-    const accountsModule = document.getElementById('settingsModuleAccounts');
-    if (accountsNav) accountsNav.hidden = !isAdmin;
-    if (accountsModule) accountsModule.hidden = !isAdmin;
-
-    const btnHomeDevice = document.getElementById('btnHomeDevice');
-    const btnHomeNewPatient = document.getElementById('btnHomeNewPatient');
-    const btnHomePatientList = document.getElementById('btnHomePatientList');
-    if (btnHomeDevice) btnHomeDevice.hidden = isOperator;
-    if (btnHomeNewPatient) btnHomeNewPatient.hidden = isOperator;
-    if (btnHomePatientList) btnHomePatientList.hidden = isOperator;
 
     const bottomNav = document.getElementById('bottomNav');
     if (bottomNav) {
@@ -3945,7 +4054,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       });
     }
 
-    if (isOperator && state.currentView === 'settings') showView('quick');
     updateBottomNav();
   }
 
@@ -4089,11 +4197,23 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       const target = e.target;
       if (!(target instanceof Element)) return;
       if (target.closest('.osk')) return;
+      const label = target.closest('label[for]');
+      if (label) {
+        const labelFor = label.getAttribute('for');
+        const labeledInput = labelFor ? document.getElementById(labelFor) : null;
+        if (isOskEligibleInput(labeledInput)) {
+          setKeyboardTarget(labeledInput);
+          return;
+        }
+      }
       const input = target.closest('input[data-osk-target], textarea[data-osk-target], .osk-input');
       if (isOskEligibleInput(input)) {
         setKeyboardTarget(input);
         return;
       }
+      const active = document.activeElement;
+      if (isOskEligibleInput(active) && target.closest('.modal')) return;
+      if (document.body.classList.contains('view-newPatient') && target.closest('#newPatientScreen')) return;
       hideKeyboard();
     });
   }
@@ -4267,8 +4387,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const durationSlider = document.getElementById('treatDuration');
     if (durationSlider) {
       const minutes = Math.max(1, Math.min(15, Number(durationSlider.value || 10)));
-      const target = document.getElementById('durationValue');
-      if (target) target.textContent = `${minutes} min`;
       if (!state.running) {
         const node = document.getElementById('countdown');
         if (node) node.textContent = `${String(minutes).padStart(2, '0')}:00`;
@@ -4301,9 +4419,11 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     set('#accountRemoveTitle', 'accountsRemoveConfirmTitle');
     set('#accountRemoveText', 'accountsRemoveConfirmText');
     set('#accountRemoveImpact', 'accountsDeleteImpact');
-    set('#accountRemovePasswordLabel', 'confirmPassword');
     set('#accountRemoveCancel', 'actionCancel');
     set('#accountRemoveConfirm', 'actionConfirm');
+    set('#treatmentRunningTitle', 'treatmentRunningTitle');
+    set('#treatmentRunningText', 'treatmentRunningText');
+    set('#treatmentRunningOk', 'treatmentRunningOk');
 
     const addUserLabels = [
       ['label[for="loginAddUsername"]', 'accountsUsernameLabel'],
@@ -4350,8 +4470,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     if (refreshReportsBtn) refreshReportsBtn.textContent = t('reportArchiveRefresh');
     const printReportsBtn = document.getElementById('btnPrintArchiveReport');
     if (printReportsBtn) printReportsBtn.textContent = t('reportArchivePrint');
-    const shareReportsBtn = document.getElementById('btnShareReport');
-    if (shareReportsBtn) shareReportsBtn.textContent = t('reportShare');
     const batchBtn = document.getElementById('btnBatchExport');
     if (batchBtn) batchBtn.textContent = t('batchExport');
     const delPatientBtn = document.getElementById('btnDeletePatient');
@@ -4385,10 +4503,8 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       '#lblPatientPhone': 'patientPhone',
       '#lblPatientTherapist': 'patientTherapist',
       '#lblPatientDevice': 'patientDevice',
-      '#lblPatientStatus': 'patientStatus',
       '#lblPatientBirth': 'patientBirth',
       '#lblPatientNotes': 'patientNotes',
-      '#lblPatientPhoto': 'patientPhoto',
     };
     Object.entries(labelMap).forEach(([selector, key]) => {
       const el = document.querySelector(selector);
@@ -4399,23 +4515,8 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     set('#filterNameLabel', 'filterName');
     set('#filterTherapistLabel', 'filterTherapist');
     set('#filterDeviceLabel', 'filterDevice');
-    set('#filterStatusLabel', 'filterStatus');
     set('#btnClearFilters', 'filterReset');
-    const statusSelect = document.getElementById('patientStatus');
-    if (statusSelect) {
-      const opts = statusSelect.querySelectorAll('option');
-      if (opts[0]) opts[0].textContent = t('statusActive');
-      if (opts[1]) opts[1].textContent = t('statusCompleted');
-      if (opts[2]) opts[2].textContent = t('statusArchived');
-    }
-    const filterStatus = document.getElementById('filterStatus');
-    if (filterStatus) {
-      const opts = filterStatus.querySelectorAll('option');
-      if (opts[0]) opts[0].textContent = t('filterAll');
-      if (opts[1]) opts[1].textContent = t('statusActive');
-      if (opts[2]) opts[2].textContent = t('statusCompleted');
-      if (opts[3]) opts[3].textContent = t('statusArchived');
-    }
+
     const dpModal = document.getElementById('datePickerModal');
     if (dpModal && !dpModal.hidden) renderDatePicker();
     if (state.currentView === 'patientList') renderPatientList();
@@ -4426,6 +4527,8 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     set('.summary-panel .panel-overline', 'summaryOverline');
     set('.summary-panel .panel-title', 'summaryTitle');
     set('#quickPatientTitle', 'quickPatientTitle');
+    const quickSearch = document.getElementById('quickPatientSearch');
+    if (quickSearch) quickSearch.placeholder = t('quickPatientSearchPlaceholder');
     set('#recommendPlanTitle', 'recommendPlanTitle');
     set('#photoModalTitle', 'photoModalTitle');
     set('#photoCaptureCancel', 'actionCancel');
@@ -4477,9 +4580,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
 
     const infoLabels = $$('.info-panel .label');
     if (infoLabels[0]) infoLabels[0].textContent = t('runStateLabel');
-    if (infoLabels[1]) infoLabels[1].textContent = t('alarmLabel');
-    if (infoLabels[2]) infoLabels[2].textContent = t('systemStateLabel');
-    if (infoLabels[3]) infoLabels[3].textContent = t('connectionStateLabel');
+    if (infoLabels[1]) infoLabels[1].textContent = t('connectionStateLabel');
     const connectionNode = $('#connectionState');
     if (connectionNode) connectionNode.textContent = state.connected ? t('connected') : t('disconnected');
 
@@ -4487,12 +4588,10 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const navMap = {
       display: ['navDisplay', 'navDisplayHint'],
       sound: ['navSound', 'navSoundHint'],
-      device: ['navDevice', 'navDeviceHint'],
       printer: ['navPrinter', 'navPrinterHint'],
       accounts: ['navAccounts', 'navAccountsHint'],
       language: ['navLanguage', 'navLanguageHint'],
       about: ['navAbout', 'navAboutHint'],
-      history: ['navHistory', 'navHistoryHint'],
       logs: ['navLogs', 'navLogsHint'],
     };
     navBtns.forEach((btn) => {
@@ -4537,18 +4636,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       if (opts[2]) opts[2].textContent = t('fontScaleLarge');
       if (opts[3]) opts[3].textContent = t('fontScaleXL');
     }
-
-    set('#deviceTitle', 'deviceTitle');
-    set('#deviceStatusLabel', 'deviceStatusLabel');
-    set('#deviceStatusHint', 'deviceStatusHint');
-    set('#deviceAutoReconnectLabel', 'deviceAutoReconnectLabel');
-    set('#deviceAutoReconnectHint', 'deviceAutoReconnectHint');
-    set('#deviceCalibrationLabel', 'deviceCalibrationLabel');
-    set('#deviceCalibrationHint', 'deviceCalibrationHint');
-    set('#btnDeviceReconnect', 'deviceReconnectNow');
-    set('#btnDeviceCalibrated', 'deviceCalibrationAction');
-    set('#historyTitle', 'historyTitle');
-    set('#btnManualSave', 'manualSave');
     set('#btnUndoPatientDelete', 'undoDelete');
     set('#autosaveRestoreTitle', 'autoSaveTitle');
     set('#autosaveRestoreText', 'autoSaveText');
@@ -4682,6 +4769,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     renderOperationHistory();
     updateUndoButton();
     checkPatientIdInput({ skipFill: true });
+    attachCustomSelectAll();
     const titleMap = {
       home: t('homeTitle'),
       quick: t('quickTitle'),
@@ -4702,10 +4790,54 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     document.body.classList.toggle('theme-dark', next === 'dark');
   }
 
+  const fontScaleCache = new WeakMap();
+  let appliedFontScale = 1;
+  let fontScaleObserver = null;
+
+  function applyFontScaleToElement(el, scale, baseScale) {
+    if (!(el instanceof HTMLElement)) return;
+    const tag = el.tagName;
+    if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'LINK') return;
+    if (el.dataset && el.dataset.noFontScale != null) return;
+    let base = fontScaleCache.get(el);
+    if (base == null) {
+      const size = Number.parseFloat(getComputedStyle(el).fontSize);
+      if (!size) return;
+      base = size / (baseScale || 1);
+      fontScaleCache.set(el, base);
+    }
+    el.style.fontSize = `${base * scale}px`;
+  }
+
+  function applyFontScaleToTree(root, scale, baseScale) {
+    if (!root) return;
+    if (root.nodeType === 1) applyFontScaleToElement(root, scale, baseScale);
+    if (!root.querySelectorAll) return;
+    root.querySelectorAll('*').forEach((el) => applyFontScaleToElement(el, scale, baseScale));
+  }
+
+  function ensureFontScaleObserver() {
+    if (fontScaleObserver || !document.body) return;
+    fontScaleObserver = new MutationObserver((mutations) => {
+      const scale = appliedFontScale;
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType !== 1) return;
+          applyFontScaleToTree(node, scale, 1);
+        });
+      });
+    });
+    fontScaleObserver.observe(document.body, { childList: true, subtree: true });
+  }
+
   function applyFontScale(scale) {
     const next = clampFontScale(scale);
+    const prev = appliedFontScale;
     state.settings.fontScale = next;
-    document.body.style.zoom = String(next);
+    document.body.style.zoom = '1';
+    applyFontScaleToTree(document.body, next, prev);
+    appliedFontScale = next;
+    ensureFontScaleObserver();
   }
 
   function updateSettingsUI() {
@@ -4714,6 +4846,8 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const brightnessPct = clampBrightness(state.settings.brightness);
     if (brightness) brightness.value = brightnessPct;
     if (brightnessValue) brightnessValue.textContent = `${brightnessPct}%`;
+    if (brightness) updateRangeFill(brightness);
+    bindRangeFill(brightness);
 
     const screensaver = document.getElementById('screensaverSelect');
     if (screensaver) screensaver.value = String(state.settings.screensaver);
@@ -4725,12 +4859,16 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     if (themeSelect) themeSelect.value = state.settings.theme === 'light' ? 'light' : 'dark';
     const fontScaleSelect = document.getElementById('fontScaleSelect');
     if (fontScaleSelect) fontScaleSelect.value = String(clampFontScale(state.settings.fontScale));
+    updateCustomSelectDisplay(themeSelect);
+    updateCustomSelectDisplay(fontScaleSelect);
 
     const volume = document.getElementById('settingsVolume');
     const volumeValue = document.getElementById('settingsVolumeValue');
     const volPct = clampVolume(state.settings.volume);
     if (volume) volume.value = volPct;
     if (volumeValue) volumeValue.textContent = `${volPct}%`;
+    if (volume) updateRangeFill(volume);
+    bindRangeFill(volume);
 
     const langZh = document.getElementById('languageZh');
     const langEn = document.getElementById('languageEn');
@@ -4770,7 +4908,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   function setSettingsModule(moduleKey) {
     let next = moduleKey || state.settingsActiveModule || 'display';
     const navBtn = document.querySelector(`.settings-nav button[data-module="${next}"]`);
-    if (navBtn && navBtn.hidden) next = 'display';
+    if (!navBtn || navBtn.hidden) next = 'display';
     state.settingsActiveModule = next;
     $$('.settings-module').forEach((mod) => {
       mod.classList.toggle('active', mod.dataset.module === next);
@@ -4784,10 +4922,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       loadPrintersList();
     } else if (next === 'accounts') {
       loadAccounts();
-    } else if (next === 'history') {
-      renderOperationHistory();
-    } else if (next === 'device') {
-      updateDeviceStatusUI();
     }
   }
 
@@ -4795,6 +4929,8 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const listNode = document.getElementById('logsList');
     const viewerNode = document.getElementById('logContent');
     if (!listNode) return;
+    setupDragScroll(listNode);
+    if (viewerNode) setupDragScroll(viewerNode);
     listNode.innerHTML = '';
     const loading = document.createElement('div');
     loading.className = 'empty-tip';
@@ -4948,8 +5084,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const modal = document.getElementById('accountRemoveModal');
     if (!modal) return;
     pendingAccountRemove = username;
-    const input = document.getElementById('accountRemovePassword');
-    if (input) input.value = '';
     setAccountRemoveMessage(null);
     modal.hidden = false;
   }
@@ -4967,17 +5101,8 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       setAccountRemoveMessage(t('adminOnly'), true);
       return;
     }
-    const password = document.getElementById('accountRemovePassword')?.value || '';
-    if (!password) {
-      setAccountRemoveMessage(t('confirmPasswordPlaceholder'), true);
-      return;
-    }
     try {
-      await api?.removeAccount?.({
-        username: pendingAccountRemove,
-        actor: state.user?.username || '',
-        actorPassword: password,
-      });
+      await api?.removeAccount?.(pendingAccountRemove);
       closeAccountRemoveModal();
       await loadAccounts();
     } catch (err) {
@@ -5232,6 +5357,28 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     if (wrapper) wrapper.classList.remove('open');
   }
 
+  function rebuildCustomSelectOptions(selectEl) {
+    if (!selectEl || !selectEl._custom?.menu) return;
+    const { menu } = selectEl._custom;
+    const items = [];
+    menu.innerHTML = '';
+    Array.from(selectEl.options).forEach((opt) => {
+      const item = document.createElement('div');
+      item.className = 'custom-select-item';
+      item.dataset.value = opt.value;
+      item.innerHTML = `<span>${opt.textContent}</span>`;
+      item.addEventListener('click', () => {
+        selectEl.value = opt.value;
+        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+        updateCustomSelectDisplay(selectEl);
+      });
+      menu.appendChild(item);
+      items.push(item);
+    });
+    selectEl._custom.items = items;
+    updateCustomSelectDisplay(selectEl);
+  }
+
   function attachCustomSelect(selectId) {
     const select = document.getElementById(selectId);
     if (!select || select._custom) return;
@@ -5247,6 +5394,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
 
     const menu = document.createElement('div');
     menu.className = 'custom-select-menu';
+    setupDragScroll(menu);
     const items = [];
     Array.from(select.options).forEach((opt) => {
       const item = document.createElement('div');
@@ -5266,8 +5414,15 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     wrapper.appendChild(menu);
     select.insertAdjacentElement('afterend', wrapper);
 
+    const closeOtherCustomSelects = () => {
+      document.querySelectorAll('.custom-select.open').forEach((node) => {
+        if (node !== wrapper) node.classList.remove('open');
+      });
+    };
     const toggle = () => {
-      wrapper.classList.toggle('open');
+      const isOpen = wrapper.classList.contains('open');
+      if (!isOpen) closeOtherCustomSelects();
+      wrapper.classList.toggle('open', !isOpen);
     };
     display.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -5276,9 +5431,22 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     document.addEventListener('click', (e) => {
       if (!wrapper.contains(e.target)) wrapper.classList.remove('open');
     });
+    select.addEventListener('change', () => updateCustomSelectDisplay(select));
 
-    select._custom = { wrapper, labelNode: display.querySelector('.label'), items };
+    select._custom = { wrapper, labelNode: display.querySelector('.label'), items, menu };
     updateCustomSelectDisplay(select);
+  }
+
+  function attachCustomSelectAll() {
+    document.querySelectorAll('select').forEach((select) => {
+      if (!select.id) return;
+      if (select.dataset.nativeSelect === 'true') return;
+      if (select._custom) {
+        rebuildCustomSelectOptions(select);
+        return;
+      }
+      attachCustomSelect(select.id);
+    });
   }
 
   async function applyBrightness(percent) {
@@ -5573,6 +5741,35 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     }
   }
 
+  async function persistTreatmentStart() {
+    const patientId = String(state.treatmentPatientId || '').trim();
+    if (!patientId || !state.lastTreatment || !api?.updatePatient) return;
+    const patch = {
+      lastTreatment: { ...state.lastTreatment },
+      lastParams: {
+        pressureMmHg: state.lastTreatment.pressureMmHg,
+        durationMin: state.lastTreatment.durationMin,
+        tempC: state.lastTreatment.tempC,
+        mode: state.lastTreatment.mode,
+      },
+    };
+    try {
+      const updated = await api.updatePatient({ id: patientId, patch });
+      if (updated && updated.id) {
+        state.patients = state.patients.map((p) =>
+          String(p?.id || '') === patientId ? { ...p, ...patch } : p
+        );
+        if (state.activePatient && String(state.activePatient.id || '') === patientId) {
+          state.activePatient = { ...state.activePatient, ...patch };
+        }
+        if (state.currentView === 'quick') renderQuickPatientPicker();
+        if (state.currentView === 'patientList') renderPatientList();
+      }
+    } catch (err) {
+      console.warn('[PPHC] persist start params failed', err);
+    }
+  }
+
   function logPressureEvent(side, active, value) {
     if (!api?.logToMain) return;
     const label = side === 'left' ? '左眼' : '右眼';
@@ -5661,6 +5858,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       toggleBtn.textContent = state.running ? t('stop') : t('start');
       toggleBtn.classList.toggle('active', state.running);
     }
+    document.body.classList.toggle('treatment-running', !!state.running);
     updateStatusChips();
   }
 
@@ -5676,6 +5874,21 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       banner.hidden = true;
     }, duration);
   }
+
+  function showTreatmentRunningModal() {
+    const modal = document.getElementById('treatmentRunningModal');
+    if (modal) {
+      modal.hidden = false;
+      return;
+    }
+    showAlert(t('treatmentRunningText'));
+  }
+
+  function closeTreatmentRunningModal() {
+    const modal = document.getElementById('treatmentRunningModal');
+    if (modal) modal.hidden = true;
+  }
+
 
   function setupDragScroll(node) {
     if (!node || node._dragScrollSetup) return;
@@ -5743,6 +5956,26 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       true
     );
   }
+
+  function updateRangeFill(slider) {
+    if (!slider) return;
+    const min = Number(slider.min ?? 0);
+    const max = Number(slider.max ?? 100);
+    const value = Number(slider.value ?? min);
+    const range = max - min || 1;
+    const ratio = Math.max(0, Math.min(1, (value - min) / range));
+    slider.style.setProperty('--range-ratio', ratio.toFixed(4));
+  }
+
+  function bindRangeFill(slider) {
+    if (!slider || slider._rangeFillBound) return;
+    slider._rangeFillBound = true;
+    updateRangeFill(slider);
+    requestAnimationFrame(() => updateRangeFill(slider));
+    slider.addEventListener('input', () => updateRangeFill(slider));
+    slider.addEventListener('change', () => updateRangeFill(slider));
+  }
+
 
   function closeExportAfterTreatmentModal() {
     const modal = document.getElementById('exportAfterTreatmentModal');
@@ -5903,6 +6136,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       sides: sides.slice(),
       tempC,
     };
+    persistTreatmentStart();
     api.sendU16(0x1006, min);
     api.sendU8(0x10c1, 1);
     state.running = true;
@@ -5960,6 +6194,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const brightness = document.getElementById('settingsBrightness');
     if (brightness) {
       brightness.value = clampBrightness(state.settings.brightness);
+      bindRangeFill(brightness);
       brightness.addEventListener('input', () => {
         requestBrightnessApply(brightness.value);
       });
@@ -6000,6 +6235,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const volume = document.getElementById('settingsVolume');
     if (volume) {
       volume.value = clampVolume(state.settings.volume);
+      bindRangeFill(volume);
       volume.addEventListener('input', () => {
         state.settings.volume = clampVolume(volume.value);
         updateSettingsUI();
@@ -6039,33 +6275,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
         api?.setPressureAlertSound?.(state.settings.pressureAlertSound);
       });
     }
-
-    const autoReconnectToggle = document.getElementById('deviceAutoReconnect');
-    if (autoReconnectToggle) {
-      autoReconnectToggle.checked = !!state.settings.autoConnect;
-      autoReconnectToggle.addEventListener('change', () => {
-        state.settings.autoConnect = !!autoReconnectToggle.checked;
-        updateSettingsUI();
-        persistAppSettings({ autoConnect: state.settings.autoConnect });
-        if (!state.settings.autoConnect && state.autoConnectTimer) {
-          clearTimeout(state.autoConnectTimer);
-          state.autoConnectTimer = null;
-        } else if (state.settings.autoConnect && !state.connected) {
-          scheduleAutoConnect(0);
-        }
-      });
-    }
-    document.getElementById('btnDeviceReconnect')?.addEventListener('click', () =>
-      attemptAutoConnect({ force: true })
-    );
-    document.getElementById('btnDeviceCalibrated')?.addEventListener('click', () => {
-      const stamp = new Date().toISOString();
-      state.settings.lastCalibrationAt = stamp;
-      updateSettingsUI();
-      persistAppSettings({ lastCalibrationAt: stamp });
-      recordOperation('calibration', formatDateYMD(new Date(stamp)));
-      showAlert(t('deviceCalibrationSet'), 2500, 'success');
-    });
 
     document.getElementById('btnCheckUpdates')?.addEventListener('click', () => {
       handleCheckUpdates();
@@ -6134,18 +6343,12 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       'btnExportPdf',
       'btnCurveHistory',
       'btnCurveZoom',
-      'btnManualSave',
-      'btnCapturePhoto',
-      'photoCaptureCancel',
-      'photoCaptureTake',
-      'photoCaptureModal',
       'filterPatientId',
       'filterPatientName',
       'filterStartDate',
       'filterEndDate',
       'filterTherapist',
       'filterDeviceModel',
-      'filterStatus',
       'btnClearFilters',
       'patientDeleteModal',
       'patientDeleteCancel',
@@ -6153,13 +6356,13 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       'btnBatchExport',
       'btnUndoPatientDelete',
       'btnPrintReport',
-      'reportTemplateSelect',
       'btnGoPatientList',
       'patientForm',
       'autosaveRestoreModal',
       'btnAutosaveRestore',
       'btnAutosaveDiscard',
-      'btnShareReport',
+      'treatmentRunningModal',
+      'treatmentRunningOk',
     ].forEach((id) => {
       if (!document.getElementById(id)) console.warn('[PPHC] missing element', id);
     });
@@ -6178,6 +6381,9 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       ensurePatientsLoaded();
       showView('patientList');
     });
+    document.getElementById('quickPatientSearch')?.addEventListener('input', () =>
+      renderQuickPatientPicker()
+    );
     document.getElementById('btnBackHome')?.addEventListener('click', () => showView('home'));
     document.getElementById('btnExit')?.addEventListener('click', () => {
       if (api && api.exitApp) api.exitApp();
@@ -6207,9 +6413,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       updateCurveActions();
       updateTelemetry();
     });
-    document.getElementById('btnManualSave')?.addEventListener('click', () =>
-      saveAutoProgress({ manual: true })
-    );
     document.getElementById('btnDeletePatient')?.addEventListener('click', handleDeleteSelectedPatient);
     document.getElementById('btnUndoPatientDelete')?.addEventListener('click', handleUndoPatientDelete);
     document.getElementById('btnClearPatients')?.addEventListener('click', handleClearPatients);
@@ -6226,23 +6429,10 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       loadReportArchive()
     );
     document.getElementById('btnPrintArchiveReport')?.addEventListener('click', handlePrintArchiveReport);
-    document.getElementById('btnShareReport')?.addEventListener('click', handleShareReport);
     document.getElementById('btnDeleteReport')?.addEventListener('click', handleDeleteSelectedReport);
     document.getElementById('btnClearReports')?.addEventListener('click', handleClearReports);
     document.getElementById('btnExportPdf')?.addEventListener('click', handleExportReportPdf);
-    document.getElementById('btnPrintReport')?.addEventListener('click', handlePrintReport);
-    document.getElementById('reportTemplateSelect')?.addEventListener('change', (e) => {
-      const value = e.target?.value || 'standard';
-      applyReportTemplate(value, { syncChecks: true });
-      renderReport();
-    });
-    document.getElementById('btnCapturePhoto')?.addEventListener('click', openPhotoCaptureModal);
-    document.getElementById('photoCaptureCancel')?.addEventListener('click', closePhotoCaptureModal);
-    document.getElementById('photoCaptureTake')?.addEventListener('click', capturePhoto);
-    document.getElementById('photoCaptureModal')?.addEventListener('click', (e) => {
-      if (e.target?.id === 'photoCaptureModal') closePhotoCaptureModal();
-    });
-    document.getElementById('patientDeleteCancel')?.addEventListener('click', closePatientDeleteModal);
+    document.getElementById('btnPrintReport')?.addEventListener('click', handlePrintReport);    document.getElementById('patientDeleteCancel')?.addEventListener('click', closePatientDeleteModal);
     document.getElementById('patientDeleteConfirm')?.addEventListener('click', confirmPatientDelete);
     document.getElementById('patientDeleteModal')?.addEventListener('click', (e) => {
       if (e.target?.id === 'patientDeleteModal') closePatientDeleteModal();
@@ -6290,7 +6480,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     document.getElementById('filterPatientName')?.addEventListener('input', applyPatientFiltersFromUI);
     document.getElementById('filterTherapist')?.addEventListener('input', applyPatientFiltersFromUI);
     document.getElementById('filterDeviceModel')?.addEventListener('input', applyPatientFiltersFromUI);
-    document.getElementById('filterStatus')?.addEventListener('change', applyPatientFiltersFromUI);
     document.getElementById('btnClearFilters')?.addEventListener('click', resetPatientFilters);
     document.getElementById('datePrevMonth')?.addEventListener('click', () => {
       datePickerState.month -= 1;
@@ -6333,6 +6522,12 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       if (e.target?.id === 'datePickerModal') closeDatePicker();
     });
 
+
+    document.getElementById('treatmentRunningOk')?.addEventListener('click', closeTreatmentRunningModal);
+    document.getElementById('treatmentRunningModal')?.addEventListener('click', (e) => {
+      if (e.target?.id === 'treatmentRunningModal') closeTreatmentRunningModal();
+    });
+
     document.getElementById('btnStartStop')?.addEventListener('click', () => {
       console.info('[PPHC] start/stop clicked, connected=', state.connected, 'running=', state.running);
       if (!state.connected) return;
@@ -6370,8 +6565,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     if (durationSlider)
       durationSlider.addEventListener('input', () => {
         const min = Math.max(1, Math.min(15, Number(durationSlider.value || 10)));
-        const durationNode = document.getElementById('durationValue');
-        if (durationNode) durationNode.textContent = `${min} min`;
         if (!state.running) {
           const node = document.getElementById('countdown');
           if (node) node.textContent = `${String(min).padStart(2, '0')}:00`;
@@ -6394,6 +6587,8 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
         const lost = document.getElementById('shieldLostModal');
         if (lost && !lost.hidden) lost.hidden = true;
         const exportModal = document.getElementById('exportAfterTreatmentModal');
+        const runningModal = document.getElementById('treatmentRunningModal');
+        if (runningModal && !runningModal.hidden) closeTreatmentRunningModal();
         if (exportModal && !exportModal.hidden) exportModal.hidden = true;
         const autosaveModal = document.getElementById('autosaveRestoreModal');
         if (autosaveModal && !autosaveModal.hidden) discardAutoSaveSnapshot();
