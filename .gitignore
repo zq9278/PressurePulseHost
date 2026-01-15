@@ -31,3 +31,9 @@ Thumbs.db
 
 
 .exe
+tools/package/windows/
+*.exe
+*.msi
+*.zip
+*.7z
+
