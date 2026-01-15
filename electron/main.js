@@ -37,7 +37,10 @@ const { Ws2812Driver, DEFAULT_COLORS } = require('./ws2812');
 const IS_LINUX = process.platform === 'linux';
 const ALSA_CARD = String(process.env.PPHC_ALSA_CARD || process.env.ALSA_CARD || '0');
 const ALSA_CARD_ARGS = ALSA_CARD ? ['-c', ALSA_CARD] : [];
-const ALSA_DEVICE = String(process.env.PPHC_ALSA_DEVICE || '').trim();
+const ALSA_DEVICE = String(process.env.PPHC_ALSA_DEVICE || process.env.ALSA_DEVICE || '').trim();
+const AUDIO_PLAYER = String(process.env.PPHC_AUDIO_PLAYER || '').trim();
+const AUDIO_GAIN = Number.parseFloat(process.env.PPHC_AUDIO_GAIN || '1');
+const AUDIO_FORCE_STEREO = String(process.env.PPHC_AUDIO_FORCE_STEREO || '1').trim().toLowerCase();
 
 const LED_COUNT = Number.parseInt(process.env.PPHC_LED_COUNT, 10);
 const SPI_BUS = Number.parseInt(process.env.PPHC_SPI_BUS, 10);
@@ -380,6 +383,12 @@ async function ensureAudioOutputsOn() {
   const tasks = [
     [...ALSA_CARD_ARGS, 'set', 'Speaker', 'on'],
     [...ALSA_CARD_ARGS, 'set', 'Headphone', 'on'],
+    [...ALSA_CARD_ARGS, 'set', 'spk switch', 'on'],
+    [...ALSA_CARD_ARGS, 'set', 'hp switch', 'on'],
+    [...ALSA_CARD_ARGS, 'set', 'OUT1', 'on'],
+    [...ALSA_CARD_ARGS, 'set', 'OUT2', 'on'],
+    [...ALSA_CARD_ARGS, 'set', 'Output 1', '100%'],
+    [...ALSA_CARD_ARGS, 'set', 'Output 2', '100%'],
     [...ALSA_CARD_ARGS, 'set', 'PCM', '100%'],
   ];
   for (const args of tasks) {
@@ -396,6 +405,10 @@ async function ensureAudioOutputsOff() {
   const tasks = [
     [...ALSA_CARD_ARGS, 'set', 'Speaker', 'off'],
     [...ALSA_CARD_ARGS, 'set', 'Headphone', 'off'],
+    [...ALSA_CARD_ARGS, 'set', 'spk switch', 'off'],
+    [...ALSA_CARD_ARGS, 'set', 'hp switch', 'off'],
+    [...ALSA_CARD_ARGS, 'set', 'OUT1', 'off'],
+    [...ALSA_CARD_ARGS, 'set', 'OUT2', 'off'],
     [...ALSA_CARD_ARGS, 'set', 'PCM', '0%', 'mute'],
   ];
   for (const args of tasks) {
@@ -541,6 +554,224 @@ function speakStartup() {
   return;
 }
 
+function findExecutable(bin) {
+  const paths = (process.env.PATH || '').split(path.delimiter).filter(Boolean);
+  for (const dir of paths) {
+    const full = path.join(dir, bin);
+    try {
+      fs.accessSync(full, fs.constants.X_OK);
+      return full;
+    } catch {}
+  }
+  return null;
+}
+
+let audioQueue = Promise.resolve();
+function enqueueAudioPlay(task) {
+  const next = audioQueue.then(task, task);
+  audioQueue = next.catch(() => {});
+  return next;
+}
+
+const audioTransformCache = new Map();
+async function transformWavForPlayback(filePath) {
+  const gainRaw = Number.isFinite(AUDIO_GAIN) ? AUDIO_GAIN : 1;
+  const gain = Math.min(10, Math.max(0, gainRaw));
+  const forceStereo = !(AUDIO_FORCE_STEREO === '0' || AUDIO_FORCE_STEREO === 'false');
+  if (gain <= 1 && !forceStereo) return filePath;
+  const key = `${filePath}|${gain}|${forceStereo ? 'stereo' : 'keep'}`;
+  const cached = audioTransformCache.get(key);
+  if (cached && fs.existsSync(cached)) return cached;
+
+  let buf;
+  try {
+    buf = await fs.promises.readFile(filePath);
+  } catch {
+    return filePath;
+  }
+  if (buf.length < 44) return filePath;
+  if (buf.toString('ascii', 0, 4) !== 'RIFF' || buf.toString('ascii', 8, 12) !== 'WAVE') {
+    return filePath;
+  }
+
+  let offset = 12;
+  let audioFormat = null;
+  let bitsPerSample = null;
+  let numChannels = null;
+  let sampleRate = null;
+  let dataOffset = null;
+  let dataSize = null;
+  while (offset + 8 <= buf.length) {
+    const chunkId = buf.toString('ascii', offset, offset + 4);
+    const chunkSize = buf.readUInt32LE(offset + 4);
+    const chunkStart = offset + 8;
+    if (chunkId === 'fmt ') {
+      audioFormat = buf.readUInt16LE(chunkStart);
+      numChannels = buf.readUInt16LE(chunkStart + 2);
+      sampleRate = buf.readUInt32LE(chunkStart + 4);
+      bitsPerSample = buf.readUInt16LE(chunkStart + 14);
+    } else if (chunkId === 'data') {
+      dataOffset = chunkStart;
+      dataSize = chunkSize;
+      break;
+    }
+    offset = chunkStart + chunkSize + (chunkSize % 2);
+  }
+  if (
+    audioFormat !== 1 ||
+    bitsPerSample !== 16 ||
+    !Number.isFinite(numChannels) ||
+    !Number.isFinite(sampleRate) ||
+    dataOffset === null ||
+    dataSize === null
+  ) {
+    return filePath;
+  }
+  if (dataOffset + dataSize > buf.length) return filePath;
+
+  const inputData = buf.slice(dataOffset, dataOffset + dataSize);
+  const needsStereo = forceStereo && numChannels === 1;
+  const outChannels = needsStereo ? 2 : numChannels;
+  const outDataSize = needsStereo ? dataSize * 2 : dataSize;
+  const outData = Buffer.allocUnsafe(outDataSize);
+  const clamp = (v) => {
+    if (v > 32767) return 32767;
+    if (v < -32768) return -32768;
+    return v;
+  };
+  if (needsStereo) {
+    let outIdx = 0;
+    for (let i = 0; i + 1 < inputData.length; i += 2) {
+      const s = inputData.readInt16LE(i);
+      const v = clamp(Math.round(s * gain));
+      outData.writeInt16LE(v, outIdx);
+      outData.writeInt16LE(v, outIdx + 2);
+      outIdx += 4;
+    }
+  } else if (gain > 1) {
+    for (let i = 0; i + 1 < inputData.length; i += 2) {
+      const s = inputData.readInt16LE(i);
+      const v = clamp(Math.round(s * gain));
+      outData.writeInt16LE(v, i);
+    }
+  } else {
+    inputData.copy(outData);
+  }
+
+  const cacheDir = path.join(os.tmpdir(), 'pphc-audio');
+  const gainLabel = String(gain).replace(/[^0-9A-Za-z_.-]/g, '') || '1';
+  const base = path.basename(filePath, path.extname(filePath));
+  const stereoLabel = needsStereo ? '-stereo' : '';
+  const outPath = path.join(cacheDir, `${base}-gain${gainLabel}${stereoLabel}.wav`);
+  try {
+    await fs.promises.mkdir(cacheDir, { recursive: true });
+    const header = Buffer.alloc(44);
+    header.write('RIFF', 0);
+    header.writeUInt32LE(36 + outData.length, 4);
+    header.write('WAVE', 8);
+    header.write('fmt ', 12);
+    header.writeUInt32LE(16, 16);
+    header.writeUInt16LE(1, 20);
+    header.writeUInt16LE(outChannels, 22);
+    header.writeUInt32LE(sampleRate, 24);
+    const blockAlign = (outChannels * bitsPerSample) / 8;
+    header.writeUInt32LE(sampleRate * blockAlign, 28);
+    header.writeUInt16LE(blockAlign, 32);
+    header.writeUInt16LE(bitsPerSample, 34);
+    header.write('data', 36);
+    header.writeUInt32LE(outData.length, 40);
+    await fs.promises.writeFile(outPath, Buffer.concat([header, outData]));
+    audioTransformCache.set(key, outPath);
+    return outPath;
+  } catch {
+    return filePath;
+  }
+}
+
+function getAplayDeviceCandidates() {
+  const devices = [];
+  if (ALSA_DEVICE) devices.push(ALSA_DEVICE);
+  devices.push('default');
+  if (IS_LINUX) {
+    const card = String(ALSA_CARD || '').trim();
+    if (card) {
+      devices.push(`dmix:CARD=${card},DEV=0`);
+      devices.push(`plughw:CARD=${card},DEV=0`);
+      devices.push(`hw:CARD=${card},DEV=0`);
+    }
+  }
+  return [...new Set(devices.filter(Boolean))];
+}
+
+function spawnAplay(args) {
+  return new Promise((resolve) => {
+    const child = spawn('aplay', args, { stdio: ['ignore', 'ignore', 'pipe'] });
+    let stderr = '';
+    let settled = false;
+    const done = (result) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+    child.stderr?.on('data', (d) => {
+      const text = d.toString();
+      stderr += text;
+      console.warn('[PPHC] aplay stderr', text.trim());
+    });
+    child.on('error', (err) => {
+      done({ ok: false, error: err?.message || String(err), fatal: err?.code === 'ENOENT' });
+    });
+    child.on('close', (code) => {
+      done({ ok: code === 0, code, stderr: stderr.trim() });
+    });
+  });
+}
+
+function isBusyError(result) {
+  const text = [result?.error, result?.stderr].filter(Boolean).join(' ');
+  if (!text) return false;
+  const lowered = text.toLowerCase();
+  return (
+    lowered.includes('resource busy') ||
+    lowered.includes('device busy') ||
+    lowered.includes('ebusy') ||
+    text.includes('设备或资源忙')
+  );
+}
+
+function waitMs(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function spawnPwPlay(filePath) {
+  return new Promise((resolve) => {
+    const bin = findExecutable('pw-play');
+    if (!bin) {
+      resolve({ ok: false, error: 'pw-play not found', fatal: true });
+      return;
+    }
+    const child = spawn(bin, [filePath], { stdio: ['ignore', 'ignore', 'pipe'] });
+    let stderr = '';
+    let settled = false;
+    const done = (result) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+    child.stderr?.on('data', (d) => {
+      const text = d.toString();
+      stderr += text;
+      console.warn('[PPHC] pw-play stderr', text.trim());
+    });
+    child.on('error', (err) => {
+      done({ ok: false, error: err?.message || String(err) });
+    });
+    child.on('close', (code) => {
+      done({ ok: code === 0, code, stderr: stderr.trim() });
+    });
+  });
+}
+
 function playWav(filePath, player, sox, aplayArgs) {
   let wavForPlay = filePath;
   const cleanup = [];
@@ -607,14 +838,34 @@ async function playPromptSound(key) {
   const full = rel ? resolveResourcePath(rel) : null;
   if (!full) return { ok: false, error: 'missing audio file' };
 
-  return new Promise((resolve) => {
-    const args = ['-q'];
-    if (ALSA_DEVICE) args.push('-D', ALSA_DEVICE);
-    args.push(full);
-    const child = spawn('aplay', args, { stdio: ['ignore', 'ignore', 'pipe'] });
-    child.stderr?.on('data', (d) => console.warn('[PPHC] aplay stderr', d.toString().trim()));
-    child.on('error', (err) => resolve({ ok: false, error: err?.message || String(err) }));
-    child.on('close', (code) => resolve({ ok: code === 0, code }));
+  return enqueueAudioPlay(async () => {
+    if (IS_LINUX) {
+      await ensureAudioOutputsOn().catch(() => {});
+    }
+    const playable = await transformWavForPlayback(full);
+    const preferPwPlay = IS_LINUX && AUDIO_PLAYER === 'pw-play';
+    if (preferPwPlay) {
+      const result = await spawnPwPlay(playable);
+      if (result.ok) return { ok: true, player: 'pw-play' };
+    }
+    const devices = getAplayDeviceCandidates();
+    let lastResult = null;
+    for (const device of devices) {
+      const args = ['-q', '-D', device, playable];
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const result = await spawnAplay(args);
+        if (result.ok) return { ok: true, device };
+        lastResult = result;
+        if (result.fatal) return { ok: false, error: result.error || 'aplay failed' };
+        if (!isBusyError(result)) break;
+        await waitMs(200);
+      }
+    }
+    return {
+      ok: false,
+      error: lastResult?.error || lastResult?.stderr || 'aplay failed',
+      code: lastResult?.code,
+    };
   });
 }
 
