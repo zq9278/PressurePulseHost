@@ -34,3 +34,17 @@ Thumbs.db
 *.zip
 *.7z
 
+# Linux
+*.AppImage
+*.deb
+*.rpm
+*.snap
+*.flatpak
+*.pkg.tar.*
+*.tar
+*.tar.gz
+*.tgz
+*.tar.bz2
+*.tar.xz
+*.bz2
+*.xz
