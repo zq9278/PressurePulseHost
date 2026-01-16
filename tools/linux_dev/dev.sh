@@ -54,6 +54,7 @@ run_dev() {
   echo "[linux_dev] Starting dev..."
   ensure_mixer
   export PPHC_AUDIO_GAIN="${PPHC_AUDIO_GAIN:-2.0}"
+  export PPHC_DISABLE_APLAY="${PPHC_DISABLE_APLAY:-1}"
   env -u ELECTRON_RUN_AS_NODE npm run dev
 }
 

@@ -41,6 +41,8 @@ const ALSA_DEVICE = String(process.env.PPHC_ALSA_DEVICE || process.env.ALSA_DEVI
 const AUDIO_PLAYER = String(process.env.PPHC_AUDIO_PLAYER || '').trim();
 const AUDIO_GAIN = Number.parseFloat(process.env.PPHC_AUDIO_GAIN || '1');
 const AUDIO_FORCE_STEREO = String(process.env.PPHC_AUDIO_FORCE_STEREO || '1').trim().toLowerCase();
+const DISABLE_APLAY =
+  String(process.env.PPHC_DISABLE_APLAY || '').trim() === '1' || AUDIO_PLAYER === 'renderer';
 
 const LED_COUNT = Number.parseInt(process.env.PPHC_LED_COUNT, 10);
 const SPI_BUS = Number.parseInt(process.env.PPHC_SPI_BUS, 10);
@@ -77,6 +79,7 @@ const leds = IS_LINUX
 const BRIGHTNESS_PATH = IS_LINUX ? '/sys/class/backlight/backlight2/brightness' : null;
 const MAX_BRIGHTNESS_PATH = IS_LINUX ? '/sys/class/backlight/backlight2/max_brightness' : null;
 const DEFAULT_MAX_BRIGHTNESS = 255;
+const MIN_BRIGHTNESS = 15;
 let DATA_BASE_DIR;
 let LEGACY_BASE_DIR;
 let SETTINGS_PATH;
@@ -157,7 +160,7 @@ async function resolveMaxBrightness() {
 async function getBrightnessPercent() {
   if (!IS_LINUX || !BRIGHTNESS_PATH) {
     const percent = Number.isFinite(currentSettings.brightness)
-      ? Math.max(0, Math.min(100, currentSettings.brightness))
+      ? Math.max(MIN_BRIGHTNESS, Math.min(100, currentSettings.brightness))
       : 80;
     return { raw: 0, max: DEFAULT_MAX_BRIGHTNESS, percent };
   }
@@ -167,14 +170,20 @@ async function getBrightnessPercent() {
   return {
     raw,
     max,
-    percent: Math.max(0, Math.min(100, percent)),
+    percent: Math.max(MIN_BRIGHTNESS, Math.min(100, percent)),
   };
+}
+
+function clampBrightnessPercent(percent, opts = {}) {
+  const pctRaw = Number(percent);
+  if (!Number.isFinite(pctRaw)) return opts.allowZero ? 0 : MIN_BRIGHTNESS;
+  const min = opts.allowZero ? 0 : MIN_BRIGHTNESS;
+  return Math.max(min, Math.min(100, pctRaw));
 }
 
 async function setBrightnessPercent(percent, opts = {}) {
   if (!IS_LINUX || !BRIGHTNESS_PATH) {
-    const pctRaw = Number(percent);
-    const pct = Number.isFinite(pctRaw) ? Math.max(0, Math.min(100, pctRaw)) : 0;
+    const pct = clampBrightnessPercent(percent, opts);
     if (!opts.skipSave) {
       currentSettings.brightness = pct;
       saveSettings().catch(() => {});
@@ -182,8 +191,7 @@ async function setBrightnessPercent(percent, opts = {}) {
     return { raw: 0, max: DEFAULT_MAX_BRIGHTNESS, percent: pct };
   }
   const max = await resolveMaxBrightness();
-  const pctRaw = Number(percent);
-  const pct = Number.isFinite(pctRaw) ? Math.max(0, Math.min(100, pctRaw)) : 0;
+  const pct = clampBrightnessPercent(percent, opts);
   const raw = Math.round((pct / 100) * max);
   await fs.promises.writeFile(BRIGHTNESS_PATH, String(raw));
   if (!opts.skipSave) {
@@ -567,6 +575,8 @@ function findExecutable(bin) {
 }
 
 let audioQueue = Promise.resolve();
+let aplayDisabledUntil = 0;
+let lastAplayLogAt = 0;
 function enqueueAudioPlay(task) {
   const next = audioQueue.then(task, task);
   audioQueue = next.catch(() => {});
@@ -703,6 +713,15 @@ function getAplayDeviceCandidates() {
   return [...new Set(devices.filter(Boolean))];
 }
 
+function shouldLogAplayError() {
+  const now = Date.now();
+  if (now - lastAplayLogAt > 5000) {
+    lastAplayLogAt = now;
+    return true;
+  }
+  return false;
+}
+
 function spawnAplay(args) {
   return new Promise((resolve) => {
     const child = spawn('aplay', args, { stdio: ['ignore', 'ignore', 'pipe'] });
@@ -714,15 +733,17 @@ function spawnAplay(args) {
       resolve(result);
     };
     child.stderr?.on('data', (d) => {
-      const text = d.toString();
-      stderr += text;
-      console.warn('[PPHC] aplay stderr', text.trim());
+      stderr += d.toString();
     });
     child.on('error', (err) => {
       done({ ok: false, error: err?.message || String(err), fatal: err?.code === 'ENOENT' });
     });
     child.on('close', (code) => {
-      done({ ok: code === 0, code, stderr: stderr.trim() });
+      const trimmed = stderr.trim();
+      if (code !== 0 && trimmed && shouldLogAplayError()) {
+        console.warn('[PPHC] aplay stderr', trimmed);
+      }
+      done({ ok: code === 0, code, stderr: trimmed });
     });
   });
 }
@@ -741,6 +762,10 @@ function isBusyError(result) {
 
 function waitMs(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isAplayDisabled() {
+  return aplayDisabledUntil && Date.now() < aplayDisabledUntil;
 }
 
 function spawnPwPlay(filePath) {
@@ -848,6 +873,9 @@ async function playPromptSound(key) {
       const result = await spawnPwPlay(playable);
       if (result.ok) return { ok: true, player: 'pw-play' };
     }
+    if (DISABLE_APLAY || isAplayDisabled()) {
+      return { ok: false, error: 'aplay disabled' };
+    }
     const devices = getAplayDeviceCandidates();
     let lastResult = null;
     for (const device of devices) {
@@ -858,8 +886,10 @@ async function playPromptSound(key) {
         lastResult = result;
         if (result.fatal) return { ok: false, error: result.error || 'aplay failed' };
         if (!isBusyError(result)) break;
+        aplayDisabledUntil = Date.now() + 60000;
         await waitMs(200);
       }
+      if (isBusyError(lastResult)) break;
     }
     return {
       ok: false,
@@ -1079,10 +1109,7 @@ function validateLogin(username, password) {
     return { ok: true, role: 'engineer', username: 'slk' };
   }
   const accounts = Array.isArray(currentSettings.accounts) ? currentSettings.accounts : [];
-  let found = accounts.find((a) => String(a.username || '').trim() === user);
-  if (!found && user.toLowerCase() === 'admin') {
-    found = accounts.find((a) => String(a.username || '').trim().toLowerCase() === 'admin');
-  }
+  const found = accounts.find((a) => String(a.username || '').trim() === user);
   if (found && String(found.password || '') === pass) {
     clearLoginAttempt(user);
     return { ok: true, role: found.role || 'user', username: found.username };
@@ -1101,9 +1128,7 @@ function isAdminCredential(username, password) {
   const user = normalizeUsername(username);
   if (!user) return false;
   const accounts = Array.isArray(currentSettings.accounts) ? currentSettings.accounts : [];
-  const admin = accounts.find(
-    (a) => String(a.username || '').trim().toLowerCase() === user.toLowerCase(),
-  );
+  const admin = accounts.find((a) => String(a.username || '').trim() === user);
   return !!admin && admin.role === 'admin' && String(admin.password || '') === String(password || '');
 }
 
@@ -1148,6 +1173,8 @@ async function resetAccountPassword(payload = {}) {
   if (!username || !newPassword) throw new Error('missing username/password');
   if (actor && !isAdminCredential(actor, actorPassword)) throw new Error('unauthorized');
   const accounts = Array.isArray(currentSettings.accounts) ? currentSettings.accounts : [];
+  const exists = accounts.some((acc) => String(acc.username || '').trim() === username);
+  if (!exists) throw new Error('user not found');
   const next = accounts.map((acc) => {
     if (String(acc.username || '').trim() !== username) return acc;
     return { ...acc, password: newPassword };
@@ -1534,7 +1561,7 @@ app.whenReady().then(() => {
   });
   // 启动即关背光，1 秒后再恢复为目标亮度
   if (IS_LINUX) {
-    setBrightnessPercent(0, { skipSave: true }).catch(() => {});
+    setBrightnessPercent(0, { skipSave: true, allowZero: true }).catch(() => {});
     setTimeout(() => {
       if (Number.isFinite(currentSettings.brightness)) {
         setBrightnessPercent(currentSettings.brightness).catch(() => {});

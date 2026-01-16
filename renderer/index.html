@@ -115,7 +115,7 @@
           </div>
         </div>
         <form id="loginForm" autocomplete="off">
-          <label class="login-field">
+          <label class="login-field" for="loginUser">
             <span>用户名</span>
             <input
               type="text"
@@ -128,7 +128,7 @@
               data-osk-target="user"
             />
           </label>
-          <label class="login-field">
+          <label class="login-field" for="loginPass">
             <span>密码</span>
             <input
               type="password"
@@ -823,7 +823,7 @@
                       </div>
                       <div class="pill"><span>当前</span><strong id="settingsBrightnessValue">80%</strong></div>
                     </div>
-                    <input type="range" class="mac-slider" id="settingsBrightness" min="0" max="100" step="1" />
+                    <input type="range" class="mac-slider" id="settingsBrightness" min="15" max="100" step="1" />
                     <div class="setting-row">
                       <div class="meta">
                         <strong>屏保等待</strong>

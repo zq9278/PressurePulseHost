@@ -1547,13 +1547,15 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
 body.login-locked .app-shell {
-  filter: blur(6px);
+  filter: none;
+  opacity: 0.45;
   pointer-events: none;
-  transition: filter 0.3s ease;
+  transition: opacity 0.3s ease;
 }
 
 body.login-locked .bg-board {
-  filter: blur(2px);
+  filter: none;
+  opacity: 0.35;
 }
 
 body.keyboard-open .login-panel {
@@ -1561,6 +1563,10 @@ body.keyboard-open .login-panel {
 }
 
 body.keyboard-open #loginAddUserModal .modal-body {
+  transform: translateY(-340px);
+}
+
+body.keyboard-open #loginResetModal .modal-body {
   transform: translateY(-340px);
 }
 

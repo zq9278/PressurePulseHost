@@ -177,6 +177,9 @@
       loginResetTitle: '重置密码',
       loginResetHint: '设置新密码后确认。',
       usernameFormatHint: '用户名需为 6-20 位字母、数字或下划线',
+      usernameRequired: '请输入用户名',
+      usernameExists: '用户名已存在，请更换用户名',
+      usernameNotFound: '账号不存在，请核对后重试',
       passwordRequired: '请输入密码',
       roleAdmin: '管理员',
       roleOperator: '普通用户',
@@ -551,6 +554,9 @@
       loginResetTitle: 'Reset Password',
       loginResetHint: 'Set a new password to reset.',
       usernameFormatHint: 'Username must be 6-20 letters, numbers, or underscore',
+      usernameRequired: 'Username required',
+      usernameExists: 'Username already exists',
+      usernameNotFound: 'Username not found',
       passwordRequired: 'Password required',
       roleAdmin: 'Admin',
       roleOperator: 'User',
@@ -802,27 +808,112 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     tempHigh: new Audio('../resoure/Temperature-high.wav'),
     pressureHigh: new Audio('../resoure/Temperature-high.wav'),
   };
+  let startupAudioPlayed = false;
+  const logToMain = (level, message, stack) => {
+    if (api?.logToMain) {
+      api.logToMain({ level, message, stack });
+      return;
+    }
+    const fn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
+    fn(message, stack || '');
+  };
+  const playHtmlAudioSample = (key) =>
+    new Promise((resolve) => {
+      const src = audioMap[key]?.src;
+      if (!src) return resolve({ ok: false, error: 'missing audio source' });
+      const audio = new Audio(src);
+      audio.preload = 'auto';
+      const cleanup = () => {
+        audio.onended = null;
+        audio.onerror = null;
+      };
+      audio.onended = () => {
+        cleanup();
+        resolve({ ok: true });
+      };
+      audio.onerror = () => {
+        cleanup();
+        resolve({ ok: false, error: 'html5 audio error' });
+      };
+      try {
+        const playRes = audio.play();
+        if (playRes && typeof playRes.catch === 'function') {
+          playRes.catch((err) => {
+            cleanup();
+            resolve({ ok: false, error: err?.message || String(err) });
+          });
+        }
+      } catch (err) {
+        cleanup();
+        resolve({ ok: false, error: err?.message || String(err) });
+      }
+    });
+
+  async function runStartupAudioProbe() {
+    if (startupAudioPlayed) return;
+    startupAudioPlayed = true;
+    const keys = Object.keys(audioMap);
+    if (!keys.length) return;
+    const key = keys[Math.floor(Math.random() * keys.length)];
+    logToMain('info', `[audio-probe] start key=${key}`);
+    let apiResult = null;
+    if (api?.playPromptSound) {
+      try {
+        apiResult = await api.playPromptSound(key);
+      } catch (err) {
+        logToMain('warn', `[audio-probe] api.playPromptSound failed`, err?.message || String(err));
+      }
+    }
+    if (apiResult?.ok) {
+      logToMain('info', `[audio-probe] ok via main player key=${key}`);
+      return;
+    }
+    if (apiResult) {
+      logToMain(
+        'warn',
+        `[audio-probe] main player failed key=${key}`,
+        apiResult.error || apiResult.code || ''
+      );
+    }
+    const fallback = await playHtmlAudioSample(key);
+    if (fallback.ok) {
+      logToMain('info', `[audio-probe] ok via html5 audio key=${key}`);
+      return;
+    }
+    logToMain('error', `[audio-probe] html5 audio failed key=${key}`, fallback.error || '');
+  }
   const playSound = (key) => {
     if (key === 'pressureHigh') {
       if (!state.settings.pressureAlertSound) return;
     } else if (!state.settings.playChime) {
       return;
     }
+    const playFallback = () => {
+      const a = audioMap[key];
+      if (!a || typeof a.play !== 'function') return;
+      try {
+        a.currentTime = 0;
+        a.play().catch((err) => {
+          if (WEB_DEBUG) console.warn('[PPHC] audio play failed', key, err?.message || err);
+        });
+      } catch {}
+    };
     const mainPlay = api?.playPromptSound;
     if (typeof mainPlay === 'function') {
       try {
-        mainPlay(key).catch?.(() => {});
+        const res = mainPlay(key);
+        if (res && typeof res.then === 'function') {
+          res
+            .then((out) => {
+              if (!out || !out.ok) playFallback();
+            })
+            .catch(() => playFallback());
+          return;
+        }
         return;
       } catch {}
     }
-    const a = audioMap[key];
-    if (!a || typeof a.play !== 'function') return;
-    try {
-      a.currentTime = 0;
-      a.play().catch((err) => {
-        if (WEB_DEBUG) console.warn('[PPHC] audio play failed', key, err?.message || err);
-      });
-    } catch {}
+    playFallback();
   };
   if (WEB_DEBUG) {
     console.log('[PPHC] web debug mode enabled - serial and device calls are stubbed');
@@ -967,7 +1058,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   };
 
   const keyboardState = {
-    lang: 'zh',
+    lang: 'en',
     target: null,
     zone: 'default',
     visible: false,
@@ -979,19 +1070,21 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   let backspaceRepeatTimer = null;
   let backspaceRepeatDelay = null;
 
-  // Pinyin dictionary populated from @pinyin-pro/data (complete.json for max coverage)
+  // Pinyin dictionary populated from @pinyin-pro/data (modern.json for faster load).
   let PINYIN_INDEX = null;
   let PINYIN_PREFIX_INDEX = null;
   let PINYIN_LOAD_PROMISE = null;
   const PINYIN_DICT_URL = new URL(
-    '../node_modules/@pinyin-pro/data/json/complete.json',
+    '../node_modules/@pinyin-pro/data/json/modern.json',
     window.location.href
   ).toString();
 
 
   let brightnessApplyTimer = null;
   let volumeApplyTimer = null;
-  const clampBrightness = (val) => Math.max(0, Math.min(100, Math.round(Number(val) || 0)));
+  const MIN_BRIGHTNESS = 15;
+  const clampBrightness = (val) =>
+    Math.max(MIN_BRIGHTNESS, Math.min(100, Math.round(Number(val) || 0)));
   const clampVolume = (val) => Math.max(0, Math.min(100, Math.round(Number(val) || 0)));
   const clampFontScale = (val) => Math.max(0.8, Math.min(1.3, Number(val) || 1));
 
@@ -3286,11 +3379,11 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       const addModal = document.getElementById('loginAddUserModal');
       const resetModal = document.getElementById('loginResetModal');
       if (addModal && !addModal.hidden) {
-        handleLoginAddUserSubmit();
+        hideKeyboard();
         return;
       }
       if (resetModal && !resetModal.hidden) {
-        handleLoginResetSubmit();
+        hideKeyboard();
         return;
       }
       attemptLogin();
@@ -3404,12 +3497,20 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
           if (keyLower === '←' || keyLower === 'backspace' || keyLower === '退格') {
             btn.addEventListener('pointerdown', (e) => {
               e.preventDefault();
+              e.stopPropagation();
               startBackspaceRepeat();
             });
-            btn.addEventListener('pointerup', () => stopBackspaceRepeat());
-            btn.addEventListener('pointerleave', () => stopBackspaceRepeat());
+            btn.addEventListener('pointerup', (e) => {
+              e.stopPropagation();
+              stopBackspaceRepeat();
+            });
+            btn.addEventListener('pointerleave', (e) => {
+              e.stopPropagation();
+              stopBackspaceRepeat();
+            });
           } else {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+              e.stopPropagation();
               handleKeyboardKey(label);
             });
           }
@@ -3427,6 +3528,9 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     keyboardState.candidates = [];
     keyboardState.candidatePage = 0;
     renderImeCandidates();
+    if (next === 'zh' && !PINYIN_INDEX && !PINYIN_LOAD_PROMISE) {
+      schedulePinyinLoad();
+    }
     document.querySelectorAll('.osk-lang-btn').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.lang === next);
     });
@@ -3441,6 +3545,16 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     if (backspaceRepeatDelay) {
       clearTimeout(backspaceRepeatDelay);
       backspaceRepeatDelay = null;
+    }
+  }
+
+  function schedulePinyinLoad() {
+    if (PINYIN_LOAD_PROMISE || PINYIN_INDEX) return;
+    const load = () => loadPinyinIndex();
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(load, { timeout: 1000 });
+    } else {
+      setTimeout(load, 200);
     }
   }
 
@@ -3853,6 +3967,10 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       setLoginLocked(state.loginLockedUntil - Date.now());
       return false;
     }
+    if (!user) {
+      setLoginError(t('usernameRequired'));
+      return false;
+    }
     if (!pass) {
       setLoginError(t('passwordRequired'));
       return false;
@@ -3958,6 +4076,15 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       setTimeout(closeLoginAddUserModal, 800);
     } catch (err) {
       console.warn('[PPHC] add user failed', err);
+      const msg = String(err?.message || err || '');
+      if (msg.includes('exists')) {
+        setLoginAddUserMessage(t('usernameExists'), true);
+        return;
+      }
+      if (msg.includes('unauthorized')) {
+        setLoginAddUserMessage(t('adminOnly'), true);
+        return;
+      }
       setLoginAddUserMessage(t('loginAddFailed'), true);
     }
   }
@@ -3985,10 +4112,14 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const password = document.getElementById('resetPassword')?.value || '';
     const password2 = document.getElementById('resetPassword2')?.value || '';
     if (!username) {
-      setLoginResetMessage(t('accountsAddFailed'), true);
+      setLoginResetMessage(t('usernameRequired'), true);
       return;
     }
-    if (!password || password !== password2) {
+    if (!password) {
+      setLoginResetMessage(t('passwordRequired'), true);
+      return;
+    }
+    if (password !== password2) {
       setLoginResetMessage(t('accountsPasswordMismatch'), true);
       return;
     }
@@ -4003,6 +4134,15 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       setTimeout(closeLoginResetModal, 800);
     } catch (err) {
       console.warn('[PPHC] reset password failed', err);
+      const msg = String(err?.message || err || '');
+      if (msg.includes('not found')) {
+        setLoginResetMessage(t('usernameNotFound'), true);
+        return;
+      }
+      if (msg.includes('unauthorized')) {
+        setLoginResetMessage(t('adminOnly'), true);
+        return;
+      }
       setLoginResetMessage(t('loginResetFailed'), true);
     }
   }
@@ -4083,6 +4223,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     startAutoSaveTimer();
     checkAutoSaveRestore();
     updateBottomNav();
+    showAlert(t('loginSuccess').replace('{user}', state.user.username || '--'), LOGIN_TOAST_DURATION, 'success');
   }
 
   function initLoginOverlay() {
@@ -4111,9 +4252,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     });
     keyboardState.target = null;
     bindKeyboardControls();
-    setKeyboardLang('zh');
-    // preload dict in idle time to reduce首次输入抖动
-    setTimeout(() => loadPinyinIndex(), 0);
+    setKeyboardLang('en');
     setLoginError(null);
 
     overlay.addEventListener('click', (e) => {
@@ -4157,6 +4296,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     if (userInput) userInput.value = LOGIN_CREDENTIALS.username;
     if (passInput) passInput.value = '';
     setLoginError(null);
+    setKeyboardLang('en');
     hideKeyboard();
     showView('home');
     stopAutoSaveTimer();
@@ -4213,6 +4353,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       }
       const active = document.activeElement;
       if (isOskEligibleInput(active) && target.closest('.modal')) return;
+      if (document.body.classList.contains('view-login') && target.closest('.login-panel')) return;
       if (document.body.classList.contains('view-newPatient') && target.closest('#newPatientScreen')) return;
       hideKeyboard();
     });
@@ -5201,6 +5342,15 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       hideKeyboard();
     } catch (err) {
       console.warn('[PPHC] add account failed', err);
+      const msg = String(err?.message || err || '');
+      if (msg.includes('exists')) {
+        setAccountsMessage(t('usernameExists'), true);
+        return;
+      }
+      if (msg.includes('unauthorized')) {
+        setAccountsMessage(t('adminOnly'), true);
+        return;
+      }
       setAccountsMessage(t('accountsAddFailed'), true);
     }
   }
@@ -6194,6 +6344,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const brightness = document.getElementById('settingsBrightness');
     if (brightness) {
       brightness.value = clampBrightness(state.settings.brightness);
+      brightness.min = String(MIN_BRIGHTNESS);
       bindRangeFill(brightness);
       brightness.addEventListener('input', () => {
         requestBrightnessApply(brightness.value);
@@ -6757,6 +6908,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       startHeroClock();
     }
     console.info('[PPHC] init done');
+    setTimeout(runStartupAudioProbe, 800);
   }
 
   window.addEventListener('DOMContentLoaded', init);
