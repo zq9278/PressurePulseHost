@@ -1209,13 +1209,19 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     let startY = 0;
     let startTime = 0;
     let tracking = false;
+    let touchId = null;
     document.addEventListener(
       'touchstart',
       (e) => {
         if (!shouldHandleSwipe(e.target)) return;
-        const touch = e.touches?.[0];
-        if (!touch) return;
+        if (!e.touches || e.touches.length !== 1) {
+          tracking = false;
+          touchId = null;
+          return;
+        }
+        const touch = e.touches[0];
         tracking = true;
+        touchId = touch.identifier;
         startX = touch.clientX;
         startY = touch.clientY;
         startTime = Date.now();
@@ -1224,8 +1230,21 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     );
     document.addEventListener('touchend', (e) => {
       if (!tracking) return;
+      if (e.touches && e.touches.length > 0) {
+        tracking = false;
+        touchId = null;
+        return;
+      }
+      const changed = e.changedTouches || [];
+      let touch = null;
+      for (let i = 0; i < changed.length; i += 1) {
+        if (touchId == null || changed[i].identifier === touchId) {
+          touch = changed[i];
+          break;
+        }
+      }
       tracking = false;
-      const touch = e.changedTouches?.[0];
+      touchId = null;
       if (!touch) return;
       const dx = touch.clientX - startX;
       const dy = touch.clientY - startY;
@@ -1239,6 +1258,10 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       const nextIndex = dx < 0 ? Math.min(sequence.length - 1, idx + 1) : Math.max(0, idx - 1);
       if (nextIndex === idx) return;
       showView(sequence[nextIndex]);
+    });
+    document.addEventListener('touchcancel', () => {
+      tracking = false;
+      touchId = null;
     });
   }
 
