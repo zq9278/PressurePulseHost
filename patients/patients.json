@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "id": "P0001",
+    "name": "张奇",
+    "gender": "男",
+    "phone": "12343",
+    "birth": "2026-01-19",
+    "notes": "",
+    "therapist": "ww",
+    "deviceModel": "ww",
+    "status": "active",
+    "photoData": null,
+    "lastTreatment": null,
+    "lastParams": null,
+    "createdAt": "2026-01-19T05:53:50.587Z",
+    "updatedAt": "2026-01-19T05:53:50.587Z"
+  }
+]

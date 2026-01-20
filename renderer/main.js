@@ -6,6 +6,8 @@
   const $$ = (q) => Array.from(document.querySelectorAll(q));
   const api = window.api;
   const WEB_DEBUG = !!window.__PPHC_WEBDEBUG__;
+  const ENABLE_BOTTOM_NAV = false;
+  const ENABLE_SWIPE_NAV = false;
 
   // Basic error logging so UI issues are visible in DevTools console
   window.addEventListener('error', (e) => {
@@ -73,6 +75,9 @@
       patientPhoto: '面部照片',
       patientCreatedAt: '建档日期',
       patientDetail: '详情',
+      patientTreat: '治疗',
+      patientPageLabel: '第 {page} 页',
+      patientSelectPage: '全选此页',
       datePickerToday: '今天',
       datePickerCancel: '取消',
       datePickerBack: '返回',
@@ -450,6 +455,9 @@
       patientPhoto: 'Photo',
       patientCreatedAt: 'Created',
       patientDetail: 'Details',
+      patientTreat: 'Treat',
+      patientPageLabel: 'Page {page}',
+      patientSelectPage: 'Select This Page',
       datePickerToday: 'Today',
       datePickerCancel: 'Cancel',
       datePickerBack: 'Back',
@@ -931,6 +939,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   const AUTO_SAVE_KEY = 'pphc.autosave';
   const OP_HISTORY_KEY = 'pphc.history';
   const MAX_HISTORY = 80;
+  const PATIENT_LIST_PAGE_SIZE = 10;
   const CALIBRATION_INTERVAL_DAYS = 180;
 
   const KEYBOARD_LAYOUTS = {
@@ -1021,6 +1030,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       therapist: '',
       deviceModel: '',
     },
+    patientListPage: 0,
     selectedPatientId: null,
     treatmentPatientId: null,
     systemState: null,
@@ -1160,6 +1170,10 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   function updateBottomNav() {
     const nav = document.getElementById('bottomNav');
     if (!nav) return;
+    if (!ENABLE_BOTTOM_NAV) {
+      nav.hidden = true;
+      return;
+    }
     const activeView = getActiveNavView();
     nav.hidden = !state.loggedIn;
     nav.querySelectorAll('.nav-item').forEach((btn) => {
@@ -1170,6 +1184,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   }
 
   function bindBottomNav() {
+    if (!ENABLE_BOTTOM_NAV) return;
     const nav = document.getElementById('bottomNav');
     if (!nav || nav._bound) return;
     nav._bound = true;
@@ -1203,6 +1218,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   }
 
   function bindSwipeNav() {
+    if (!ENABLE_SWIPE_NAV) return;
     if (document.body._swipeNavBound) return;
     document.body._swipeNavBound = true;
     let startX = 0;
@@ -1922,8 +1938,13 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   function renderPatientList() {
     const listNode = document.getElementById('patientList');
     const emptyNode = document.getElementById('patientListEmpty');
+    const pagerNode = document.getElementById('patientListPager');
+    const pagerButtons = document.getElementById('patientPageButtons');
+    const selectPageBtn = document.getElementById('btnSelectPatientPage');
     if (!listNode) return;
     listNode.innerHTML = '';
+    if (pagerButtons) pagerButtons.innerHTML = '';
+    if (selectPageBtn) selectPageBtn.onclick = null;
     const patients = Array.isArray(state.patients) ? state.patients : [];
     state.selectedPatientIds = state.selectedPatientIds.filter((id) =>
       patients.some((p) => String(p?.id || '') === id)
@@ -1965,6 +1986,39 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       }
       return true;
     });
+    const pageSize = PATIENT_LIST_PAGE_SIZE;
+    const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const currentPage = clampNumber(state.patientListPage, 0, pageCount - 1, 0);
+    state.patientListPage = currentPage;
+    const pageStart = currentPage * pageSize;
+    const pageItems = filtered.slice(pageStart, pageStart + pageSize);
+    if (pagerNode) pagerNode.hidden = false;
+    if (pagerButtons) {
+      const template = t('patientPageLabel');
+      for (let i = 0; i < pageCount; i += 1) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ghost-btn patient-page-btn';
+        btn.textContent = template.includes('{page}')
+          ? template.replace('{page}', String(i + 1))
+          : String(i + 1);
+        btn.classList.toggle('active', i === currentPage);
+        btn.addEventListener('click', () => {
+          state.patientListPage = i;
+          renderPatientList();
+        });
+        pagerButtons.appendChild(btn);
+      }
+    }
+    if (selectPageBtn) {
+      selectPageBtn.disabled = !pageItems.length;
+      selectPageBtn.onclick = () => {
+        const ids = pageItems.map((item) => String(item?.id || '')).filter(Boolean);
+        state.selectedPatientIds = ids;
+        state.selectedPatientId = ids[0] || null;
+        renderPatientList();
+      };
+    }
     if (!filtered.length) {
       if (emptyNode) emptyNode.hidden = false;
       return;
@@ -1986,6 +2040,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       { key: 'patientBirth', className: 'birth' },
       { key: 'patientNotes', className: 'notes' },
       { key: 'patientCreatedAt', className: 'created' },
+      { key: 'patientTreat', className: 'treat' },
       { key: 'patientDetail', className: 'detail' },
     ];
     headerCells.forEach(({ key, className }) => {
@@ -1996,7 +2051,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     });
     table.appendChild(headerRow);
 
-    filtered.forEach((p) => {
+    pageItems.forEach((p) => {
       const row = document.createElement('div');
       row.className = 'patient-row';
       const pid = String(p.id || '');
@@ -2046,6 +2101,18 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
         cell.textContent = values[col];
         row.appendChild(cell);
       });
+      const treatCell = document.createElement('div');
+      treatCell.className = 'patient-cell treat';
+      const treatBtn = document.createElement('button');
+      treatBtn.type = 'button';
+      treatBtn.className = 'ghost-btn';
+      treatBtn.textContent = t('patientTreat');
+      treatBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openTreatmentForPatient(p);
+      });
+      treatCell.appendChild(treatBtn);
+      row.appendChild(treatCell);
       const detailCell = document.createElement('div');
       detailCell.className = 'patient-cell detail';
       const detailBtn = document.createElement('button');
@@ -2109,6 +2176,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const nameInput = document.getElementById('filterPatientName');
     const therapistInput = document.getElementById('filterTherapist');
     const deviceInput = document.getElementById('filterDeviceModel');
+    state.patientListPage = 0;
     state.patientFilters = {
       startDate: startInput?.value || '',
       endDate: endInput?.value || '',
@@ -2121,6 +2189,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   }
 
   function resetPatientFilters() {
+    state.patientListPage = 0;
     state.patientFilters = {
       startDate: '',
       endDate: '',
@@ -2389,7 +2458,17 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   };
 
 
-    function openReportForPatient(patient) {
+  function openTreatmentForPatient(patient) {
+    if (!patient) return;
+    const id = String(patient.id || '').trim();
+    state.activePatient = patient;
+    state.selectedPatientId = id || null;
+    state.selectedPatientIds = id ? [id] : [];
+    state.treatmentPatientId = id || null;
+    showView('quick');
+  }
+
+  function openReportForPatient(patient) {
     if (!patient) return;
     state.activePatient = patient;
     showView('report');
@@ -3331,6 +3410,17 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     document.body.style.removeProperty('--keyboard-shift');
   }
 
+  function getTranslateY(node) {
+    if (!node) return 0;
+    const transform = getComputedStyle(node).transform;
+    if (!transform || transform === 'none') return 0;
+    const match = transform.match(/^matrix(3d)?\((.+)\)$/);
+    if (!match) return 0;
+    const values = match[2].split(',').map((v) => parseFloat(v.trim()));
+    if (match[1] === '3d') return values[13] || 0;
+    return values[5] || 0;
+  }
+
   function updateKeyboardShiftForTarget(target) {
     if (!document.body.classList.contains('view-newPatient')) {
       clearKeyboardShift();
@@ -3356,14 +3446,18 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const margin = 24;
     const currentShift =
       parseFloat(getComputedStyle(document.body).getPropertyValue('--keyboard-shift')) || 0;
-    const effectiveBottom = targetRect.bottom + currentShift;
+    const formNode = target.closest('.patient-form') || document.querySelector('.patient-form');
+    const actualShift = Math.max(0, -getTranslateY(formNode));
+    const effectiveBottom = targetRect.bottom + actualShift;
     const overlap = effectiveBottom - (keyboardTop - margin);
     if (overlap > 0) {
-      const shift = overlap;
-      document.body.style.setProperty('--keyboard-shift', `${Math.ceil(shift)}px`);
+      const shift = Math.ceil(overlap);
+      const nextShift = Math.max(currentShift, shift);
+      document.body.style.setProperty('--keyboard-shift', `${nextShift}px`);
       document.body.classList.add('keyboard-shift');
       return;
     }
+    if (document.body.classList.contains('keyboard-open') && currentShift > 0) return;
     clearKeyboardShift();
   }
 
@@ -4171,11 +4265,16 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   }
 
   function setKeyboardTarget(input) {
+    const prevTarget = keyboardState.target;
+    const prevZone = keyboardState.zone;
     keyboardState.target = input || null;
     const zone = input?.dataset?.oskZone || 'default';
     keyboardState.zone = KEYBOARD_HOSTS[zone] ? zone : 'default';
     if (input) {
       focusEnd(input);
+      if (keyboardState.visible && prevTarget === input && prevZone === keyboardState.zone) {
+        return;
+      }
       showKeyboard();
       renderImeCandidates();
       requestAnimationFrame(() => updateKeyboardShiftForTarget(input));
@@ -4351,14 +4450,30 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   function bindOskInputs() {
     if (oskInputsBound) return;
     oskInputsBound = true;
+    document.addEventListener(
+      'pointerdown',
+      (e) => {
+        const rawTarget = e.target;
+        const target = rawTarget instanceof Element ? rawTarget : rawTarget?.parentElement;
+        if (!target) return;
+        if (target.closest('.osk')) return;
+        const row = target.closest('.form-row');
+        if (!row) return;
+        const candidates = Array.from(row.querySelectorAll('input, textarea'));
+        const rowInput = candidates.find((item) => isOskEligibleInput(item));
+        if (rowInput) setKeyboardTarget(rowInput);
+      },
+      { capture: true }
+    );
     document.addEventListener('focusin', (e) => {
       const target = e.target;
       if (!isOskEligibleInput(target)) return;
       setKeyboardTarget(target);
     });
     document.addEventListener('click', (e) => {
-      const target = e.target;
-      if (!(target instanceof Element)) return;
+      const rawTarget = e.target;
+      const target = rawTarget instanceof Element ? rawTarget : rawTarget?.parentElement;
+      if (!target) return;
       if (target.closest('.osk')) return;
       const label = target.closest('label[for]');
       if (label) {
@@ -4366,6 +4481,15 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
         const labeledInput = labelFor ? document.getElementById(labelFor) : null;
         if (isOskEligibleInput(labeledInput)) {
           setKeyboardTarget(labeledInput);
+          return;
+        }
+      }
+      const row = target.closest('.form-row');
+      if (row) {
+        const candidates = Array.from(row.querySelectorAll('input, textarea'));
+        const rowInput = candidates.find((item) => isOskEligibleInput(item));
+        if (rowInput) {
+          setKeyboardTarget(rowInput);
           return;
         }
       }
@@ -4377,7 +4501,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       const active = document.activeElement;
       if (isOskEligibleInput(active) && target.closest('.modal')) return;
       if (document.body.classList.contains('view-login') && target.closest('.login-panel')) return;
-      if (document.body.classList.contains('view-newPatient') && target.closest('#newPatientScreen')) return;
       hideKeyboard();
     });
   }
@@ -4680,6 +4803,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     set('#filterTherapistLabel', 'filterTherapist');
     set('#filterDeviceLabel', 'filterDevice');
     set('#btnClearFilters', 'filterReset');
+    set('#btnSelectPatientPage', 'patientSelectPage');
 
     const dpModal = document.getElementById('datePickerModal');
     if (dpModal && !dpModal.hidden) renderDatePicker();
@@ -6524,6 +6648,9 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       'filterTherapist',
       'filterDeviceModel',
       'btnClearFilters',
+      'patientListPager',
+      'patientPageButtons',
+      'btnSelectPatientPage',
       'patientDeleteModal',
       'patientDeleteCancel',
       'patientDeleteConfirm',

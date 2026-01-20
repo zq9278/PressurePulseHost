@@ -618,6 +618,7 @@
               <button id="btnDeletePatient" class="ghost-btn" type="button">删除</button>
               <button id="btnUndoPatientDelete" class="ghost-btn" type="button" disabled>撤销删除</button>
               <button id="btnClearPatients" class="ghost-btn" type="button">清空</button>
+              <button id="btnSelectPatientPage" class="ghost-btn" type="button">全选此页</button>
             </div>
           </header>
 
@@ -649,6 +650,9 @@
 
           <div id="patientListEmpty" class="empty-tip" hidden>暂无病例，请先创建。</div>
           <div id="patientList" class="patient-list"></div>
+          <div id="patientListPager" class="patient-pager" hidden>
+            <div id="patientPageButtons" class="patient-page-buttons"></div>
+          </div>
         </div>
       </section>
 
@@ -1016,7 +1020,7 @@
 
     </div>
 
-    <nav class="bottom-nav" id="bottomNav">
+    <nav class="bottom-nav" id="bottomNav" hidden>
       <button type="button" data-view="quick" class="nav-item">
         <span class="nav-icon nav-icon-treatment"></span>
         <span class="label">治疗</span>
