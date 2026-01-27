@@ -857,7 +857,7 @@ async function playPromptSound(key) {
     start: 'resoure/Treatment-start.wav',
     stop: 'resoure/Treatment-stop.wav',
     tempHigh: 'resoure/Temperature-high.wav',
-    pressureHigh: 'resoure/Temperature-high.wav',
+    pressureHigh: 'resoure/pressure_woring.wav',
   };
   const rel = map[String(key || '').trim()] || null;
   const full = rel ? resolveResourcePath(rel) : null;
@@ -1462,6 +1462,7 @@ async function clearAllReports() {
 // 4) 创建窗口
 // =============================================
 function createWindow() {
+  const HIDE_CURSOR = true;
   mainWindow = new BrowserWindow({
     width: 2560,
     height: 1600,
@@ -1489,6 +1490,13 @@ function createWindow() {
   if (process.env.PPHC_DEBUG_WEB) query.debugWeb = '1';
   if (process.env.PPHC_DEBUG_MOUSE) query.debugMouse = '1';
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'), { query });
+
+  mainWindow.webContents.on('dom-ready', () => {
+    if (!HIDE_CURSOR || !mainWindow) return;
+    try {
+      mainWindow.webContents.insertCSS('html, body, * { cursor: none !important; }');
+    } catch {}
+  });
 
   mainWindow.webContents.once('did-finish-load', () => {
     // 等页面加载完再展示，减少背景色闪烁

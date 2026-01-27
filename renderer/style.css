@@ -34,8 +34,8 @@ body.theme-light {
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html, body { height: 100%; overflow: hidden; cursor: auto; }
-* { cursor: auto !important; }
+html, body { height: 100%; overflow: hidden; cursor: none; }
+* { cursor: none !important; }
 body {
   margin: 0;
   background: var(--bg-hero) !important;

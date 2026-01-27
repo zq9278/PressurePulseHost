@@ -328,7 +328,7 @@
       chimeLabel: '提示音',
       chimeHint: '重要操作播放提示',
       pressureAlertSoundLabel: '压力警示音',
-      pressureAlertSoundHint: '压力超过 250mmHg 时提示',
+      pressureAlertSoundHint: '压力超过目标值 50mmHg 时提示',
       deviceTitle: '设备连接',
       deviceStatusLabel: '设备状态',
       deviceStatusHint: '实时监测连接',
@@ -708,7 +708,7 @@
       chimeLabel: 'Chime',
       chimeHint: 'Play prompts on key actions',
       pressureAlertSoundLabel: 'Pressure Alert Sound',
-      pressureAlertSoundHint: 'Alert when pressure exceeds 250 mmHg',
+      pressureAlertSoundHint: 'Alert when pressure exceeds target by 50 mmHg',
       deviceTitle: 'Device',
       deviceStatusLabel: 'Status',
       deviceStatusHint: 'Real-time connection',
@@ -805,7 +805,8 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
 
   const MODE = { target: 20, t1: 25, t2: 35, t3: 50 };
   const TEMP_FIXED_C = 42.0;
-  const PRESSURE_ALERT_THRESHOLD = 250;
+  const PRESSURE_ALERT_OFFSET = 50;
+  const PRESSURE_ALERT_FALLBACK = 250;
   const PRESSURE_ALERT_SOUND_COOLDOWN = 5000;
   const AUTO_PORT = '/dev/ttyS1';
   const AUTO_BAUD = 115200;
@@ -814,8 +815,9 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     start: new Audio('../resoure/Treatment-start.wav'),
     stop: new Audio('../resoure/Treatment-stop.wav'),
     tempHigh: new Audio('../resoure/Temperature-high.wav'),
-    pressureHigh: new Audio('../resoure/Temperature-high.wav'),
+    pressureHigh: new Audio('../resoure/pressure_woring.wav'),
   };
+  const STARTUP_AUDIO_ENABLED = false;
   let startupAudioPlayed = false;
   const logToMain = (level, message, stack) => {
     if (api?.logToMain) {
@@ -5859,7 +5861,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   }
 
   function drawSparkline(canvas, data, color, cfg = {}) {
-    const { visibleMax, yMin, yMax, target, windowSize, history, axisTicks = 10 } = cfg || {};
+    const { visibleMax, yMin, yMax, target, windowSize, history } = cfg || {};
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -5893,7 +5895,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     minVal -= padding;
     maxVal += padding;
     const range = maxVal - minVal || 1;
-    const axisHeight = 22;
+    const axisHeight = 0;
     const plotHeight = Math.max(20, canvas.height - axisHeight);
     const yFor = (v) => plotHeight * (1 - (v - minVal) / range);
 
@@ -5945,31 +5947,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       ctx.restore();
     }
 
-    if (samples.length > 1) {
-      const tickEvery = Math.max(2, Number(axisTicks) || 10);
-      ctx.save();
-      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      ctx.lineWidth = 1;
-      ctx.font = '12px sans-serif';
-      const baseY = plotHeight + 6;
-      ctx.beginPath();
-      ctx.moveTo(0, plotHeight + 0.5);
-      ctx.lineTo(canvas.width, plotHeight + 0.5);
-      ctx.stroke();
-      const lastIdx = samples.length - 1;
-      for (let i = 0; i <= lastIdx; i += tickEvery) {
-        const x = (i / (samples.length - 1 || 1)) * canvas.width;
-        ctx.beginPath();
-        ctx.moveTo(x, plotHeight + 0.5);
-        ctx.lineTo(x, plotHeight + 6.5);
-        ctx.stroke();
-        const sec = i - lastIdx;
-        const label = `${sec}s`;
-        ctx.fillText(label, Math.max(0, x - 10), baseY + 12);
-      }
-      ctx.restore();
-    }
+    // Bottom axis removed for quick-treatment curves.
   }
 
   function getCurveWindowSize() {
@@ -6080,8 +6058,12 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   function updatePressureAlertStatus() {
     const leftVal = typeof state.latest[0] === 'number' ? state.latest[0] : NaN;
     const rightVal = typeof state.latest[2] === 'number' ? state.latest[2] : NaN;
-    const leftAlert = Number.isFinite(leftVal) && leftVal > PRESSURE_ALERT_THRESHOLD;
-    const rightAlert = Number.isFinite(rightVal) && rightVal > PRESSURE_ALERT_THRESHOLD;
+    const baseTarget = Number.isFinite(state.targets.pressure)
+      ? Number(state.targets.pressure)
+      : PRESSURE_ALERT_FALLBACK;
+    const threshold = baseTarget + PRESSURE_ALERT_OFFSET;
+    const leftAlert = Number.isFinite(leftVal) && leftVal > threshold;
+    const rightAlert = Number.isFinite(rightVal) && rightVal > threshold;
 
     const leftNodes = [document.getElementById('pressureLeft'), document.getElementById('pressureLeftLabel')];
     const rightNodes = [document.getElementById('pressureRight'), document.getElementById('pressureRightLabel')];
@@ -7058,7 +7040,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       startHeroClock();
     }
     console.info('[PPHC] init done');
-    setTimeout(runStartupAudioProbe, 800);
+    if (STARTUP_AUDIO_ENABLED) setTimeout(runStartupAudioProbe, 800);
   }
 
   window.addEventListener('DOMContentLoaded', init);
