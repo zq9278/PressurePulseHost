@@ -1,0 +1,783 @@
+﻿<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=2560, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'" />
+    <meta name="color-scheme" content="light dark" />
+    <title>睑板腺热脉冲控制中心</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="view-home">
+    <script>
+      (function() {
+        const params = new URLSearchParams(window.location.search || '');
+        let debugWeb = params.has('debugWeb');
+        const debugMouse = params.has('debugMouse') || debugWeb || location.protocol.startsWith('http');
+        if (!window.api) {
+          debugWeb = true; // fallback to stub when no electron preload
+        }
+        window.__PPHC_WEBDEBUG__ = debugWeb;
+        if (debugWeb) {
+          document.documentElement.classList.add('debug-web');
+        }
+        if (debugMouse) {
+          document.documentElement.classList.add('debug-mouse');
+        }
+        if (!window.api) {
+          const noop = () => {};
+          window.api = {
+            listPorts: async () => [],
+            connect: async () => false,
+            disconnect: async () => {},
+            sendU8: noop,
+            sendF32: noop,
+            sendU16: noop,
+            sendU32: noop,
+            sendText: noop,
+            exitApp: noop,
+            getBrightness: async () => ({ percent: 80, raw: 0, max: 255 }),
+            setBrightness: async () => ({ percent: 80, raw: 0, max: 255 }),
+            getVolume: async () => ({ percent: 60 }),
+            setVolume: async () => ({ percent: 60 }),
+            getPlayChime: async () => ({ on: true }),
+            setPlayChime: async () => ({ on: true }),
+            getPressureAlertSound: async () => ({ on: true }),
+            setPressureAlertSound: async () => ({ on: true }),
+            getSettings: async () => ({
+              language: 'zh',
+              theme: 'dark',
+              fontScale: 1,
+              autoConnect: true,
+              lastCalibrationAt: null,
+            }),
+            updateSettings: async (patch) => ({
+              language: patch?.language || 'zh',
+              theme: patch?.theme || 'dark',
+              fontScale: patch?.fontScale || 1,
+              autoConnect: patch?.autoConnect ?? true,
+              lastCalibrationAt: patch?.lastCalibrationAt ?? null,
+            }),
+            getPatients: async () => [],
+            addPatient: async (patient) => ({
+              id: patient?.id || `P${String(Date.now()).slice(-4)}`,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              ...patient,
+            }),
+            updatePatient: async (payload) => ({ id: payload?.id || 'P0001', ...(payload?.patch || {}) }),
+            restorePatients: async () => ({ success: true, restored: [] }),
+            listLogs: async () => [],
+            readLog: async () => '',
+            checkUpdates: async () => ({ currentVersion: '0.0.0', latestVersion: null, updateAvailable: false }),
+            listPrinters: async () => [{ name: 'Default Printer', displayName: 'Default Printer', isDefault: true }],
+            getPrinter: async () => ({ printerName: '' }),
+            setPrinter: async (name) => ({ printerName: name }),
+            printReport: async () => ({ success: true, failureReason: null }),
+            exportReportPdf: async () => ({ success: true, filePath: 'reports/demo.pdf' }),
+            exportReportData: async () => ({ success: true, filePath: 'reports/demo.doc' }),
+            listReports: async () => ([{ name: 'demo_P0001.pdf', url: 'about:blank', mtimeMs: Date.now(), size: 0, patientId: 'P0001' }]),
+            printReportPdf: async () => ({ success: true, failureReason: null }),
+            shareReport: async () => ({ success: true, filePath: 'reports/share/demo.pdf' }),
+            removePatient: async () => ({ success: true }),
+            clearPatients: async () => ({ success: true }),
+            removeReport: async () => ({ success: true }),
+            clearReports: async () => ({ success: true }),
+            login: async (username, password) => ({ ok: username === 'admin' && password === 'admin', role: 'admin', username }),
+            listAccounts: async () => ([{ username: 'admin', role: 'admin' }]),
+            addAccount: async (account) => ([{ username: 'admin', role: 'admin' }, { username: account.username, role: account.role || 'operator' }]),
+            removeAccount: async () => ([{ username: 'admin', role: 'admin' }]),
+            resetAccountPassword: async () => ([{ username: 'admin', role: 'admin' }]),
+            logToMain: noop,
+            onSerialData: () => {},
+            onConnectionChanged: () => {},
+            onHeartbeatAck: () => {},
+            onSystemState: () => {},
+            onAlarmState: () => {},
+            onModeCurves: () => {},
+            onStopTreatment: () => {},
+            onShieldState: () => {},
+          };
+        }
+      })();
+    </script>
+    <div id="loginOverlay" class="login-overlay active" aria-live="polite">
+      <div class="login-panel">
+        <div class="login-branding">
+          <div class="brand-logo">
+            <img src="../resoure/logo.png" alt="九辰医疗" />
+            <div class="brand-text">
+              <strong>九辰医疗</strong>
+            </div>
+          </div>
+          <div class="brand-title">
+            <h1>系统登录</h1>
+          </div>
+        </div>
+        <form id="loginForm" autocomplete="off">
+          <label class="login-field" for="loginUser">
+            <span>用户名</span>
+            <input
+              type="text"
+              id="loginUser"
+              class="login-input"
+              inputmode="none"
+              value="admin"
+              autocomplete="off"
+              spellcheck="false"
+              data-osk-target="user"
+            />
+          </label>
+          <label class="login-field" for="loginPass">
+            <span>密码</span>
+            <input
+              type="password"
+              id="loginPass"
+              class="login-input"
+              inputmode="none"
+              value="admin"
+              autocomplete="off"
+              spellcheck="false"
+              data-osk-target="pass"
+            />
+          </label>
+          <div class="login-error" id="loginError" hidden>
+            <span class="login-error-icon">⚠</span>
+            <span id="loginErrorText">账号或密码错误，请重试。</span>
+          </div>
+          <div class="login-actions">
+            <button type="button" id="loginSubmit" class="action primary-toggle">登录</button>
+          </div>
+        </form>
+      </div>
+      <div id="loginToast" class="login-toast" hidden></div>
+    </div>
+    <div class="osk osk-hidden" id="osk" data-lang="zh">
+      <div id="imeCandidates" class="ime-candidates osk-hidden"></div>
+      <div class="osk-header">
+        <div>
+          <div class="osk-overline">屏幕键盘</div>
+          <div class="osk-title">Screen Keyboard</div>
+        </div>
+        <div class="osk-lang">
+          <button type="button" class="osk-lang-btn active" data-lang="zh">中文</button>
+          <button type="button" class="osk-lang-btn" data-lang="en">English</button>
+        </div>
+      </div>
+      <div class="osk-keys" id="oskKeys"></div>
+    </div>
+    <div class="bg-board"></div>
+    <div class="app-shell" data-view="home">
+      <section id="homeScreen" class="screen home-screen">
+        <div class="hero-backdrop">
+          <div class="hero-glow hero-glow-left"></div>
+          <div class="hero-glow hero-glow-right"></div>
+          <div class="hero-grid">
+            <div class="hero-blade"></div>
+            <div class="hero-content">
+              <div class="hero-clock" id="heroClock">2025/09/16 15:30</div>
+              <div class="hero-nameplate">
+                <div class="hero-logo" aria-label="九辰医疗 9C-U-TPS">
+                  <img src="../resoure/logo.png" alt="九辰医疗标志" />
+                  <div class="hero-logo-text">
+                    <strong>九辰医疗</strong>
+                    <span>NINESTARS</span>
+                  </div>
+                </div>
+                <div class="hero-codename">9C-U-TPS</div>
+              </div>
+              <div class="hero-text">
+                <h1>眼板腺热脉动治疗仪</h1>
+                <p class="hero-subtitle">Thermal Pulsation System</p>
+                <p class="hero-desc">面向干眼诊疗的恒温恒压热脉动平台，融合九辰医疗 9C-U-TPS 研发经验与安全控制实力。</p>
+              </div>
+              <div class="hero-actions-home">
+                <button id="btnHomeQuick" class="hero-btn primary">
+                  <span class="label">开始治疗</span>
+                  <small>Start Session</small>
+                </button>
+                <button id="btnHomeDevice" class="hero-btn secondary">
+                  <span class="label">设备设置</span>
+                  <small>Device Settings</small>
+                </button>
+                <button id="btnHomeNewPatient" class="hero-btn tertiary">
+                  <span class="label">新建档案</span>
+                  <small>Create Profile</small>
+                </button>
+                <button id="btnHomePatientList" class="hero-btn tertiary">
+                  <span class="label">病例列表</span>
+                  <small>Patient Files</small>
+                </button>
+              </div>
+            </div>
+            <div class="hero-eye-texture">
+              <div class="hero-eye-core"></div>
+              <div class="hero-eye-ring hero-eye-ring-outer"></div>
+              <div class="hero-eye-ring hero-eye-ring-inner"></div>
+              <div class="hero-eye-scan"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      
+      <section id="quickScreen" class="screen quick-screen">
+        <div class="quick-container">
+          <header class="top-bar">
+            <button id="btnBackHome" class="icon-back" aria-label="返回主界面"><span>←</span></button>
+            <div class="section-title"></div>
+            <div class="top-placeholder"></div>
+          </header>
+
+          <div class="quick-grid">
+            <div class="telemetry-area">
+              <div class="quick-top-row">
+                <div class="surface summary-panel">
+                  <div class="panel-headline">
+                    <div>
+                      <div class="panel-title primary-title">压力 / 温度</div>
+                    </div>
+                    <div class="live-chip stage-chip stage-idle" id="modeStageChip">
+                      <span class="stage-eyebrow">当前阶段</span>
+                      <div class="stage-main">
+                        <span class="stage-orb"></span>
+                        <span class="stage-label">待机</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="circle-readings">
+                    <div class="reading-circle" data-side="left">
+                      <div class="ring"></div>
+                      <div class="circle-core">
+                      <div class="circle-label">左眼</div>
+                      <div class="circle-value">
+                          <span id="pressureLeft">0.0</span>
+                          <small>mmHg</small>
+                      </div>
+                      <div class="circle-temp">
+                        <strong id="tempLeft">--.-℃</strong>
+                      </div>
+                      </div>
+                    </div>
+                    <div class="reading-circle" data-side="right">
+                      <div class="ring"></div>
+                      <div class="circle-core">
+                      <div class="circle-label">右眼</div>
+                      <div class="circle-value">
+                          <span id="pressureRight">0.0</span>
+                          <small>mmHg</small>
+                      </div>
+                      <div class="circle-temp">
+                        <strong id="tempRight">--.-℃</strong>
+                      </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="surface curve-panel">
+                <div class="panel-headline">
+                  <div>
+                    <div class="panel-title primary-title">波形监控</div>
+                  </div>
+                  <div class="curve-tools">
+                    <div class="curve-legend">
+                      <span class="legend pressure-left">左眼压力</span>
+                      <span class="legend pressure-right">右眼压力</span>
+                      <span class="legend temp-left">左眼温度</span>
+                      <span class="legend temp-right">右眼温度</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="curve-grid">
+                  <div class="curve-card pressure">
+                    <div class="curve-head">
+                      <div>左眼压力</div>
+                      <div id="pressureLeftLabel">0.0 mmHg</div>
+                    </div>
+                    <canvas id="sparkPressureLeft" width="1024" height="260"></canvas>
+                  </div>
+                  <div class="curve-card pressure">
+                    <div class="curve-head">
+                      <div>右眼压力</div>
+                      <div id="pressureRightLabel">0.0 mmHg</div>
+                    </div>
+                    <canvas id="sparkPressureRight" width="1024" height="260"></canvas>
+                  </div>
+                  <div class="curve-card temp">
+                    <div class="curve-head">
+                      <div>左侧温度</div>
+                      <div id="tempLeftLabel">--.-℃</div>
+                    </div>
+                    <canvas id="sparkTempLeft" width="1024" height="260"></canvas>
+                  </div>
+                  <div class="curve-card temp">
+                    <div class="curve-head">
+                      <div>右侧温度</div>
+                      <div id="tempRightLabel">--.-℃</div>
+                    </div>
+                    <canvas id="sparkTempRight" width="1024" height="260"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="side-area">
+              <div class="surface shield-panel">
+                <div class="panel-title">眼盾状态</div>
+                <div class="shield-ovals">
+                  <div class="shield-oval offline" id="shieldLeft">
+                    <div class="shield-oval-label">左眼</div>
+                    <div class="shield-oval-state" id="shieldLeftState">未连接</div>
+                  </div>
+                  <div class="shield-oval offline" id="shieldRight">
+                    <div class="shield-oval-label">右眼</div>
+                    <div class="shield-oval-state" id="shieldRightState">未连接</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="surface treatment-panel">
+                <div class="control-stack">
+                  <div class="slider-card" data-kind="duration">
+                    <div class="slider-head">
+                      <div class="duration-title">
+                        <span class="eyebrow">治疗时间</span>
+                        <span class="duration-inline" id="durationTargetValue">12:00</span>
+                      </div>
+                      <div class="duration-values">
+                        <span class="countdown-chip" id="countdown">12:00</span>
+                      </div>
+                    </div>
+                    <input type="range" id="treatDuration" min="0" max="12" step="1" value="12" />
+                    <div class="slider-scale">
+                      <span>0</span>
+                      <span>6</span>
+                      <span>12</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="action-cluster">
+                  <button id="btnStartStop" class="action primary-toggle" disabled>开始</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="newPatientScreen" class="screen new-patient-screen">
+        <div class="form-shell">
+          <header class="top-bar">
+            <button id="btnBackNewPatient" class="icon-back" aria-label="返回主页"><span>←</span></button>
+            <div class="section-title">新建档案</div>
+            <div class="top-placeholder"></div>
+          </header>
+
+          <form id="patientForm" class="patient-form">
+            <div class="form-row">
+              <label for="patientId" id="lblPatientId">患者编号</label>
+              <input
+                type="text"
+                id="patientId"
+                name="patientId"
+                class="osk-input"
+                placeholder="P0001"
+                readonly
+              />
+            </div>
+            <div id="patientIdHint" class="form-msg info" hidden></div>
+            <div class="form-row">
+              <label for="patientName" id="lblPatientName">姓名</label>
+              <input
+                type="text"
+                id="patientName"
+                name="patientName"
+                placeholder="请输入姓名"
+                class="osk-input"
+                data-osk-target="patient-name"
+                data-osk-zone="patient"
+              />
+            </div>
+            <div class="form-row">
+              <label id="lblPatientGender">性别</label>
+              <div class="radio-group">
+                <label><input type="radio" name="patientGender" value="男" required checked /> 男</label>
+                <label><input type="radio" name="patientGender" value="女" /> 女</label>
+              </div>
+            </div>
+            <div class="form-row">
+              <label for="patientPhone" id="lblPatientPhone">联系电话</label>
+              <input
+                type="tel"
+                id="patientPhone"
+                name="patientPhone"
+                inputmode="tel"
+                placeholder="11 位手机号"
+                class="osk-input"
+                data-osk-target="patient-phone"
+                data-osk-zone="patient"
+              />
+            </div>
+            <div class="form-row">
+              <label for="patientBirth" id="lblPatientBirth">出生日期</label>
+              <input
+                type="text"
+                id="patientBirth"
+                name="patientBirth"
+                class="osk-input"
+                data-osk-target="patient-birth"
+                data-osk-zone="patient"
+                inputmode="numeric"
+                placeholder="xxxx-xx-xx"
+                required
+              />
+            </div>
+            <div class="form-actions">
+              <button type="button" id="btnGoPatientList" class="action subtle">查看列表</button>
+              <button type="submit" id="btnSavePatient" class="action start">保存档案</button>
+            </div>
+            <div id="patientFormMessage" class="form-msg" hidden></div>
+          </form>
+          <div class="osk osk-hidden patient-osk" id="patientOsk" data-lang="zh">
+            <div id="patientImeCandidates" class="ime-candidates osk-hidden"></div>
+            <div class="osk-header">
+              <div>
+                <div class="osk-overline">屏幕键盘</div>
+                <div class="osk-title">Screen Keyboard</div>
+              </div>
+              <div class="osk-lang">
+                <button type="button" class="osk-lang-btn active" data-lang="zh">中文</button>
+                <button type="button" class="osk-lang-btn" data-lang="en">English</button>
+              </div>
+            </div>
+            <div class="osk-keys" id="patientOskKeys"></div>
+          </div>
+        </div>
+      </section>
+
+      <div id="datePickerModal" class="modal date-picker-modal" hidden>
+        <div class="modal-body date-picker-body">
+          <div class="date-picker-header">
+            <button type="button" id="datePrevMonth" class="ghost-btn">←</button>
+            <div id="datePickerTitle" class="date-picker-title">2025-01</div>
+            <button type="button" id="dateNextMonth" class="ghost-btn">→</button>
+          </div>
+          <div id="datePickerYearPanel" class="date-picker-year-panel" hidden>
+            <div id="datePickerYearTitle" class="date-picker-year-title">选择年份</div>
+            <div id="datePickerYearList" class="date-picker-year-list"></div>
+            <div class="date-picker-year-actions">
+              <button type="button" id="datePickerBack" class="action subtle">返回</button>
+            </div>
+          </div>
+          <div id="datePickerWeekdays" class="date-picker-weekdays"></div>
+          <div id="datePickerGrid" class="date-picker-grid"></div>
+          <div class="date-picker-actions">
+            <button type="button" id="datePickerToday" class="action subtle">今天</button>
+            <button type="button" id="datePickerCancel" class="action subtle">取消</button>
+          </div>
+        </div>
+      </div>
+
+      <section id="patientListScreen" class="screen patient-list-screen">
+        <div class="form-shell">
+          <header class="top-bar">
+            <button id="btnBackPatientList" class="icon-back" aria-label="返回主页"><span>←</span></button>
+            <div class="section-title">病例列表</div>
+            <div class="top-actions">
+              <button id="btnDeletePatient" class="ghost-btn" type="button">删除</button>
+              <button id="btnClearPatients" class="ghost-btn" type="button">清空</button>
+              <button id="btnSelectPatientPage" class="ghost-btn" type="button">全选此页</button>
+            </div>
+          </header>
+
+          <div id="patientListEmpty" class="empty-tip" hidden>暂无病例，请先创建。</div>
+          <div id="patientList" class="patient-list"></div>
+          <div id="patientListPager" class="patient-pager" hidden>
+            <button id="patientPagePrev" class="ghost-btn pager-arrow" type="button">←</button>
+            <div id="patientPageLabel" class="patient-page-label">（第 1 页）</div>
+            <button id="patientPageNext" class="ghost-btn pager-arrow" type="button">→</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="reportScreen" class="screen report-screen">
+        <div class="report-shell">
+          <header class="top-bar">
+            <button id="btnBackReport" class="icon-back" aria-label="返回病例列表"><span>←</span></button>
+            <div class="section-title" id="reportScreenTitle">打印报告</div>
+            <div class="top-placeholder"></div>
+          </header>
+
+          <div class="report-container">
+            <div id="reportPage" class="report-page">
+              <div class="report-header">
+                <div class="report-title" id="reportHeaderTitle">Report</div>
+                <div class="report-subline" id="reportGeneratedAt"></div>
+              </div>
+
+              <section class="report-section">
+                <h3 id="reportPatientInfoTitle">患者信息</h3>
+                <div class="report-grid" id="reportPatientInfoGrid"></div>
+              </section>
+
+              <section class="report-section">
+                <h3 id="reportTreatmentInfoTitle">治疗信息</h3>
+                <div class="report-grid" id="reportTreatmentInfoGrid"></div>
+              </section>
+
+              <section class="report-section" id="reportSectionTips">
+                <h3 id="reportTipsTitle">干眼注意事项</h3>
+                <ul id="reportTipsList" class="report-list"></ul>
+              </section>
+
+              <section class="report-section" id="reportSectionDisclaimer">
+                <h3 id="reportDisclaimerTitle">医疗报告说明</h3>
+                <div id="reportDisclaimerText" class="report-text"></div>
+                <div class="report-sign">
+                  <div id="reportDoctorSign">医生签名：________________</div>
+                  <div id="reportDoctorDate">日期：________________</div>
+                </div>
+              </section>
+            </div>
+
+            <div id="reportActions" class="report-actions">
+              <div class="report-export-actions">
+                <button id="btnExportPdf" class="action subtle">导出</button>
+                <button id="btnPrintReport" class="action start">打印报告</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="reportArchiveScreen" class="screen report-archive-screen">
+        <div class="form-shell report-archive-shell">
+          <header class="top-bar">
+            <button id="btnBackReportArchive" class="icon-back" aria-label="返回病例列表"><span>←</span></button>
+            <div class="section-title" id="reportArchiveTitle">报告列表</div>
+            <div class="top-placeholder"></div>
+          </header>
+
+          <div class="report-archive-layout">
+            <div class="report-archive-list" id="reportArchiveList"></div>
+            <iframe class="report-archive-viewer" id="reportArchiveViewer" title="Report PDF"></iframe>
+          </div>
+
+          <div class="settings-actions logs-actions">
+            <button id="btnRefreshReportArchive" class="ghost-btn" type="button">刷新</button>
+            <button id="btnPrintArchiveReport" class="ghost-btn" type="button">打印</button>
+            <button id="btnDeleteReport" class="ghost-btn" type="button">删除</button>
+            <button id="btnClearReports" class="ghost-btn" type="button">清空</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="engineerScreen" class="screen engineer-screen">
+        <div class="form-shell engineer-shell">
+          <header class="top-bar">
+            <button id="btnBackEngineer" class="icon-back" aria-label="返回主页"><span>←</span></button>
+            <div class="section-title" id="engineerTitle">工程模式</div>
+            <div class="top-placeholder"></div>
+          </header>
+
+          <div class="engineer-grid">
+            <div class="settings-card headered">
+              <h3 id="engineerParamsTitle">治疗参数</h3>
+              <div class="setting-row">
+                <div class="meta">
+                  <strong id="engineerPressureLabel">压力</strong>
+                </div>
+                <div class="pill"><span id="engineerCurrentLabel1">当前</span><strong id="engineerPressureValue">250 mmHg</strong></div>
+              </div>
+              <input type="range" class="mac-slider" id="engineerPressure" min="0" max="400" step="1" value="250" />
+
+              <div class="setting-row">
+                <div class="meta">
+                  <strong id="engineerDurationLabel">时间</strong>
+                </div>
+                <div class="pill"><span id="engineerCurrentLabel2">当前</span><strong id="engineerDurationValue">10 min</strong></div>
+              </div>
+              <input type="range" class="mac-slider" id="engineerDuration" min="1" max="30" step="1" value="10" />
+
+              <div class="setting-row">
+                <div class="meta">
+                  <strong id="engineerTempLabel">温度</strong>
+                </div>
+                <div class="pill"><span id="engineerCurrentLabel3">当前</span><strong id="engineerTempValue">42 ℃</strong></div>
+              </div>
+              <input type="range" class="mac-slider" id="engineerTemp" min="35" max="45" step="0.1" value="42" />
+
+              <div class="settings-actions">
+                <button id="btnEngineerApplyToDevice" class="ghost-btn" type="button">下发到设备</button>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <h3 id="engineerTestTitle">设备测试</h3>
+              <div class="setting-row">
+                <div class="meta">
+                  <strong id="engineerBrightnessLabel">屏幕亮度</strong>
+                </div>
+                <div class="pill"><span id="engineerCurrentLabel4">当前</span><strong id="engineerBrightnessValue">80%</strong></div>
+              </div>
+              <input type="range" class="mac-slider" id="engineerBrightness" min="0" max="100" step="1" value="80" />
+
+              <div class="setting-row">
+                <div class="meta">
+                  <strong id="engineerVolumeLabel">系统音量</strong>
+                </div>
+                <div class="pill"><span id="engineerCurrentLabel5">当前</span><strong id="engineerVolumeValue">60%</strong></div>
+              </div>
+              <input type="range" class="mac-slider" id="engineerVolume" min="0" max="100" step="1" value="60" />
+
+              <div class="settings-actions">
+                <button id="btnEngineerTestSound" class="ghost-btn" type="button">测试提示音</button>
+                <button id="btnEngineerTestLed" class="ghost-btn" type="button">测试灯带</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="settingsScreen" class="screen settings-screen">
+        <div class="settings-container">
+          <header class="top-bar">
+            <button id="btnBackSettings" class="icon-back" aria-label="返回主页"><span>←</span></button>
+            <div class="section-title">系统设置</div>
+            <div class="top-placeholder"></div>
+          </header>
+
+          <div class="settings-layout">
+            <aside class="settings-sidebar">
+              <div class="sidebar-title">偏好选项</div>
+              <div class="settings-nav">
+                <button type="button" data-module="accounts" class="active">账户 <span class="hint">退出登录</span></button>
+                <button type="button" data-module="about">关于 <span class="hint">固件版本</span></button>
+              </div>
+            </aside>
+
+              <div class="settings-main">
+                <div id="settingsModuleAccounts" class="settings-module active" data-module="accounts">
+                  <div class="settings-card">
+                    <h3 id="accountsTitle">账户</h3>
+                    <div class="settings-actions">
+                      <button id="btnLogout" class="ghost-btn" type="button">退出登录</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="settingsModuleAbout" class="settings-module" data-module="about">
+                  <div class="settings-card">
+                    <h3>关于</h3>
+                    <div class="settings-meta">
+                      <div class="meta-tile">
+                        <div class="label">固件版本</div>
+                        <div class="value" id="settingsFirmwareVersion">--</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+          </div>
+        </div>
+      </section>
+
+
+    </div>
+
+    <nav class="bottom-nav" id="bottomNav" hidden>
+      <button type="button" data-view="quick" class="nav-item">
+        <span class="nav-icon nav-icon-treatment"></span>
+        <span class="label">治疗</span>
+      </button>
+      <button type="button" data-view="patientList" class="nav-item">
+        <span class="nav-icon nav-icon-patient"></span>
+        <span class="label">病例</span>
+      </button>
+      <button type="button" data-view="reportArchive" class="nav-item">
+        <span class="nav-icon nav-icon-report"></span>
+        <span class="label">报告</span>
+      </button>
+      <button type="button" data-view="settings" class="nav-item">
+        <span class="nav-icon nav-icon-settings"></span>
+        <span class="label">设置</span>
+      </button>
+    </nav>
+
+    <div id="alertBanner" class="alert" hidden></div>
+
+    <div id="autosaveRestoreModal" class="modal" hidden>
+      <div class="modal-body modal-form">
+        <div class="modal-title" id="autosaveRestoreTitle">恢复治疗进度</div>
+        <div class="modal-body-text" id="autosaveRestoreText">检测到未完成的治疗进度，是否恢复？</div>
+        <div class="modal-body-text" id="autosaveRestoreMeta">--</div>
+        <div class="modal-actions">
+          <button id="btnAutosaveDiscard" class="action subtle" type="button">忽略</button>
+          <button id="btnAutosaveRestore" class="action start" type="button">恢复</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="shieldModal" class="modal" hidden>
+      <div class="modal-body">
+        <div class="modal-title">眼盾未就绪</div>
+        <p id="shieldModalText">请确认左右眼盾均已插入并保持良好接触。</p>
+        <button id="modalClose" class="action start">知道了</button>
+      </div>
+    </div>
+
+    <div id="shieldLostModal" class="modal" hidden>
+      <div class="modal-body">
+        <div class="modal-title">眼盾断开</div>
+        <p>检测到眼盾离线，治疗已停止，请检查佩戴情况并重试。</p>
+        <button id="shieldLostBack" class="action start">返回</button>
+      </div>
+    </div>
+
+    <div id="shieldConfirm" class="modal" hidden>
+      <div class="modal-body">
+        <div class="modal-title" id="shieldConfirmTitle">仅左眼盾在线</div>
+        <p id="shieldConfirmText">检测到仅左通道可用，是否继续治疗？</p>
+        <div class="modal-actions">
+          <button id="confirmCancel" class="action subtle">取消</button>
+          <button id="confirmContinue" class="action start">继续</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="exportAfterTreatmentModal" class="modal" hidden>
+      <div class="modal-body export-after-modal">
+        <div class="modal-title" id="exportAfterTreatmentTitle">治疗完成</div>
+        <p id="exportAfterTreatmentText">是否需要导出报告？</p>
+        <div class="modal-actions">
+          <button id="btnExportAfterNo" class="action subtle">暂不导出</button>
+          <button id="btnExportAfterYes" class="action start">导出报告</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="treatmentRunningModal" class="modal" hidden>
+      <div class="modal-body">
+        <div class="modal-title" id="treatmentRunningTitle">正在治疗中</div>
+        <p id="treatmentRunningText">治疗进行中，请先停止治疗。</p>
+        <button id="treatmentRunningOk" class="action start">确定</button>
+      </div>
+    </div>
+
+    <div id="patientDeleteModal" class="modal" hidden>
+      <div class="modal-body modal-form">
+          <div class="modal-title" id="patientDeleteTitle">确认删除病例</div>
+          <div class="modal-body-text" id="patientDeleteText">确认删除所选病例？此操作不可恢复。</div>
+          <div id="patientDeleteMessage" class="form-msg" hidden></div>
+          <div class="modal-actions">
+            <button id="patientDeleteCancel" class="action subtle">取消</button>
+            <button id="patientDeleteConfirm" class="action start">确认删除</button>
+          </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+  </body>
+</html>

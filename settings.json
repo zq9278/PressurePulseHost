@@ -1,0 +1,13 @@
+{
+  "brightness": 244,
+  "volume": 77,
+  "playChime": false,
+  "printerName": "HPA6E0D4.lan (HP LaserJet Pro MFP 3101-3108)",
+  "accounts": [
+    {
+      "username": "admin",
+      "password": "admin",
+      "role": "admin"
+    }
+  ]
+}
