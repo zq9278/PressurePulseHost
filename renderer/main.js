@@ -59,8 +59,9 @@
       patientNameRequired: '请输入姓名',
       patientNameInvalid: '请输入有效中文姓名',
       patientGenderRequired: '请选择性别',
+      patientPhoneRequired: '请输入联系电话',
       patientBirthRequired: '请输入出生日期',
-      patientBirthInvalid: '出生日期格式应为 xxxx-xx-xx',
+      patientBirthInvalid: '出生日期格式应为 yyyy-mm-dd',
       patientIdLoaded: '已载入历史档案',
       patientIdAvailable: '编号已自动生成',
       patientHistorySummary: '历史治疗记录：{summary}',
@@ -210,6 +211,7 @@
       treatmentRunningText: '治疗进行中，请先停止治疗。',
       treatmentRunningOk: '确定',
       accountsTitle: '账户',
+      accountsDefaultLabel: '默认账户',
       accountsAddTitle: '添加账户',
       accountsAddHint: '新账户可用于登录系统',
       accountsUsernameLabel: '账号',
@@ -443,6 +445,7 @@
       patientNameRequired: 'Name is required',
       patientNameInvalid: 'Enter a valid Chinese name',
       patientGenderRequired: 'Select gender',
+      patientPhoneRequired: 'Phone is required',
       patientBirthRequired: 'Birth date is required',
       patientBirthInvalid: 'Use YYYY-MM-DD format',
       patientIdLoaded: 'Loaded existing record',
@@ -594,6 +597,7 @@
       treatmentRunningText: 'Treatment is in progress. Please stop it first.',
       treatmentRunningOk: 'OK',
       accountsTitle: 'Accounts',
+      accountsDefaultLabel: 'Default Account',
       accountsAddTitle: 'Add Account',
       accountsAddHint: 'New accounts can log into the system',
       accountsUsernameLabel: 'Username',
@@ -1979,10 +1983,8 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     const pageLabel = document.getElementById('patientPageLabel');
     const pagePrev = document.getElementById('patientPagePrev');
     const pageNext = document.getElementById('patientPageNext');
-    const selectPageBtn = document.getElementById('btnSelectPatientPage');
     if (!listNode) return;
     listNode.innerHTML = '';
-    if (selectPageBtn) selectPageBtn.onclick = null;
     const patients = Array.isArray(state.patients) ? state.patients : [];
     const sortedPatients = patients.slice().sort((a, b) => {
       const aTime = a?.createdAt ? Date.parse(a.createdAt) : NaN;
@@ -2028,20 +2030,11 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
         }
       };
     }
-    if (selectPageBtn) {
-      selectPageBtn.disabled = !pageItems.length;
-      selectPageBtn.onclick = () => {
-        const ids = pageItems.map((item) => String(item?.id || '')).filter(Boolean);
-        state.selectedPatientIds = ids;
-        state.selectedPatientId = ids[0] || null;
-        renderPatientList();
-      };
-    }
     if (!sortedPatients.length) {
       if (emptyNode) emptyNode.hidden = false;
-      return;
+    } else if (emptyNode) {
+      emptyNode.hidden = true;
     }
-    if (emptyNode) emptyNode.hidden = true;
     const table = document.createElement('div');
     table.className = 'patient-table';
 
@@ -3194,14 +3187,11 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       if (idInput) idInput.value = patientId;
     }
     const name = nameInput?.value?.trim() || '';
-    if (!name) {
-      setPatientFormMessage(t('patientNameRequired'), true);
-      return;
-    }
     if (!genderInput) {
       setPatientFormMessage(t('patientGenderRequired'), true);
       return;
     }
+    const phoneText = phoneInput?.value?.trim() || '';
     const birthText = birthInput?.value?.trim() || '';
     if (!birthText) {
       setPatientFormMessage(t('patientBirthRequired'), true);
@@ -3223,7 +3213,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       const status = existing?.status || 'active';
       const basePayload = {
         name,
-        phone: phoneInput?.value?.trim() || '',
+        phone: phoneText,
         status,
         birth: birthText,
         gender: genderInput?.value || '男',
@@ -4419,7 +4409,12 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
   function isShieldHealthy(side) {
     const presentRaw = state.shields[side];
     const presentNum = typeof presentRaw === 'string' ? Number(presentRaw) : Number(presentRaw);
-    return presentRaw === true || presentNum === 1; // 高电平 = 在线
+    const online = presentRaw === true || presentNum === 1; // 高电平 = 在线
+    const fuseVal = state.shieldDetail[`${side}Fuse`];
+    const fuseNum = typeof fuseVal === 'string' ? Number(fuseVal) : Number(fuseVal);
+    const hasFuse = fuseVal !== null && fuseVal !== undefined && fuseVal !== '';
+    const isFault = hasFuse && fuseNum === 0;
+    return online && !isFault;
   }
 
   function updateDeviceStatusUI() {
@@ -4634,8 +4629,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     if (batchBtn) batchBtn.textContent = t('batchExport');
     const delPatientBtn = document.getElementById('btnDeletePatient');
     if (delPatientBtn) delPatientBtn.textContent = t('deleteOne');
-    const clearPatientsBtn = document.getElementById('btnClearPatients');
-    if (clearPatientsBtn) clearPatientsBtn.textContent = t('clearAll');
     const delReportBtn = document.getElementById('btnDeleteReport');
     if (delReportBtn) delReportBtn.textContent = t('deleteOne');
     const clearReportsBtn = document.getElementById('btnClearReports');
@@ -4667,7 +4660,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       const el = document.querySelector(selector);
       if (el && TRANSLATIONS[next]?.[key]) el.textContent = TRANSLATIONS[next][key];
     });
-    set('#btnSelectPatientPage', 'patientSelectPage');
 
     const dpModal = document.getElementById('datePickerModal');
     if (dpModal && !dpModal.hidden) renderDatePicker();
@@ -4743,6 +4735,10 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     if (accountsCard) {
       const h3 = accountsCard.querySelector('h3');
       if (h3) h3.textContent = t('accountsTitle');
+      const defaultLabel = document.getElementById('accountsDefaultLabel');
+      if (defaultLabel) defaultLabel.textContent = t('accountsDefaultLabel');
+      const defaultAccount = document.getElementById('settingsDefaultAccount');
+      if (defaultAccount) defaultAccount.textContent = 'admin';
       const logoutBtn = document.getElementById('btnLogout');
       if (logoutBtn) logoutBtn.textContent = t('accountsLogoutBtn');
     }
@@ -6182,6 +6178,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     state.countdownTotalMs = 0;
     updateElapsedDisplay(0);
     updateRunState();
+    playSound('shield');
     const modal = document.getElementById('shieldLostModal');
     if (modal) modal.hidden = false;
   }
@@ -6194,20 +6191,14 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
 
   function handleStartClick() {
     if (!state.connected) return;
-    const left = !!state.shields.left;
-    const right = !!state.shields.right;
+    const left = isShieldHealthy('left');
+    const right = isShieldHealthy('right');
     if (left && right) {
       startTreatmentForSides(['left', 'right']);
       return;
     }
-    if (!left && !right) {
-      openShieldAlert('未检测到治疗眼罩，请正确佩戴后再开始治疗。');
-      playSound('shield');
-      return;
-    }
-    const active = left ? ['left'] : ['right'];
+    openShieldAlert('请确认左右眼盾同时在线且状态正常后再开始治疗。');
     playSound('shield');
-    openShieldConfirm(active);
   }
 
   function bindSettingsControls() {
@@ -6360,7 +6351,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       'btnBackEngineer',
       'btnExportPdf',
       'patientListPager',
-      'btnSelectPatientPage',
       'patientDeleteModal',
       'patientDeleteCancel',
       'patientDeleteConfirm',
@@ -6396,7 +6386,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       showView('home')
     );
     document.getElementById('btnDeletePatient')?.addEventListener('click', handleDeleteSelectedPatient);
-    document.getElementById('btnClearPatients')?.addEventListener('click', handleClearPatients);
     document.getElementById('btnBackReport')?.addEventListener('click', () =>
       showView('patientList')
     );

@@ -2055,6 +2055,18 @@ body.keyboard-shift.view-newPatient .patient-form {
   color: rgba(255, 255, 255, 0.88);
   letter-spacing: 1px;
 }
+.form-row label.required-field {
+  position: relative;
+  padding-right: 20px;
+}
+.form-row label.required-field::after {
+  content: '*';
+  position: absolute;
+  right: 0;
+  top: -4px;
+  color: #ff5f5f;
+  font-weight: 700;
+}
 .form-row input,
 .form-row textarea {
   width: 100%;

@@ -401,7 +401,7 @@
               />
             </div>
             <div class="form-row">
-              <label id="lblPatientGender">性别</label>
+              <label id="lblPatientGender" class="required-field">性别</label>
               <div class="radio-group">
                 <label><input type="radio" name="patientGender" value="男" required checked /> 男</label>
                 <label><input type="radio" name="patientGender" value="女" /> 女</label>
@@ -421,7 +421,7 @@
               />
             </div>
             <div class="form-row">
-              <label for="patientBirth" id="lblPatientBirth">出生日期</label>
+              <label for="patientBirth" id="lblPatientBirth" class="required-field">出生日期</label>
               <input
                 type="text"
                 id="patientBirth"
@@ -430,7 +430,7 @@
                 data-osk-target="patient-birth"
                 data-osk-zone="patient"
                 inputmode="numeric"
-                placeholder="xxxx-xx-xx"
+                placeholder="yyyy-mm-dd"
                 required
               />
             </div>
@@ -487,8 +487,6 @@
             <div class="section-title">病例列表</div>
             <div class="top-actions">
               <button id="btnDeletePatient" class="ghost-btn" type="button">删除</button>
-              <button id="btnClearPatients" class="ghost-btn" type="button">清空</button>
-              <button id="btnSelectPatientPage" class="ghost-btn" type="button">全选此页</button>
             </div>
           </header>
 
@@ -662,6 +660,12 @@
                 <div id="settingsModuleAccounts" class="settings-module active" data-module="accounts">
                   <div class="settings-card">
                     <h3 id="accountsTitle">账户</h3>
+                    <div class="settings-meta">
+                      <div class="meta-tile">
+                        <div class="label" id="accountsDefaultLabel">默认账户</div>
+                        <div class="value" id="settingsDefaultAccount">admin</div>
+                      </div>
+                    </div>
                     <div class="settings-actions">
                       <button id="btnLogout" class="ghost-btn" type="button">退出登录</button>
                     </div>
