@@ -41,12 +41,33 @@ if [ -s "$NVM_DIR/nvm.sh" ]; then
   . "$NVM_DIR/nvm.sh"
 fi
 
+APPIMAGE_PATH="${PPHC_APPIMAGE_PATH:-${PPHC_APP_IMAGE_PATH:-}}"
+APP_ARGS="${PPHC_APP_ARGS:-}"
+if [ -n "$APP_ARGS" ]; then
+  APP_ARGS="$(printf '%s\n' "$APP_ARGS" | sed -E 's/(^|[[:space:]])--kiosk([[:space:]]|$)/ /g; s/[[:space:]]+/ /g; s/^ //; s/ $//')"
+fi
+if [ -z "$APPIMAGE_PATH" ]; then
+  APPIMAGE_PATH="$(find "$APP_DIR/dist" -maxdepth 1 -type f -name '*.AppImage' 2>/dev/null | sort | tail -n 1 || true)"
+fi
+
+if [ -n "$APPIMAGE_PATH" ] && [ -f "$APPIMAGE_PATH" ]; then
+  chmod +x "$APPIMAGE_PATH" 2>/dev/null || true
+  echo "[pphc-xsession] launching AppImage: $APPIMAGE_PATH args=${APP_ARGS:-<none>}"
+  if [ -n "$APP_ARGS" ]; then
+    read -r -a APP_ARGS_ARR <<<"$APP_ARGS"
+    exec "$APPIMAGE_PATH" "${APP_ARGS_ARR[@]}"
+  fi
+  exec "$APPIMAGE_PATH"
+fi
+
+echo "[pphc-xsession] AppImage not found, fallback to npm run dev"
 if ! command -v npm >/dev/null 2>&1; then
   FALLBACK_NPM="$USER_HOME/.nvm/versions/node/v24.13.0/bin/npm"
   if [ -x "$FALLBACK_NPM" ]; then
     exec "$FALLBACK_NPM" run dev
   fi
   echo "[pphc-xsession] npm not found in PATH: $PATH" >&2
+  exit 1
 fi
 
 exec npm run dev

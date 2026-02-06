@@ -1567,14 +1567,7 @@ app.whenReady().then(() => {
     spiDevice: Number.isFinite(SPI_DEVICE) ? SPI_DEVICE : 0,
     spiSpeedHz: Number.isFinite(SPI_SPEED_HZ) ? SPI_SPEED_HZ : 2_400_000,
   });
-  // 启动即关背光，1 秒后再恢复为目标亮度
   if (IS_LINUX) {
-    setBrightnessPercent(0, { skipSave: true, allowZero: true }).catch(() => {});
-    setTimeout(() => {
-      if (Number.isFinite(currentSettings.brightness)) {
-        setBrightnessPercent(currentSettings.brightness).catch(() => {});
-      }
-    }, 500);
     if (Number.isFinite(currentSettings.volume)) {
       setVolumePercent(currentSettings.volume).catch(() => {});
     }
