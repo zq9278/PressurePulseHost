@@ -49,10 +49,13 @@ const SPI_BUS = Number.parseInt(process.env.PPHC_SPI_BUS, 10);
 const SPI_DEVICE = Number.parseInt(process.env.PPHC_SPI_DEVICE, 10);
 const SPI_SPEED_HZ = Number.parseInt(process.env.PPHC_SPI_SPEED_HZ, 10);
 
+const PRESTART_BACKLIGHT_PATH = IS_LINUX ? '/sys/class/backlight/backlight2/brightness' : null;
+let prestartBacklightOff = false;
 // Preemptively turn off backlight before Electron window creation to avoid white flash (Linux only)
-if (IS_LINUX) {
+if (PRESTART_BACKLIGHT_PATH) {
   try {
-    fs.writeFileSync('/sys/class/backlight/backlight2/brightness', '0');
+    fs.writeFileSync(PRESTART_BACKLIGHT_PATH, '0');
+    prestartBacklightOff = true;
   } catch (err) {
     console.warn('[PPHC] pre-start backlight off failed', err?.message || err);
   }
@@ -113,6 +116,8 @@ function initStoragePaths() {
 }
 let currentLogFile = null;
 let logStream = null;
+let suppressNextStopLedAlert = false;
+let suppressStopLedTimer = null;
 const STARTUP_SPEECH = {
   zh: '设备已启动，请连接治疗仪。',
   en: 'System is ready. Please connect the device.',
@@ -1522,7 +1527,15 @@ function createWindow() {
   });
   serial.on('stop-treatment', (value) => {
     mainWindow.webContents.send('stop-treatment', value);
-    ledShowStopAlert();
+    if (suppressNextStopLedAlert) {
+      suppressNextStopLedAlert = false;
+      if (suppressStopLedTimer) {
+        clearTimeout(suppressStopLedTimer);
+        suppressStopLedTimer = null;
+      }
+    } else {
+      ledShowStopAlert();
+    }
   });
   serial.on('shield-state', (value) => {
     mainWindow.webContents.send('shield-state', value);
@@ -1572,6 +1585,14 @@ app.whenReady().then(() => {
       setVolumePercent(currentSettings.volume).catch(() => {});
     }
     applyChimeSetting().catch(() => {});
+    if (prestartBacklightOff) {
+      const restoreBrightness = Number.isFinite(currentSettings.brightness)
+        ? currentSettings.brightness
+        : DEFAULT_SETTINGS.brightness;
+      setTimeout(() => {
+        setBrightnessPercent(restoreBrightness).catch(() => {});
+      }, 8000);
+    }
   }
   createWindow();
 
@@ -1605,11 +1626,23 @@ app.on('window-all-closed', () => {
 ipcMain.handle('list-ports', async () => serial.listPorts());
 ipcMain.handle('connect', async (e, { port, baud }) => serial.connect(port, baud));
 ipcMain.handle('disconnect', async () => serial.disconnect());
-ipcMain.handle('send-u8', async (e, { frameId, value }) => {
+ipcMain.handle('send-u8', async (e, { frameId, value, opts }) => {
   const sent = serial.sendU8(frameId, value);
   if (leds && value) {
     if (frameId === proto.U8_START_TREATMENT) ledShowRunning();
-    else if (frameId === proto.U8_STOP_TREATMENT) ledShowStopAlert();
+    else if (frameId === proto.U8_STOP_TREATMENT) {
+      const suppressStopAlert = !!opts?.suppressStopAlert;
+      if (suppressStopAlert) {
+        suppressNextStopLedAlert = true;
+        if (suppressStopLedTimer) clearTimeout(suppressStopLedTimer);
+        suppressStopLedTimer = setTimeout(() => {
+          suppressNextStopLedAlert = false;
+          suppressStopLedTimer = null;
+        }, 3000);
+      } else {
+        ledShowStopAlert();
+      }
+    }
   }
   return sent;
 });

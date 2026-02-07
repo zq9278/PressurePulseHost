@@ -6033,7 +6033,7 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     updateElapsedDisplay(elapsed);
     if (remain <= 0) {
       // 自动停止
-      api.sendU8(0x10c2, 1);
+      api.sendU8(0x10c2, 1, { suppressStopAlert: true });
       captureHistorySnapshot();
       persistLastTreatment();
       clearAutoSaveSnapshot();
@@ -6145,7 +6145,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       sides: sides.slice(),
       tempC,
     };
-    persistTreatmentStart();
     api.sendU16(0x1006, min);
     api.sendU8(0x10c1, 1);
     state.running = true;
@@ -6165,7 +6164,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     state.shieldDropShown = true;
     api.sendU8(0x10c2, 1);
     captureHistorySnapshot();
-    persistLastTreatment();
     clearAutoSaveSnapshot();
     state.running = false;
     state.activeSides = [];
@@ -6478,7 +6476,6 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
       if (state.running) {
         api.sendU8(0x10c2, 1);
         captureHistorySnapshot();
-        persistLastTreatment();
         clearAutoSaveSnapshot();
         state.running = false;
         state.activeSides = [];
@@ -6622,12 +6619,12 @@ const NAV_SEQUENCE = ['quick', 'patientList', 'reportArchive', 'settings'];
     }
     if (api.onStopTreatment) {
       api.onStopTreatment(() => {
+        if (!state.running) return;
         if (state.countdownTimer) {
           clearInterval(state.countdownTimer);
           state.countdownTimer = null;
         }
         captureHistorySnapshot();
-        persistLastTreatment();
         clearAutoSaveSnapshot();
         state.running = false;
         state.countdownEnd = 0;

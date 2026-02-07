@@ -4,7 +4,7 @@ contextBridge.exposeInMainWorld('api', {
   listPorts: () => ipcRenderer.invoke('list-ports'),
   connect: (port, baud) => ipcRenderer.invoke('connect', { port, baud }),
   disconnect: () => ipcRenderer.invoke('disconnect'),
-  sendU8: (frameId, value) => ipcRenderer.invoke('send-u8', { frameId, value }),
+  sendU8: (frameId, value, opts = {}) => ipcRenderer.invoke('send-u8', { frameId, value, opts }),
   sendF32: (frameId, value) => ipcRenderer.invoke('send-f32', { frameId, value }),
   sendU16: (frameId, value) => ipcRenderer.invoke('send-u16', { frameId, value }),
   sendU32: (frameId, value) => ipcRenderer.invoke('send-u32', { frameId, value }),
